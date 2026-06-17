@@ -3,12 +3,13 @@ name: task-cycle
 description: >-
   Manage the task lifecycle for this project. At the start of any work session,
   read TASKS.md in the repo root to orient yourself, then use this skill to
-  start a task, complete it, and debrief. Covers: finding the next task,
-  marking it in-progress, writing the debrief, updating LOG.jsonl, and
-  committing the result.
+  decide whether work needs a durable task or just a small chore commit, start
+  a task, complete it, and debrief. Covers: finding the next task, marking it
+  in-progress, writing the debrief, updating LOG.jsonl, and committing the
+  result.
 metadata:
   author: symbolfarm
-  version: "6"
+  version: "7"
   authored_by: user
   status: approved
 ---
@@ -23,6 +24,11 @@ agent-facing entry point.
 If the workspace holds more than one repo, read "Multi-project
 workspaces" below *first* — "the repo root", "`.tasks/`", and "the
 project" all mean *one specific repo*, and you need to know which.
+
+Reading `TASKS.md` is orientation, not a requirement to file every
+change as a durable task. Use the full task cycle for work that needs a
+reviewable work order, handoff, acceptance criteria, or multi-session
+audit trail. Small session-unblocking chores can be direct commits.
 
 ---
 
@@ -72,6 +78,10 @@ boundary (dependency repo first).
 
 ## Starting a task
 
+Before starting, decide whether the work is large enough to deserve a
+durable `.tasks/` entry. If it is a quick maintenance chore, use
+"Small chores" below instead.
+
 1. Read `TASKS.md` to understand the current state of the project. (In a
    multi-project workspace, first `cd` into the target repo — see
    "Multi-project workspaces" — and read *that* repo's `TASKS.md`.)
@@ -82,6 +92,33 @@ boundary (dependency repo first).
    LOG.jsonl" below).
 5. Confirm the goal and acceptance criteria with the user if anything
    is ambiguous before starting work.
+
+---
+
+## Small chores
+
+Do **not** file a task for every repo change. Prefer a direct
+`chore:` commit when the work is all of:
+
+- immediate maintenance needed to unblock the current session;
+- mechanical or low-risk after inspection;
+- small enough to complete and verify in one sitting;
+- unlikely to need handoff, reviewable acceptance criteria, or a future
+  audit trail beyond the commit itself.
+
+Examples: fixing a stale path in `TASKS.md`, repairing a local dev
+wrapper, formatting a touched file, or updating a small piece of
+agent-facing documentation after reality has drifted.
+
+If a small chore uncovers broader product/research work, finish or
+revert the chore as appropriate, then file the broader work as a real
+task. If you are already inside a task, handle eligible small chores as
+"Drive-by cleanup landed" in the debrief rather than filing a second
+task.
+
+When in doubt, ask whether a future agent would need more than `git
+show` to understand why the change happened. If yes, file a task; if no,
+a direct chore commit is usually enough.
 
 ---
 
