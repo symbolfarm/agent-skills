@@ -76,7 +76,15 @@ notebook/
 - **`notes/<slug>.md`** — one concept, claim, or design position per
   note. Examples: a theoretical framing, a named phenomenon ("the
   keying wall"), a standing methodology decision. These are the notes
-  that get *updated in place*.
+  that get *updated in place*. For a note that describes a **mechanism
+  in the code**, carry concrete implementation detail — a curated code
+  excerpt or tight labelled pseudocode, with `file.py:line` anchors —
+  enough that a reader could reconstruct the mechanism, not just its
+  gloss. This is deliberately in tension with "no wholesale dumps"
+  below: paste the *load-bearing* lines (the retrieval loop, the gate,
+  the solve), not the whole file. A note dense enough to reconstruct
+  from is what lets the human stay aware of *what is implemented* while
+  work moves fast.
 - **`experiments/<id>-<slug>.md`** — one note per experiment worth
   citing later: hypothesis, setup, exact command, headline numbers,
   verdict. Named after the driving task ID where one exists

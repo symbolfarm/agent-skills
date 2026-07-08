@@ -19,7 +19,10 @@ believed. Write for a cold reader.
 ## Evidence and reasoning
 
 Why we believe it. Link experiments, debriefs, and other notes rather
-than restating them; include the headline numbers inline.
+than restating them; include the headline numbers inline. If this note
+describes a mechanism in the code, paste the load-bearing code excerpt
+or tight labelled pseudocode (with `file.py:line` anchors) — enough to
+reconstruct the mechanism, not a whole-file dump.
 
 ## Implications
 
