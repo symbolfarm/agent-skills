@@ -5,13 +5,16 @@ description: >-
   we currently believe and why. Use when: recording findings or negative
   results from an experiment, writing up a session's research narrative,
   distilling a completed task's debrief into durable understanding,
-  correcting or superseding an earlier claim, or orienting on the
-  project's current theory before starting research work. Complements
-  the task-cycle skill: task-cycle tracks what happened; the notebook
-  tracks what we now think.
+  correcting or superseding an earlier claim, capturing reading notes
+  on an external paper, or orienting on the project's current theory
+  before starting research work. This skill defines the notebook
+  substrate (layout, note types, statuses, correction discipline);
+  the research-cycle skill drives the workflow around it, and
+  task-cycle tracks what happened while the notebook tracks what we
+  now think.
 metadata:
   author: symbolfarm
-  version: "1"
+  version: "2"
   authored_by: agent
   status: draft
 ---
@@ -57,6 +60,8 @@ notebook/
     keying-wall.md       # evergreen concept/claim notes, one idea each
   experiments/
     CR-19-onehop-additivity.md   # one note per experiment, structured
+  references/
+    vaswani-2017-attention.md    # reading notes on external sources
 ```
 
 - **`INDEX.md`** — a curated map, not an auto-listing: the north-star
@@ -78,8 +83,16 @@ notebook/
   (`CR-19-...`), otherwise a dated slug. Negative results are
   first-class — an experiment that rules something out is often the
   most valuable note in the book.
+- **`references/<citekey>.md`** — one note per external source (paper,
+  post, codebase), named by a citekey-style slug
+  (`vaswani-2017-attention`). Bibliographic frontmatter plus *our*
+  reading notes: what it claims, what we take from it, how it bears on
+  our notes. Created lazily — only when a source actually informs the
+  work. Theory does **not** get its own directory: our own claims and
+  framings are exactly what `notes/` is for, and a `theory/` split
+  would force a boundary decision on every note.
 
-Templates for all four live in `skills/research-notebook/assets/`.
+Templates for all of these live in `skills/research-notebook/assets/`.
 
 ---
 
@@ -106,6 +119,7 @@ superseded_by: notes/two-stage-chaining.md   # only when not live
 
 Experiment notes add machine-scannable result fields where they
 apply (`command`, `metrics`, `verdict: supports | refutes | inconclusive`).
+Reference notes add bibliographic fields (`url`, `authors`, `year`).
 Keep frontmatter values simple scalars/lists — it should survive any
 YAML parser and Obsidian's properties panel alike.
 
@@ -177,15 +191,20 @@ When *filing* a task, link the relevant notebook notes in the brief's
 "Context" section — that's how cold-starting agents inherit theory
 without a full history replay.
 
-**At task completion (the distill step).** After writing the debrief
-(task-cycle "Completing a task", step 1), distill into the notebook
+**At task completion (the distill step — findings only).** After
+writing the debrief (task-cycle "Completing a task", step 1), ask one
+gating question: *did this task produce a finding — change what we
+believe, rule something out, or develop the theory?* Chores and pure
+plumbing (env setup, refactors, harness wiring) answer no: skip the
+distill entirely — the debrief is their whole record (at most add a
+line to an already-open day log). The debrief is always mandatory;
+the distill is only for findings. When the answer is yes, distill
 *before* the housekeeping commit:
 
 1. Append today's `log/` entry: what was tried, observed, decided.
 2. Create or update the affected `notes/` and `experiments/` notes.
-   Ask: *did this task change what we believe?* If a result overturned
-   a premise, flip the old note's status now, while the evidence is in
-   context.
+   If a result overturned a premise, flip the old note's status now,
+   while the evidence is in context.
 3. Update `INDEX.md` if the map changed.
 
 Then include the notebook changes in the task's housekeeping commit
@@ -205,6 +224,11 @@ Notebook-only changes outside a task (a correction, a new hunch worth
 recording, a session log for exploratory work) are committed directly
 as `notebook: <what>` — they are the notebook's analogue of
 task-cycle's small chores, and never need a task filed.
+
+The *workflow* that drives writing into this substrate — regular
+learning sessions to sync the human, converting direction into filed
+tasks, and closing the loop when an experiment concludes — is the
+`research-cycle` skill. This skill only defines the artifact.
 
 ---
 

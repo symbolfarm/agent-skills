@@ -14,7 +14,8 @@ else that loads instruction files. Discovery differs per agent (see **Install**)
 | Skill | What it does |
 | --- | --- |
 | [`task-cycle`](./skills/task-cycle) | Manage the task lifecycle for a repo — find the next task, mark it in-progress, write the debrief, update `LOG.jsonl`, and commit. |
-| [`research-notebook`](./skills/research-notebook) | Maintain a project's living research notebook (`notebook/`) — Obsidian-compatible Markdown notes, dated lab logs, experiment records, and a correction/supersession discipline; interlocks with `task-cycle` via a distill step at task completion. |
+| [`research-notebook`](./skills/research-notebook) | Maintain a project's living research notebook (`notebook/`) — Obsidian-compatible Markdown notes, dated lab logs, experiment records, reference reading notes, and a correction/supersession discipline; interlocks with `task-cycle` via a findings-gated distill step at task completion. |
+| [`research-cycle`](./skills/research-cycle) | Drive the research workflow over the notebook: **learning** sessions that sync the human and set direction, **planning** that breaks direction into filed `task-cycle` tasks with pre-registered experiment stubs, and **logging** that closes findings back into the notebook. |
 
 ## Install
 
