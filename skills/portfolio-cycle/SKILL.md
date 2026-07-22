@@ -122,11 +122,16 @@ section with their outcome and date; Git history preserves older records.
 A daily plan is a bounded dispatch manifest created from
 `assets/daily-plan-template.json`. A packet references one existing, unblocked,
 filed task. It includes the target path, ordered skills, execution policy, and
-stop condition. It does not reproduce the task brief.
+stop condition. It also records the reviewed task file, task-file hash,
+task-log-entry hash, and repository `HEAD`. These snapshots detect stale work
+without copying task state into the portfolio. The packet does not reproduce
+the task brief.
 
 Plan states are `draft`, `frozen`, and `cancelled`. Once frozen and committed,
 do not mutate the plan to record runtime status. Several cron jobs may read it
 concurrently; immutable input avoids races. Record outcomes in the review.
+A changed execution contract requires a new plan that explicitly supersedes
+the old one; never silently amend a frozen contract.
 
 ### Daily reviews
 
@@ -206,6 +211,10 @@ A task may enter a plan only when all are true:
 - the repository is clean, or explicitly sequenced after an earlier packet;
 - no open user decision or review gates it.
 
+Before freezing, record the registry revision, project `HEAD`, task-file path
+and SHA-256, and the selected task-log-entry SHA-256. If a task has no stable
+file or log entry, it is not ready for unattended execution.
+
 Default to one task per packet and one packet per fresh agent session. A packet
 may authorize a bounded list only for short sequential tasks with a clear stop
 rule.
@@ -233,12 +242,16 @@ packet, project path, task ID, ordered skills, and stop condition.
 3. Re-read project instructions, `TASKS.md`, task log, and named task.
 4. Revalidate that the task is pending, unblocked, in scope, and safe on the
    current worktree.
-5. If anything needs user judgment, stop without guessing. Do not leave a task
+5. Recompute the task and log-entry hashes. If they differ, skip and report;
+   never choose a replacement task. A changed `HEAD` also fails closed unless
+   direct inspection proves it consists only of an explicitly preceding packet
+   from the same frozen plan and the task snapshots still match.
+6. If anything needs user judgment, stop without guessing. Do not leave a task
    `in_progress` merely because it was inspected.
-6. Execute, test, debrief, update project task records, and commit locally.
-7. Never push unless both project policy and direct user instruction permit it.
-8. Do not edit the portfolio repository from a project execution job.
-9. Report packet ID, task ID, result, commits, verification, and any new
+7. Execute, test, debrief, update project task records, and commit locally.
+8. Never push unless both project policy and direct user instruction permit it.
+9. Do not edit the portfolio repository from a project execution job.
+10. Report packet ID, task ID, result, commits, verification, and any new
    decision/review item.
 
 Stop and report on dirty user work, scope expansion beyond `Touches`, ambiguity,
@@ -297,6 +310,8 @@ Verification checklist:
 - [ ] no project task state duplicated into the registry;
 - [ ] active ranks unique;
 - [ ] packets name registered projects and matching paths;
+- [ ] project paths resolve beneath the configured workspace root;
+- [ ] packet task and log snapshots match the state reviewed by the planner;
 - [ ] frozen packets target cron-allowed projects;
 - [ ] no packet blocked on user input;
 - [ ] daily limits respected;

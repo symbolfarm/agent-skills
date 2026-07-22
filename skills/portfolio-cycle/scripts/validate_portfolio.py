@@ -19,6 +19,8 @@ PLAN_STATUSES = {"draft", "frozen", "cancelled"}
 ID_RE = re.compile(r"^[a-z0-9][a-z0-9-]*$")
 DATE_RE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
 TIME_RE = re.compile(r"^(?:[01]\d|2[0-3]):[0-5]\d$")
+SHA256_RE = re.compile(r"^sha256:[0-9a-f]{64}$")
+GIT_SHA_RE = re.compile(r"^[0-9a-f]{40,64}$")
 
 
 def load_json(path: Path, errors: list[str]) -> Any | None:
@@ -59,8 +61,11 @@ def validate_registry(data: Any, root: Path) -> tuple[list[str], list[str], dict
         errors.append("PROJECTS.json schema_version must be 1")
 
     workspace_root = obj.get("workspace_root")
+    workspace_path: Path | None = None
     if not isinstance(workspace_root, str) or not Path(workspace_root).is_absolute():
         errors.append("PROJECTS.json workspace_root must be an absolute path")
+    else:
+        workspace_path = Path(workspace_root).resolve()
 
     timezone = require_nonempty_string(obj.get("timezone"), "PROJECTS.json timezone", errors)
     if timezone and "/" not in timezone:
@@ -113,6 +118,8 @@ def validate_registry(data: Any, root: Path) -> tuple[list[str], list[str], dict
             path = Path(path_value)
             if not path.is_absolute():
                 errors.append(f"{where}.path must be absolute")
+            elif workspace_path is not None and not path.resolve().is_relative_to(workspace_path):
+                errors.append(f"{where}.path must resolve beneath workspace_root {workspace_path}")
             paths.append(path_value)
             if not path.exists():
                 warnings.append(f"{project_id or where}: path does not exist: {path}")
@@ -197,6 +204,12 @@ def validate_plan(
     status = obj.get("status")
     if status not in PLAN_STATUSES:
         errors.append(f"{path}: status must be one of {sorted(PLAN_STATUSES)}")
+    registry_revision = obj.get("registry_revision")
+    if status == "frozen" and not isinstance(registry_revision, str):
+        errors.append(f"{path}: frozen plans require registry_revision")
+    supersedes = obj.get("supersedes")
+    if supersedes is not None and (not isinstance(supersedes, str) or not supersedes.strip()):
+        errors.append(f"{path}: supersedes must be null or a non-empty plan id")
 
     packets = obj.get("packets")
     if not isinstance(packets, list):
@@ -244,6 +257,20 @@ def validate_plan(
         skills = packet.get("skills")
         if not isinstance(skills, list) or not skills or not all(isinstance(s, str) and s for s in skills):
             errors.append(f"{where}.skills must be a non-empty array")
+        snapshot = require_dict(packet.get("source_snapshot"), f"{where}.source_snapshot", errors)
+        if snapshot:
+            task_file = require_nonempty_string(snapshot.get("task_file"), f"{where}.source_snapshot.task_file", errors)
+            if task_file and Path(task_file).is_absolute():
+                errors.append(f"{where}.source_snapshot.task_file must be project-relative")
+            for key in ("task_sha256", "log_entry_sha256"):
+                digest = snapshot.get(key)
+                if not isinstance(digest, str) or not SHA256_RE.match(digest):
+                    errors.append(f"{where}.source_snapshot.{key} must be sha256: followed by 64 lowercase hex characters")
+            git_head = snapshot.get("git_head")
+            if not isinstance(git_head, str) or not GIT_SHA_RE.match(git_head):
+                errors.append(f"{where}.source_snapshot.git_head must be a full hexadecimal Git object id")
+        if packet.get("on_stale") != "skip_and_report":
+            errors.append(f"{where}.on_stale must be skip_and_report")
         execution = require_dict(packet.get("execution"), f"{where}.execution", errors)
         if execution:
             if execution.get("push") is not False:

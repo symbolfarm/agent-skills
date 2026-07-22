@@ -4,6 +4,8 @@
   "timezone": "Australia/Adelaide",
   "status": "draft",
   "created_at": "YYYY-MM-DDTHH:MM:SS+TZ",
+  "supersedes": null,
+  "registry_revision": "git:COMMIT_SHA",
   "constraints": {
     "work_window": {"start": "10:00", "end": "15:00"},
     "max_parallel_projects": 2,
@@ -15,6 +17,12 @@
       "project": "example",
       "path": "/workspace/example",
       "task_id": "EX-1",
+      "source_snapshot": {
+        "task_file": ".tasks/EX-1-example.md",
+        "task_sha256": "sha256:64_HEX_CHARACTERS",
+        "log_entry_sha256": "sha256:64_HEX_CHARACTERS",
+        "git_head": "FULL_GIT_COMMIT_SHA"
+      },
       "skills": ["task-cycle"],
       "not_before": "10:00",
       "execution": {
@@ -23,6 +31,7 @@
         "push": false,
         "stop_on_ambiguity": true
       },
+      "on_stale": "skip_and_report",
       "stop_condition": "Complete only EX-1; stop after its verified housekeeping commit."
     }
   ]
