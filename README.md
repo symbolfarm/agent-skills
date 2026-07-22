@@ -16,6 +16,7 @@ else that loads instruction files. Discovery differs per agent (see **Install**)
 | [`task-cycle`](./skills/task-cycle) | Manage the task lifecycle for a repo — find the next task, mark it in-progress, write the debrief, update `LOG.jsonl`, and commit. |
 | [`research-notebook`](./skills/research-notebook) | Maintain a project's living research notebook (`notebook/`) — Obsidian-compatible Markdown notes, dated lab logs, experiment records, reference reading notes, and a correction/supersession discipline; interlocks with `task-cycle` via a findings-gated distill step at task completion. |
 | [`research-cycle`](./skills/research-cycle) | Drive the research workflow over the notebook: **learning** sessions that sync the human and set direction, **planning** that breaks direction into filed `task-cycle` tasks with pre-registered experiment stubs, and **logging** that closes findings back into the notebook. |
+| [`portfolio-cycle`](./skills/portfolio-cycle) | Coordinate attention across project repositories, surface work blocked on user decisions or review, freeze bounded daily execution plans, and reconcile cron outcomes without duplicating project-local task state. |
 
 ## Install
 
@@ -36,6 +37,21 @@ ln -s "$PWD/agent-skills/skills/task-cycle" ~/.claude/skills/task-cycle
 
 Use a project-local `.claude/skills/` instead of `~/.claude/skills/` to scope a
 skill to a single repo.
+
+### Hermes Agent
+
+Keep this repository as the canonical checkout and add its `skills/` directory
+to `skills.external_dirs` in the active Hermes profile's `config.yaml`:
+
+```yaml
+skills:
+  external_dirs:
+    - /absolute/path/to/agent-skills/skills
+```
+
+Start a new Hermes session after configuring the directory. The skills then
+appear in `skills_list`, `skill_view`, slash commands, and cron skill
+attachments while edits continue to land in this Git working tree.
 
 ### Other agents
 

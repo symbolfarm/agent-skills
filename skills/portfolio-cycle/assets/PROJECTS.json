@@ -1,0 +1,28 @@
+{
+  "schema_version": 1,
+  "updated_at": "YYYY-MM-DDTHH:MM:SS+TZ",
+  "workspace_root": "/workspace",
+  "timezone": "Australia/Adelaide",
+  "planning": {
+    "work_window": {"start": "10:00", "end": "15:00"},
+    "max_packets_per_day": 4,
+    "max_parallel_projects": 2,
+    "commit": true,
+    "push": false
+  },
+  "projects": [
+    {
+      "id": "example",
+      "name": "Example project",
+      "path": "/workspace/example",
+      "status": "candidate",
+      "rank": null,
+      "attention": "unranked",
+      "cycle": "task",
+      "skills": ["task-cycle"],
+      "automation": {"mode": "manual_only", "commit": true, "push": false},
+      "daily_task_limit": 1,
+      "notes": "Triage before activation."
+    }
+  ]
+}

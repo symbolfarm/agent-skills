@@ -1,0 +1,29 @@
+{
+  "schema_version": 1,
+  "date": "YYYY-MM-DD",
+  "timezone": "Australia/Adelaide",
+  "status": "draft",
+  "created_at": "YYYY-MM-DDTHH:MM:SS+TZ",
+  "constraints": {
+    "work_window": {"start": "10:00", "end": "15:00"},
+    "max_parallel_projects": 2,
+    "notes": []
+  },
+  "packets": [
+    {
+      "id": "YYYY-MM-DD-01",
+      "project": "example",
+      "path": "/workspace/example",
+      "task_id": "EX-1",
+      "skills": ["task-cycle"],
+      "not_before": "10:00",
+      "execution": {
+        "mode": "sequential",
+        "commit": true,
+        "push": false,
+        "stop_on_ambiguity": true
+      },
+      "stop_condition": "Complete only EX-1; stop after its verified housekeeping commit."
+    }
+  ]
+}
