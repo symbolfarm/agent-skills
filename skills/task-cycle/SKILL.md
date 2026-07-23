@@ -143,7 +143,7 @@ whether the task came from initial planning, was surfaced mid-session,
 or was triaged out of a debrief.
 
 1. Write the task file using the template at
-   `skills/task-cycle/assets/task-template.md`.
+   `assets/task-template.md`.
 2. Append a `pending` entry to `LOG.jsonl` (see "Editing LOG.jsonl").
 3. Commit the new task file + LOG entry together as
    `chore: file <task-id> — <one-line summary>`.
@@ -213,7 +213,7 @@ Run these steps after the work is done and committed.
 ### 1. Write the debrief
 
 Create `.tasks/debriefs/<task-id>-<slug>.md` using the debrief template
-in `skills/task-cycle/assets/debrief-template.md` — use the **same
+in `assets/debrief-template.md` — use the **same
 `<task-id>-<slug>`** as the task file (e.g. task `C11-incontext-validation-sut.md`
 → debrief `C11-incontext-validation-sut.md`), so debrief filenames are
 scannable and mirror their task.
@@ -283,7 +283,7 @@ user check-in.
 - **Real task** — needs a decision, spans multiple files
   non-trivially, risky enough to want pre-merge review, or might
   take more than one sitting. File it: create a task file using
-  `skills/task-cycle/assets/task-template.md`, append a `pending`
+  `assets/task-template.md`, append a `pending`
   entry to LOG.jsonl.
 - **Drop** — sounded interesting in the moment but on second look
   adds no value, or duplicates existing work. Don't mention.
