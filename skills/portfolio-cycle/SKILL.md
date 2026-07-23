@@ -8,7 +8,7 @@ description: >-
   plan for cron jobs, or reconciling planned work with actual outcomes.
 metadata:
   author: symbolfarm
-  version: "1"
+  version: "2"
   authored_by: agent
   status: draft
 ---
@@ -212,8 +212,23 @@ A task may enter a plan only when all are true:
 - no open user decision or review gates it.
 
 Before freezing, record the registry revision, project `HEAD`, task-file path
-and SHA-256, and the selected task-log-entry SHA-256. If a task has no stable
-file or log entry, it is not ready for unattended execution.
+and SHA-256, and the selected task-log-entry SHA-256. `task_sha256` hashes the
+task file's exact bytes. `log_entry_sha256` hashes the exact UTF-8 JSONL line
+selected by parsed task ID, excluding its line terminator. Do not hash a
+reformatted JSON object: key order and whitespace are part of the reviewed
+record. If a task has no stable file or does not have exactly one matching log
+entry, it is not ready for unattended execution.
+
+Generate the snapshot with the included standard-library helper:
+
+```bash
+python3 scripts/snapshot_task.py \
+  /absolute/project/root TASK-ID .tasks/TASK-ID-slug.md
+```
+
+Copy its JSON output into the packet's `source_snapshot` field. When invoking
+the helper from outside the skill directory, use the absolute path to the
+skill's `scripts/snapshot_task.py`.
 
 Default to one task per packet and one packet per fresh agent session. A packet
 may authorize a bounded list only for short sequential tasks with a clear stop
