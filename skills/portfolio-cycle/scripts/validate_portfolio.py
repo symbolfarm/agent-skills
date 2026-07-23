@@ -8,6 +8,7 @@ import json
 import re
 import sys
 from collections import Counter
+from datetime import datetime
 from pathlib import Path
 from typing import Any
 
@@ -76,6 +77,11 @@ def validate_registry(data: Any, root: Path) -> tuple[list[str], list[str], dict
         max_packets = planning.get("max_packets_per_day")
         if not isinstance(max_packets, int) or isinstance(max_packets, bool) or max_packets < 1:
             errors.append("planning.max_packets_per_day must be a positive integer")
+        max_slots = planning.get("max_slots_per_plan")
+        if max_slots != 12:
+            errors.append("planning.max_slots_per_plan must be 12")
+        if planning.get("slot_interval_hours") != 2:
+            errors.append("planning.slot_interval_hours must be 2")
         max_parallel = planning.get("max_parallel_projects")
         if not isinstance(max_parallel, int) or isinstance(max_parallel, bool) or max_parallel < 1:
             errors.append("planning.max_parallel_projects must be a positive integer")
@@ -182,7 +188,7 @@ def validate_registry(data: Any, root: Path) -> tuple[list[str], list[str], dict
     return errors, warnings, projects_by_id
 
 
-def validate_plan(
+def validate_packet_plan_v1(
     data: Any,
     path: Path,
     registry: dict[str, Any],
@@ -243,7 +249,7 @@ def validate_plan(
             project_counts[project_id] += 1
             if packet.get("path") != project.get("path"):
                 errors.append(f"{where}.path does not match PROJECTS.json for {project_id}")
-            if packet.get("skills") != project.get("skills"):
+            if status != "frozen" and packet.get("skills") != project.get("skills"):
                 warnings.append(f"{where}.skills differs from registry order for {project_id}")
             if status == "frozen":
                 automation = project.get("automation", {})
@@ -295,6 +301,127 @@ def validate_plan(
     return errors, warnings
 
 
+def validate_slot_plan_v2(
+    data: Any,
+    path: Path,
+    registry: dict[str, Any],
+    projects_by_id: dict[str, dict[str, Any]],
+) -> tuple[list[str], list[str]]:
+    """Validate a generated one-shot slot plan without duplicating task state."""
+    errors: list[str] = []
+    warnings: list[str] = []
+    obj = require_dict(data, str(path), errors)
+    if obj is None:
+        return errors, warnings
+
+    date = obj.get("date")
+    if not isinstance(date, str) or not DATE_RE.match(date):
+        errors.append(f"{path}: date must be YYYY-MM-DD")
+    elif path.stem != date:
+        errors.append(f"{path}: filename must match date field")
+    status = obj.get("status")
+    if status not in PLAN_STATUSES:
+        errors.append(f"{path}: status must be one of {sorted(PLAN_STATUSES)}")
+    if status == "frozen" and not isinstance(obj.get("registry_revision"), str):
+        errors.append(f"{path}: frozen plans require registry_revision")
+    supersedes = obj.get("supersedes")
+    if supersedes is not None and (not isinstance(supersedes, str) or not supersedes.strip()):
+        errors.append(f"{path}: supersedes must be null or a non-empty plan id")
+
+    schedule = require_dict(obj.get("schedule"), f"{path}: schedule", errors)
+    capacity: int | None = None
+    if schedule is not None:
+        capacity = schedule.get("capacity")
+        if not isinstance(capacity, int) or isinstance(capacity, bool) or not 1 <= capacity <= 12:
+            errors.append(f"{path}: schedule.capacity must be an integer from 1 to 12")
+        if schedule.get("interval_hours") != 2:
+            errors.append(f"{path}: schedule.interval_hours must be 2")
+        start_value = schedule.get("start_at")
+        if not isinstance(start_value, str):
+            errors.append(f"{path}: schedule.start_at must be an ISO timestamp")
+        else:
+            try:
+                start_at = datetime.fromisoformat(start_value)
+                if start_at.tzinfo is None:
+                    errors.append(f"{path}: schedule.start_at must include a UTC offset")
+            except ValueError:
+                errors.append(f"{path}: schedule.start_at must be an ISO timestamp")
+
+    execution = require_dict(obj.get("execution_defaults"), f"{path}: execution_defaults", errors)
+    if execution is not None:
+        if execution.get("task_limit") != 1:
+            errors.append(f"{path}: execution_defaults.task_limit must be 1")
+        if execution.get("selection") != "task_cycle_highest_priority_pending_unblocked":
+            errors.append(f"{path}: unsupported task selection policy")
+        if execution.get("commit") is not True:
+            errors.append(f"{path}: execution_defaults.commit must be true")
+        if execution.get("push") is not False:
+            errors.append(f"{path}: execution_defaults.push must be false")
+        if execution.get("stop_on_ambiguity") is not True:
+            errors.append(f"{path}: execution_defaults.stop_on_ambiguity must be true")
+        require_nonempty_string(execution.get("delivery"), f"{path}: execution_defaults.delivery", errors)
+
+    slots = obj.get("slots")
+    if not isinstance(slots, list):
+        errors.append(f"{path}: slots must be an array")
+        return errors, warnings
+    if capacity is not None and len(slots) > capacity:
+        errors.append(f"{path}: {len(slots)} allocated slots exceeds capacity {capacity}")
+
+    slot_numbers: list[int] = []
+    project_counts: Counter[str] = Counter()
+    for index, slot_value in enumerate(slots):
+        where = f"{path}: slots[{index}]"
+        slot = require_dict(slot_value, where, errors)
+        if slot is None:
+            continue
+        number = slot.get("slot")
+        if not isinstance(number, int) or isinstance(number, bool):
+            errors.append(f"{where}.slot must be an integer")
+        elif capacity is not None and not 1 <= number <= capacity:
+            errors.append(f"{where}.slot must be between 1 and {capacity}")
+        else:
+            slot_numbers.append(number)
+        project_id = require_nonempty_string(slot.get("project"), f"{where}.project", errors)
+        project = projects_by_id.get(project_id or "")
+        if project_id and project is None:
+            errors.append(f"{where}: unknown project {project_id}")
+        elif project is not None and project_id is not None:
+            project_counts[project_id] += 1
+            if status == "frozen":
+                automation = project.get("automation", {})
+                if project.get("status") != "active" or automation.get("mode") != "cron_allowed":
+                    errors.append(f"{where}: frozen slot targets project not allowed for cron")
+                if automation.get("commit") is not True or automation.get("push") is not False:
+                    errors.append(f"{where}: frozen slot requires commit=true and push=false")
+        note = slot.get("note")
+        if note is not None and not isinstance(note, str):
+            errors.append(f"{where}.note must be a string when present")
+
+    duplicates = [value for value, count in Counter(slot_numbers).items() if count > 1]
+    if duplicates:
+        errors.append(f"{path}: duplicate slot numbers: {duplicates}")
+    for project_id, count in project_counts.items():
+        limit = projects_by_id[project_id].get("daily_task_limit")
+        if isinstance(limit, int) and count > limit:
+            errors.append(f"{path}: {project_id} has {count} slots, exceeding daily_task_limit {limit}")
+
+    return errors, warnings
+
+
+def validate_plan(
+    data: Any,
+    path: Path,
+    registry: dict[str, Any],
+    projects_by_id: dict[str, dict[str, Any]],
+) -> tuple[list[str], list[str]]:
+    if isinstance(data, dict) and data.get("schema_version") == 1:
+        return validate_packet_plan_v1(data, path, registry, projects_by_id)
+    if isinstance(data, dict) and data.get("schema_version") == 2:
+        return validate_slot_plan_v2(data, path, registry, projects_by_id)
+    return [f"{path}: schema_version must be 1 or 2"], []
+
+
 def validate(root: Path) -> tuple[list[str], list[str]]:
     root = root.resolve()
     errors: list[str] = []
@@ -311,7 +438,7 @@ def validate(root: Path) -> tuple[list[str], list[str]]:
     for required in ("PORTFOLIO.md", "DECISIONS.md"):
         if not (root / required).is_file():
             errors.append(f"missing required file: {root / required}")
-    for required_dir in ("plans", "reviews", "scripts"):
+    for required_dir in ("plans", "reviews", "scripts", "deployments"):
         if not (root / required_dir).is_dir():
             errors.append(f"missing required directory: {root / required_dir}")
 

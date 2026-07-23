@@ -1,32 +1,22 @@
-# Portfolio packet execution prompt
+# Portfolio slot execution prompt
 
-Execute exactly one frozen portfolio packet in a fresh unattended session.
+This template documents the prompt rendered by `scripts/render_cron_jobs.py`.
+The renderer fills the frozen plan path, slot number, project ID, scheduled time,
+and project workdir.
 
-- **Plan:** `{{ absolute_plan_path }}`
-- **Packet:** `{{ packet_id }}`
-- **Project:** `{{ project_id }}`
-- **Workdir:** `{{ absolute_project_path }}`
-- **Task:** `{{ task_id }}`
+The assigned repository is the execution environment. Its `AGENTS.md`, linked
+project documents, scripts, and task records are authoritative. Attach only the
+generic `task-cycle` skill; do not load a project-specific skill.
 
-Read the committed frozen plan and confirm that this packet still names the
-registered project path. Load the packet's attached skills, then read the
-project instructions, `TASKS.md`, `.tasks/LOG.jsonl`, and named task file.
+Before editing, require:
 
-Before editing, require all of the following:
+1. the frozen schema-v2 plan still assigns this slot to this project;
+2. the repository contains `AGENTS.md`, `TASKS.md`, and `.tasks/LOG.jsonl`;
+3. the worktree is clean and no task is already `in_progress`;
+4. a pending, unblocked, concrete task exists; and
+5. no user decision or project/portfolio reprioritisation is needed.
 
-1. the task is pending and its dependencies are resolved;
-2. the worktree has no unrelated pre-existing changes;
-3. the task-file and selected log-entry SHA-256 values match the packet;
-4. the current branch and `HEAD` are expected; and
-5. the acceptance criteria are concrete enough to execute without questions.
-
-If any check fails, skip the packet and report why. Do not select another task,
-guess a decision, or leave the task `in_progress` merely because it was read.
-
-If checks pass, execute only the named task. Follow `task-cycle` through
-implementation, tests, debrief, task-log housekeeping, and local commits. Stop
-at the packet's stop condition. Never push, merge, rebase, force-update history,
-or edit the project-portfolio repository.
-
-Report the packet ID, task ID, result, implementation and housekeeping commits,
-verification performed, and any new item requiring user decision or review.
+If a check fails, make no edits and report a no-op. Never invent, broaden, split,
+or reprioritise work. Otherwise complete at most one task through task-cycle,
+including tests, debrief, task-log housekeeping, and local commits. Never push,
+merge, rebase, or modify the project-portfolio repository.

@@ -1,38 +1,23 @@
 {
-  "schema_version": 1,
+  "schema_version": 2,
   "date": "YYYY-MM-DD",
   "timezone": "Australia/Adelaide",
   "status": "draft",
-  "created_at": "YYYY-MM-DDTHH:MM:SS+TZ",
+  "created_at": "YYYY-MM-DDTHH:MM:SS+09:30",
   "supersedes": null,
   "registry_revision": "git:COMMIT_SHA",
-  "constraints": {
-    "work_window": {"start": "10:00", "end": "15:00"},
-    "max_parallel_projects": 2,
-    "notes": []
+  "schedule": {
+    "start_at": "YYYY-MM-DDTHH:MM:SS+09:30",
+    "interval_hours": 2,
+    "capacity": 12
   },
-  "packets": [
-    {
-      "id": "YYYY-MM-DD-01",
-      "project": "example",
-      "path": "/workspace/example",
-      "task_id": "EX-1",
-      "source_snapshot": {
-        "task_file": ".tasks/EX-1-example.md",
-        "task_sha256": "sha256:64_HEX_CHARACTERS",
-        "log_entry_sha256": "sha256:64_HEX_CHARACTERS",
-        "git_head": "FULL_GIT_COMMIT_SHA"
-      },
-      "skills": ["task-cycle"],
-      "not_before": "10:00",
-      "execution": {
-        "mode": "sequential",
-        "commit": true,
-        "push": false,
-        "stop_on_ambiguity": true
-      },
-      "on_stale": "skip_and_report",
-      "stop_condition": "Complete only EX-1; stop after its verified housekeeping commit."
-    }
-  ]
+  "execution_defaults": {
+    "selection": "task_cycle_highest_priority_pending_unblocked",
+    "task_limit": 1,
+    "commit": true,
+    "push": false,
+    "stop_on_ambiguity": true,
+    "delivery": "whatsapp"
+  },
+  "slots": []
 }

@@ -1,379 +1,203 @@
 ---
 name: portfolio-cycle
-description: >-
-  Coordinate attention across several project repositories through an
-  interactive prioritisation discussion before freezing any execution plan,
-  without replacing project-local task-cycle or research-cycle records. Use
-  when reviewing project progress with the user, negotiating which projects
-  receive attention next, surfacing work blocked on user decisions or review,
-  preparing a bounded daily cron plan, or reconciling actual outcomes.
+description: Coordinate an interactive multi-project planning session, shape project-local backlogs, allocate up to twelve expiring two-hour execution slots, render one-shot Hermes cron jobs, and reconcile results. Use for cross-project priority, capacity, user decisions, WhatsApp planning, or unattended portfolio scheduling. Repository state is evidence; discussion remains the source of strategy.
+license: MIT
 metadata:
-  author: symbolfarm
-  version: "3"
-  authored_by: agent
-  status: draft
+  author: Symbol Farm
+  version: "4"
+  category: productivity
+  tags: portfolio, planning, task-cycle, cron, whatsapp, multi-project
 ---
 
-## Overview
+# Portfolio cycle
+
+Coordinate attention across independent repositories without creating a second
+task system. The portfolio layer decides where execution capacity goes. Each
+project repository defines what work means and `task-cycle` executes it.
+
+## Non-negotiable boundaries
 
-The portfolio is a scheduling and attention layer above project-local work.
-Each project remains authoritative for its own queue, task briefs, debriefs,
-research notebook, Git history, and completion state. The portfolio answers:
+- Begin with an interactive priority and trade-off discussion.
+- Treat Git, task, research, and test state as evidence, not automatic strategy.
+- Keep task descriptions, statuses, acceptance criteria, and debriefs in projects.
+- Keep project instructions in each repository's `AGENTS.md`, linked docs, and
+  scripts. Do not require or generate project-specific Hermes skills.
+- Use priorities plus explicit slot allocations; rank alone can starve projects.
+- Twelve slots are maximum capacity, never a quota.
+- Unattended jobs complete at most one already-filed task per invocation.
+- Never let unattended execution invent, broaden, split, or reprioritise work.
+- Commit locally only when allowed. Never push unless the user explicitly changes
+  the portfolio policy.
+- Frozen plans are immutable. Supersede them rather than editing them.
+- Use supported Hermes cron APIs; never edit scheduler-internal JSON directly.
+
+## Portfolio repository
 
-- Which projects should receive attention now?
-- Which filed tasks are safe to run unattended?
-- What is blocked on a user decision, review, or external event?
-- What bounded set of work should cron execute tomorrow?
-- What actually happened compared with the frozen plan?
+Default location: `/workspace/project-portfolio`.
+
+- `PROJECTS.json`: project paths, strategic status, rank, cycle, automation policy,
+  daily task limit, and generic skills.
+- `PORTFOLIO.md`: concise human-facing dashboard.
+- `DECISIONS.md`: user decisions and review requests.
+- `plans/YYYY-MM-DD.json`: immutable execution authority once frozen.
+- `deployments/YYYY-MM-DD.json`: rendered cron payloads and, after deployment,
+  actual scheduler job IDs.
+- `reviews/YYYY-MM-DD.md`: verified outcomes and planning lessons.
+- `scripts/validate_portfolio.py`: schema and policy validation.
+- `scripts/render_cron_jobs.py`: deterministic schema-v2 plan-to-cron rendering.
+
+Projects remain authoritative for `AGENTS.md`, `TASKS.md`, `.tasks/LOG.jsonl`,
+active task files, research records, tests, and Git history.
+
+## Phase 0: establish the interactive venue
+
+The session may happen in the current chat or through a gateway such as
+WhatsApp. It must be conversational either way.
+
+For a WhatsApp-initiated session, use a one-shot cron kickoff with:
+
+- `workdir: /workspace/project-portfolio`
+- `skills: ["portfolio-cycle"]`
+- `deliver: whatsapp` or a more specific WhatsApp destination
+- `attach_to_session: true`
+- a prompt that reads current portfolio evidence, sends a concise opening brief,
+  and invites the user to discuss priorities
+
+The kickoff must not freeze a plan, deploy execution jobs, or answer its own
+strategy questions. The user's replies continue the attached session.
+
+## Phase 1: collect evidence
+
+Inspect, without yet changing strategy:
+
+1. portfolio registry, latest plan/review, decisions, and deployments;
+2. each relevant project's `AGENTS.md`, task queue, research records, Git status,
+   recent commits, and validation state;
+3. material changes since the prior session;
+4. tasks blocked on user decisions or review;
+5. dirty, missing, ambiguous, or unsafe repositories.
+
+Summarise only material evidence. Do not mechanically sort the queue and call it
+planning.
+
+## Phase 2: hold the priority conversation
+
+Discuss with the user:
+
+- what outcome matters most now;
+- changes in urgency, value, risk, dependencies, or available attention;
+- whether a primary project should continue receiving most capacity;
+- which lower-ranked project deserves protected capacity to avoid starvation;
+- what decisions or reviews need the user's attention;
+- how much unattended capacity should be used at all;
+- the desired first slot time, delivery target, and any quiet-hours constraint.
+
+Questions and proposals do not authorise edits by themselves. Make planning
+changes only after the user agrees to them.
+
+## Phase 3: shape project-local backlogs
+
+For projects being considered for execution:
+
+1. enter the repository;
+2. read `AGENTS.md` and project documents;
+3. use `task-cycle` to add, split, clarify, or prioritise tasks;
+4. ensure acceptance criteria, dependencies, `Touches`, and validation commands
+   are concrete;
+5. separate user decisions from executable work;
+6. verify `TASKS.md`, `.tasks/LOG.jsonl`, and referenced task files agree;
+7. commit project-local planning changes independently when appropriate.
+
+Do not copy task descriptions or statuses into the portfolio plan. A slot grants
+capacity to a project; `task-cycle` chooses the highest-priority pending,
+unblocked task at execution time.
 
-The central invariant is:
+## Phase 4: allocate generated slots
 
-> The portfolio selects work; the project-level cycle defines and completes it.
+Use schema-version 2 for new plans.
 
-Never copy full task descriptions or project completion state into the
-portfolio. Reference project IDs and task IDs, then inspect the owning project
-when planning or reconciling.
+- Capacity is at most 12 slots.
+- Slot timestamps are derived from one offset-aware `schedule.start_at` value.
+- `schedule.interval_hours` is 2.
+- Unallocated slots are omitted.
+- Multiple slots may target one project, subject to its `daily_task_limit`.
+- A frozen slot may target only an active `cron_allowed` project.
+- Execution defaults are one task, local commit, no push, stop on ambiguity.
+- Initial delivery is normally `whatsapp` when the gateway is configured.
 
-This skill assumes a dedicated portfolio repository, normally
-`/workspace/project-portfolio`, containing:
+Two-hour spacing reduces but does not eliminate collision risk. Each job must
+no-op if the repository is dirty or another task is already `in_progress`.
 
-```text
-PORTFOLIO.md             human entry point and current attention summary
-PROJECTS.json            machine-readable project registry and policy
-DECISIONS.md             items requiring user decision or review
-plans/YYYY-MM-DD.json    frozen inputs to daytime execution
-reviews/YYYY-MM-DD.md    observed outcomes and planning lessons
-scripts/validate_portfolio.py
-```
+## Phase 5: freeze and render
 
-Templates and the validator shipped with this skill live under `assets/` and
-`scripts/`, relative to this `SKILL.md`.
+Before freezing:
 
----
+1. record the current registry Git revision;
+2. validate project paths beneath `/workspace`;
+3. verify allocated repositories contain `AGENTS.md`, `TASKS.md`, and
+   `.tasks/LOG.jsonl`;
+4. validate the draft plan;
+5. show the user the proposed allocation and schedule.
 
-## Boundary with project cycles
-
-### Portfolio-cycle owns
-
-- the set of projects participating in the portfolio;
-- active/paused/candidate/completed status and relative attention;
-- per-project automation policy and cross-project constraints;
-- the user decision/review queue;
-- dated daily execution plans and reviews.
-
-### Task-cycle owns
-
-- `.tasks/LOG.jsonl`, task files, task state, dependencies, and task IDs;
-- acceptance criteria and implementation scope;
-- task debriefs, completion housekeeping, and project commits.
-
-### Research-cycle and research-notebook own
-
-- project research direction, experiments, findings, and current beliefs;
-- learning/planning/logging phases within one research repository;
-- the notebook's correction and supersession discipline.
-
-A portfolio record may say “run GNN-42 from `gnn-review`,” but it must not
-repeat GNN-42's brief or claim that it is complete. Completion is established
-from that project's task log, debrief, and Git history.
-
-One work packet belongs to exactly one repository. Cross-repository changes are
-separate project tasks ordered through explicit dependencies.
-
----
-
-## Portfolio artifacts
-
-### `PROJECTS.json`
-
-The registry contains stable project identity and scheduling policy, not daily
-task state. Use `assets/PROJECTS.json` as the template.
-
-Important fields:
-
-- `id`: stable short ID used by plans and decisions;
-- `path`: absolute repository path;
-- `status`: `active`, `paused`, `candidate`, `incubating`, or `completed`;
-- `rank`: positive integer for active attention order, otherwise `null`;
-- `attention`: `primary`, `secondary`, `maintenance`, `watch`, or `unranked`;
-- `cycle`: `task`, `research`, or `none`;
-- `skills`: ordered skill names to attach to work sessions;
-- `automation.mode`: `cron_allowed`, `manual_only`, or `paused`;
-- `automation.commit`: whether unattended work may commit locally;
-- `automation.push`: false unless the user explicitly changes policy;
-- `daily_task_limit`: maximum packets from this project in one daily plan.
-
-Do not add `next_task`, `task_status`, or `last_commit` to the registry. Those
-drift immediately and duplicate project truth.
-
-### `DECISIONS.md`
-
-This is the evening agenda. Keep two open queues:
-
-- **Needs decision** — the user must choose direction or resolve ambiguity.
-- **Needs review** — work exists and needs human inspection or acceptance.
-
-Every item has an ID, project ID, related task where applicable, concise
-question or review target, enough context to act, and the date raised. Ordinary
-task dependencies stay in the project. Move resolved items to the recent
-section with their outcome and date; Git history preserves older records.
-
-### Daily plans
-
-A daily plan is a bounded dispatch manifest created from
-`assets/daily-plan-template.json`. A packet references one existing, unblocked,
-filed task. It includes the target path, ordered skills, execution policy, and
-stop condition. It also records the reviewed task file, task-file hash,
-task-log-entry hash, and repository `HEAD`. These snapshots detect stale work
-without copying task state into the portfolio. The packet does not reproduce
-the task brief.
-
-Plan states are `draft`, `frozen`, and `cancelled`. Once frozen and committed,
-do not mutate the plan to record runtime status. Several cron jobs may read it
-concurrently; immutable input avoids races. Record outcomes in the review.
-A changed execution contract requires a new plan that explicitly supersedes
-the old one; never silently amend a frozen contract.
-
-### Daily reviews
-
-A review records observed outcomes after execution: completed, blocked, failed,
-deferred, or not dispatched. Verify every outcome against the project
-repository rather than trusting an agent delivery message. Capture planning
-lessons and new user-gated items for the next plan.
-
----
-
-## Phase 1: bootstrap or refresh the registry
-
-1. Confirm the portfolio repository path and inspect its Git status.
-2. Discover candidate repositories under the agreed workspace root. Do not
-   automatically activate every Git repository.
-3. Inspect only enough to classify each candidate: Git state, `TASKS.md`, task
-   log, notebook index, agent instructions, and automation suitability.
-4. Add new entries as `candidate`, `rank: null`, `attention: unranked`, and
-   `automation.mode: manual_only` unless the user activates them.
-5. Assign stable IDs that remain valid if a directory is renamed.
-6. Validate `PROJECTS.json` and commit the registry change.
-
-Do not create missing task or notebook structures merely because a repository
-was discovered. Their bootstrap is a separate project-local decision.
-
----
-
-## Phase 2: interactive evening prioritisation
-
-Evening planning starts with a user discussion. Repository state supplies
-options and evidence; it does not decide portfolio priority by itself. Do not
-freeze a plan merely by sorting task queues, recency, ranks, or apparent
-readiness.
-
-Begin by presenting a concise portfolio brief:
-
-- what materially changed in each active or candidate project;
-- what is executable now;
-- what is blocked on the user's decision or review;
-- current capacity, time-window, cost, or energy constraints; and
-- a proposed attention allocation with the reasoning made explicit.
-
-Then ask the user to confirm or revise the primary project, secondary or
-maintenance attention, paused/watch projects, and any non-negotiable outcomes
-for the coming day. Clarify trade-offs rather than asking the user to rank an
-undifferentiated list. Record the resulting choices in `DECISIONS.md` or
-`PROJECTS.json` before selecting task packets.
-
-A user may explicitly delegate a bounded prioritisation rule for a later
-session, but silence is not delegation. When the user is unavailable, retain
-the last approved attention policy and prepare no new frozen work that requires
-a changed priority or product/research decision.
-
-The discussion turns project truth and user judgment into tomorrow's frozen
-plan.
-
-### Establish the delta
-
-Start with the portfolio repository, then inspect active projects in rank order.
-Prefer small deltas over full history replay:
-
-- open tasks and blockers;
-- recent debriefs and commits since the last review;
-- dirty worktrees or existing `in_progress` tasks;
-- research findings that change direction;
-- unresolved `DECISIONS.md` entries.
-
-Do not bulk-read every file in every repository. For a large portfolio, ask
-read-only subagents for focused summaries, then verify selected tasks directly.
-
-### Handle user-gated work
-
-Walk open decisions and reviews first. Resolutions may change rank, invalidate
-tasks, or make work executable. Record outcomes in `DECISIONS.md` and, where
-needed, in the owning project.
-
-Do not hide design questions inside daily packets. If a task needs a user
-choice, exclude it from unattended work and file a decision item.
-
-### Set attention
-
-Agree on a small attention shape:
-
-- one `primary` project receiving the largest share;
-- zero or more `secondary` projects with bounded packets;
-- `maintenance` only for concrete upkeep;
-- `watch` projects observed but not scheduled.
-
-Ranks must be unique among active projects. Respect task limits, energy/cost
-windows, cross-project dependencies, and desired variety.
-
-### Select packets
-
-A task may enter a plan only when all are true:
-
-- it exists in the owning project's task-cycle records;
-- it is pending and dependencies are satisfied;
-- acceptance criteria are concrete enough for cold unattended execution;
-- declared `Touches` do not conflict with another concurrent packet;
-- the project permits cron execution and local commits;
-- the repository is clean, or explicitly sequenced after an earlier packet;
-- no open user decision or review gates it.
-
-Before freezing, record the registry revision, project `HEAD`, task-file path
-and SHA-256, and the selected task-log-entry SHA-256. `task_sha256` hashes the
-task file's exact bytes. `log_entry_sha256` hashes the exact UTF-8 JSONL line
-selected by parsed task ID, excluding its line terminator. Do not hash a
-reformatted JSON object: key order and whitespace are part of the reviewed
-record. If a task has no stable file or does not have exactly one matching log
-entry, it is not ready for unattended execution.
-
-Generate the snapshot with the included standard-library helper:
-
-```bash
-python3 scripts/snapshot_task.py \
-  /absolute/project/root TASK-ID .tasks/TASK-ID-slug.md
-```
-
-Copy its JSON output into the packet's `source_snapshot` field. When invoking
-the helper from outside the skill directory, use the absolute path to the
-skill's `scripts/snapshot_task.py`.
-
-Default to one task per packet and one packet per fresh agent session. A packet
-may authorize a bounded list only for short sequential tasks with a clear stop
-rule.
-
-### Freeze and commit
-
-Write `plans/YYYY-MM-DD.json`, run the validator, re-read every packet as its
-implementer, and resolve surprises before setting `status` to `frozen`. Commit
-the plan. Only a committed frozen plan may be dispatched.
-
-Cron creation follows plan approval. Keep scheduler job IDs outside the
-immutable plan; the packet ID is the stable join key.
-
----
-
-## Phase 3: daytime execution
-
-Each cron run starts cold and cannot ask questions. Its prompt must name one
-packet, project path, task ID, ordered skills, and stop condition.
-
-1. Set cron `workdir` to the target project.
-2. Attach packet skills in order. Research execution usually loads
-   `task-cycle`, `research-notebook`, then a project-specific skill. Load
-   `research-cycle` only when the packet is itself a research-cycle phase.
-3. Re-read project instructions, `TASKS.md`, task log, and named task.
-4. Revalidate that the task is pending, unblocked, in scope, and safe on the
-   current worktree.
-5. Recompute the task and log-entry hashes. If they differ, skip and report;
-   never choose a replacement task. A changed `HEAD` also fails closed unless
-   direct inspection proves it consists only of an explicitly preceding packet
-   from the same frozen plan and the task snapshots still match.
-6. If anything needs user judgment, stop without guessing. Do not leave a task
-   `in_progress` merely because it was inspected.
-7. Execute, test, debrief, update project task records, and commit locally.
-8. Never push unless both project policy and direct user instruction permit it.
-9. Do not edit the portfolio repository from a project execution job.
-10. Report packet ID, task ID, result, commits, verification, and any new
-   decision/review item.
-
-Stop and report on dirty user work, scope expansion beyond `Touches`, ambiguity,
-or an acceptance criterion that cannot be satisfied. A clean partial state is
-better than invented success.
-
----
-
-## Phase 4: reconciliation
-
-1. Read the frozen plan.
-2. For every packet, inspect the owning project's task log, debrief, Git status,
-   and commits. Treat cron output as a lead, not proof.
-3. Write `reviews/YYYY-MM-DD.md` from `assets/review-template.md`.
-4. Classify each packet with evidence.
-5. Add user-gated items to `DECISIONS.md`.
-6. Adjust attention only when outcomes justify it; do not churn rank because
-   one task ran long.
-7. Validate and commit the portfolio review separately from project commits.
-
-The next evening plan consumes this review. Prefer committed artifacts over
-carrying transient execution state in a chat.
-
----
-
-## Parallelism and cron safety
-
-- Parallelize across projects only when packets are independent and each writes
-  to a different repository.
-- Within one project, default to sequential runs. Task logs and the Git worktree
-  serialize writes.
-- Never let two jobs update portfolio registry, decisions, or the same review.
-- Frozen plans are read-only during the work window.
-- A dirty worktree, `in_progress` task, `Touches: unknown`, or ambiguous scope
-  conflicts with all other work in that project.
-- Stagger jobs to reduce provider, disk, and Git contention.
-- Cron jobs commit but do not push by default.
-
----
-
-## Validation
-
-From the portfolio repository, run:
+After approval, mark the plan `frozen` and commit it. Render with:
 
 ```bash
 python3 scripts/validate_portfolio.py .
-python3 -m unittest discover -s tests -v
+python3 scripts/render_cron_jobs.py plans/YYYY-MM-DD.json \
+  --output deployments/YYYY-MM-DD.json
 ```
 
-Validation checks structure and policy, not whether a task is truly pending.
-A valid frozen plan still requires direct project inspection before dispatch.
+Review the generated manifest before deployment. Rendering has no scheduler side
+effect.
 
-Verification checklist:
+## Phase 6: deploy one-shot cron jobs
 
-- [ ] portfolio Git status inspected first;
-- [ ] no project task state duplicated into the registry;
-- [ ] active ranks unique;
-- [ ] packets name registered projects and matching paths;
-- [ ] project paths resolve beneath the configured workspace root;
-- [ ] packet task and log snapshots match the state reviewed by the planner;
-- [ ] frozen packets target cron-allowed projects;
-- [ ] no packet blocked on user input;
-- [ ] daily limits respected;
-- [ ] push disabled unless explicitly authorized;
-- [ ] validator passes;
-- [ ] portfolio and project changes committed independently.
+For every rendered payload, create a Hermes job through the supported cron API.
+The generated job must have:
 
----
+- an ISO one-shot schedule and `repeat: 1`;
+- the assigned project as `workdir`;
+- only the generic `task-cycle` skill;
+- repository-local instructions loaded from `AGENTS.md`;
+- at most one task;
+- clean-worktree and no-`in_progress` preflight checks;
+- local commit and no push;
+- a fail-closed no-op on missing work, ambiguity, decisions, or stale allocation.
 
-## Common pitfalls
+Record returned job IDs and deployed timestamps in `deployments/`. Do not mutate
+the frozen plan. If deployment is partial, record exactly which jobs exist and
+pause or remove them through the cron API before retrying.
 
-1. **Turning the portfolio into a second task queue.** Store references, not
-   copied briefs or statuses.
-2. **Letting cron choose strategy.** Strategy is fixed during evening planning;
-   daytime jobs execute bounded packets.
-3. **Scheduling draft work.** Only committed frozen plans are dispatchable.
-4. **Making every project active.** Candidate and watch states protect focus.
-5. **Hiding user decisions in task prose.** Promote them and exclude the task.
-6. **Recording outcomes by mutating the plan.** Use a separate review.
-7. **Running several jobs in one project worktree.** Sequence or isolate them.
-8. **Trusting agent summaries.** Verify debriefs, task logs, tests, and commits.
-9. **Pushing from unattended jobs.** Local commits are recoverable; publication
-   remains separate.
-10. **Loading portfolio-cycle in a project execution job.** Execution jobs need
-    project cycle skills, not cross-project planning context.
+## Phase 7: reconcile
+
+At the next interactive session:
+
+1. inspect scheduler outcomes and project Git/task state;
+2. verify claimed commits, tests, debriefs, and log transitions directly;
+3. classify each slot as completed, no-op, blocked, failed, or deferred;
+4. add user decisions/reviews to `DECISIONS.md`;
+5. write `reviews/YYYY-MM-DD.md`;
+6. update the dashboard and registry only after discussion;
+7. commit portfolio reconciliation separately from project work.
+
+## Fail-closed conditions
+
+Do not execute or deploy a slot when:
+
+- the plan is draft, invalid, stale, or superseded;
+- the project is not active and `cron_allowed`;
+- required repository-local instruction/task files are absent;
+- the worktree is dirty or a task is already `in_progress`;
+- no eligible task exists;
+- task scope or acceptance criteria are ambiguous;
+- a user decision or external review is required;
+- another slot or process is operating in the same repository;
+- the renderer output differs from the frozen allocation.
+
+A no-op is a correct result. Never substitute unrelated work.
+
+## Historical schema
+
+Schema-version 1 packet plans remain valid historical execution records and may
+retain exact task/source snapshots. Do not rewrite them to match the current
+registry. New portfolio plans use generated schema-version 2 slots.

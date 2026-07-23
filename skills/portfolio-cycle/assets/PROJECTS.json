@@ -6,6 +6,8 @@
   "planning": {
     "work_window": {"start": "10:00", "end": "15:00"},
     "max_packets_per_day": 4,
+    "max_slots_per_plan": 12,
+    "slot_interval_hours": 2,
     "max_parallel_projects": 2,
     "commit": true,
     "push": false
