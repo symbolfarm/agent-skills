@@ -1,14 +1,15 @@
 ---
 name: portfolio-cycle
 description: >-
-  Coordinate attention across several project repositories without replacing
-  their own task-cycle or research-cycle records. Use when maintaining a
-  project portfolio, deciding which projects receive attention next, surfacing
-  work blocked on user decisions or review, preparing a frozen daily execution
-  plan for cron jobs, or reconciling planned work with actual outcomes.
+  Coordinate attention across several project repositories through an
+  interactive prioritisation discussion before freezing any execution plan,
+  without replacing project-local task-cycle or research-cycle records. Use
+  when reviewing project progress with the user, negotiating which projects
+  receive attention next, surfacing work blocked on user decisions or review,
+  preparing a bounded daily cron plan, or reconciling actual outcomes.
 metadata:
   author: symbolfarm
-  version: "2"
+  version: "3"
   authored_by: agent
   status: draft
 ---
@@ -159,10 +160,34 @@ was discovered. Their bootstrap is a separate project-local decision.
 
 ---
 
-## Phase 2: evening planning
+## Phase 2: interactive evening prioritisation
 
-Evening planning is normally interactive. It turns project truth and user
-judgment into tomorrow's frozen plan.
+Evening planning starts with a user discussion. Repository state supplies
+options and evidence; it does not decide portfolio priority by itself. Do not
+freeze a plan merely by sorting task queues, recency, ranks, or apparent
+readiness.
+
+Begin by presenting a concise portfolio brief:
+
+- what materially changed in each active or candidate project;
+- what is executable now;
+- what is blocked on the user's decision or review;
+- current capacity, time-window, cost, or energy constraints; and
+- a proposed attention allocation with the reasoning made explicit.
+
+Then ask the user to confirm or revise the primary project, secondary or
+maintenance attention, paused/watch projects, and any non-negotiable outcomes
+for the coming day. Clarify trade-offs rather than asking the user to rank an
+undifferentiated list. Record the resulting choices in `DECISIONS.md` or
+`PROJECTS.json` before selecting task packets.
+
+A user may explicitly delegate a bounded prioritisation rule for a later
+session, but silence is not delegation. When the user is unavailable, retain
+the last approved attention policy and prepare no new frozen work that requires
+a changed priority or product/research decision.
+
+The discussion turns project truth and user judgment into tomorrow's frozen
+plan.
 
 ### Establish the delta
 

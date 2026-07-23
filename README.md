@@ -16,7 +16,7 @@ else that loads instruction files. Discovery differs per agent (see **Install**)
 | [`task-cycle`](./skills/task-cycle) | Manage the task lifecycle for a repo — find the next task, mark it in-progress, write the debrief, update `LOG.jsonl`, and commit. |
 | [`research-notebook`](./skills/research-notebook) | Maintain a project's living research notebook (`notebook/`) — Obsidian-compatible Markdown notes, dated lab logs, experiment records, reference reading notes, and a correction/supersession discipline; interlocks with `task-cycle` via a findings-gated distill step at task completion. |
 | [`research-cycle`](./skills/research-cycle) | Drive the research workflow over the notebook: **learning** sessions that sync the human and set direction, **planning** that breaks direction into filed `task-cycle` tasks with pre-registered experiment stubs, and **logging** that closes findings back into the notebook. |
-| [`portfolio-cycle`](./skills/portfolio-cycle) | Coordinate attention across project repositories, surface work blocked on user decisions or review, freeze bounded daily execution plans, and reconcile cron outcomes without duplicating project-local task state. |
+| [`portfolio-cycle`](./skills/portfolio-cycle) | Start with an interactive cross-project prioritisation discussion, then surface user-blocked work, freeze bounded daily execution plans, and reconcile cron outcomes without duplicating project-local task state. |
 
 ## Install
 
