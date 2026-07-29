@@ -78,9 +78,9 @@ boundary (dependency repo first).
 
 ## Starting a task
 
-Before starting, decide whether the work is large enough to deserve a
-durable `.tasks/` entry. If it is a quick maintenance chore, use
-"Small chores" below instead.
+Before starting, decide whether the work needs a durable `.tasks/`
+entry at all — apply "Does this need a task? The handoff test" below.
+Work you will do yourself in one sitting is a chore commit, not a task.
 
 1. Read `TASKS.md` to understand the current state of the project. (In a
    multi-project workspace, first `cd` into the target repo — see
@@ -95,30 +95,44 @@ durable `.tasks/` entry. If it is a quick maintenance chore, use
 
 ---
 
-## Small chores
+## Does this need a task? The handoff test
 
-Do **not** file a task for every repo change. Prefer a direct
-`chore:` commit when the work is all of:
+**A brief is a handoff artifact.** Write one when the work is going to
+someone else — a subagent, a future session — or when it is gated on
+the user's review before it lands. In those cases the brief *is* the
+instruction, or *is* the thing being reviewed, and it earns its cost.
 
-- immediate maintenance needed to unblock the current session;
-- mechanical or low-risk after inspection;
-- small enough to complete and verify in one sitting;
-- unlikely to need handoff, reviewable acceptance criteria, or a future
-  audit trail beyond the commit itself.
+Work you do yourself, now, in one sitting is a `chore:` or `docs:`
+commit. The commit message is the record.
 
-Examples: fixing a stale path in `TASKS.md`, repairing a local dev
-wrapper, formatting a touched file, or updating a small piece of
-agent-facing documentation after reality has drifted.
+**Size is the wrong test.** A one-line change handed to a subagent needs
+a brief, because the brief is the subagent's instruction. A substantial
+docs rewrite done by whoever already holds the context does not.
 
-If a small chore uncovers broader product/research work, finish or
-revert the chore as appropriate, then file the broader work as a real
-task. If you are already inside a task, handle eligible small chores as
-"Drive-by cleanup landed" in the debrief rather than filing a second
-task.
+| Situation | Artifact |
+|---|---|
+| You do it now; no judgment calls | `chore:`/`docs:` commit |
+| You do it now; made a call worth keeping | same commit + a short **Decisions** paragraph in the message body |
+| Handed off, or gated on user review | task file + debrief |
 
-When in doubt, ask whether a future agent would need more than `git
-show` to understand why the change happened. If yes, file a task; if no,
-a direct chore commit is usually enough.
+The middle tier is the one most often skipped. Three lines of
+`Decisions:` in a commit message carry what a debrief file would, at a
+fraction of the cost, and `git log` surfaces them.
+
+Examples of the first tier: fixing a stale path, repairing a dev
+wrapper, formatting a touched file, refreshing agent-facing docs after
+reality drifted.
+
+If a chore uncovers broader product/research work, finish or revert the
+chore as appropriate, then file the broader work as a real task. If you
+are already inside a task, land eligible chores as "Drive-by cleanup"
+in the debrief rather than filing a second task.
+
+**Downgrading is normal and cheap.** A task that gets filed and then
+done immediately by whoever filed it should be marked `superseded` with
+a one-paragraph debrief noting it was delivered as a chore — not
+`completed`. Filing is reversible, which is exactly why it is safe to
+file when unsure.
 
 ---
 
@@ -202,16 +216,31 @@ Create `.tasks/debriefs/<task-id>-<slug>.md` using the debrief template
 in `skills/task-cycle/assets/debrief-template.md` — use the **same
 `<task-id>-<slug>`** as the task file (e.g. task `C11-incontext-validation-sut.md`
 → debrief `C11-incontext-validation-sut.md`), so debrief filenames are
-scannable and mirror their task. Cover:
+scannable and mirror their task.
 
-- What was shipped (brief, factual)
-- What was descoped or deferred, and why
-- **Design decisions made in-flight** — any choice that deviated
-  from the brief, wasn't pre-specified, or involves a non-obvious
-  trade-off, even if small/reversible. Surface them so the user
-  can review in one place; don't bury them in the prose.
-- Anything surprising or non-obvious encountered
-- Candidate new tasks surfaced during the work
+**Write it for a future agent, not for the user.** The user gets the
+report in the session chat; the file is for whoever picks this up cold
+months later. Assume the user will not read it.
+
+**Do not restate what shipped.** `git show <commit>` does that better
+and cannot drift. Spend the words on what git cannot recover:
+
+- **Design decisions made in-flight** — any choice that deviated from
+  the brief, wasn't pre-specified, or involved a non-obvious trade-off,
+  even small and reversible ones. Record *why* it went that way, not
+  just what was chosen.
+- **Descoped / deferred** — what was left out, and the condition under
+  which it should be picked back up.
+- **Observations** — hidden constraints, tricky edges, things that
+  would trip up the next agent.
+- **Candidate follow-ups**, triaged.
+
+The through-line: git records what happened; the debrief records what
+*didn't*, and why. That is the part nothing else preserves.
+
+Then **report to the user in the session chat**: what landed, the calls
+you made, and anything needing their decision. That report is the
+user's channel; the file is the agent's.
 
 ### 2. Update LOG.jsonl
 

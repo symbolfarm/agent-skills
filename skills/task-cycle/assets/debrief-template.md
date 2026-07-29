@@ -3,28 +3,30 @@
 **Completed:** YYYY-MM-DD
 **Commit:** abc1234
 
-## What shipped
-
-Brief factual summary of what was implemented or changed.
-
-## Descoped / deferred
-
-What was left out and why. If nothing, write "Nothing descoped."
+<!-- Written for a future agent picking this up cold, NOT for the user
+     (they get the report in the session chat). Do not restate what
+     shipped — `git show` does that better and cannot drift. Record what
+     git cannot recover: what didn't happen, and why things went the way
+     they did. -->
 
 ## Design decisions
 
-Any choices made during the work that deviated from the task brief,
-weren't pre-specified, or involve a non-obvious trade-off — even
-small or easily reversible ones. The point is to surface them in
-one place so the user can review them, not to gate them. Write
-"None — followed brief as written" if nothing applies.
+Any choice made during the work that deviated from the brief, wasn't
+pre-specified, or involved a non-obvious trade-off — even small or
+easily reversible ones. Record *why* it went that way, not just what
+was chosen; the reasoning is the part that doesn't survive elsewhere.
+Write "None — followed brief as written" if nothing applies.
+
+## Descoped / deferred
+
+What was left out, and — importantly — the condition under which it
+should be picked back up. If nothing, write "Nothing descoped."
 
 ## Observations
 
-Anything surprising, non-obvious, or worth remembering — hidden
-constraints encountered, tricky edge cases, performance notes,
-things that would have tripped up a future agent. This is the
-signal worth preserving; skip obvious stuff.
+Hidden constraints encountered, tricky edge cases, performance notes,
+things that would trip up the next agent. Skip anything obvious from
+reading the code.
 
 ## Follow-ups
 
