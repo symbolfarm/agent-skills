@@ -17,7 +17,7 @@ else that loads instruction files. Discovery differs per agent (see **Install**)
 | [`research-notebook`](./skills/research-notebook) | Maintain a project's living research notebook (`notebook/`) — Obsidian-compatible Markdown notes, dated lab logs, experiment records, reference reading notes, and a correction/supersession discipline; interlocks with `task-cycle` via a findings-gated distill step at task completion. |
 | [`research-cycle`](./skills/research-cycle) | Drive the research workflow over the notebook: **learning** sessions that sync the human and set direction, **planning** that breaks direction into filed `task-cycle` tasks with pre-registered experiment stubs, and **logging** that closes findings back into the notebook. |
 | [`portfolio-cycle`](./skills/portfolio-cycle) | Hold an interactive cross-project priority discussion, shape repository-local backlogs, allocate up to twelve expiring two-hour slots, render one-shot Hermes cron payloads, support continuable WhatsApp planning, and reconcile outcomes without duplicating project task state. |
-| [`portfolio-review-gate`](./skills/portfolio-review-gate) | Send a concise, read-only portfolio checkpoint that identifies whether a batch is active, a milestone needs review, another bounded allocation is ready for discussion, or the portfolio should remain parked. |
+| [`portfolio-review-gate`](./skills/portfolio-review-gate) | Send a concise, read-only portfolio checkpoint that identifies whether a batch is active or needs review, and proactively derives bounded, unfiled next-job options when useful queued work is absent. |
 
 ## Install
 
