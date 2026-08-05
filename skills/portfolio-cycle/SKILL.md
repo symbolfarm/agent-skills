@@ -139,9 +139,9 @@ is a legitimate state, not a stalled one.
 A goal names an outcome and a way to check it. Nothing else.
 
 ```markdown
-4. **G-004** `obsidian-toby` — Migrate the published vault to GitHub Pages.
-   *Done when:* the vault is served from Pages, content is readable by an agent
-   over plain HTTP, and the Obsidian Publish subscription can be cancelled.
+- **G-004** `obsidian-toby` — Migrate the published vault to GitHub Pages.
+  *Done when:* the vault is served from Pages, content is readable by an agent
+  over plain HTTP, and the Obsidian Publish subscription can be cancelled.
 ```
 
 Requirements:
@@ -150,6 +150,10 @@ Requirements:
 - bounded enough for one `goal-cycle` run, or explicitly marked as a small batch;
 - tagged to one `active` project with a non-empty `agent_may`;
 - no decision in an `ask` class buried inside it.
+
+Use unnumbered bullets. The stable `G-NNN` identifier is the goal's identity;
+physical position is priority. Removing or moving a goal must not require
+renumbering the rest of the queue.
 
 Deliberately absent: acceptance-criteria blocks, `Touches` lists, effort
 estimates, debriefs. If a goal needs that much ceremony it is Lane B work and
