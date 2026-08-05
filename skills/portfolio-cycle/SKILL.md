@@ -155,6 +155,47 @@ Deliberately absent: acceptance-criteria blocks, `Touches` lists, effort
 estimates, debriefs. If a goal needs that much ceremony it is Lane B work and
 belongs in `task-cycle`.
 
+### Shape, not size
+
+Do not estimate effort. Hours are guesses that become theatre, and the queue
+does not need them.
+
+Do judge **shape**, because a queue cannot be ordered without it:
+
+| Shape | Sign | What to do |
+|---|---|---|
+| **One run** | The work is understood and bounded. | File it. |
+| **Look first** | Nobody knows what the work is until someone looks. | File the *reconnaissance* as the goal. |
+| **Programme** | Several goals wearing one name. | Split it, or scope it (§Session B). |
+
+The failure this prevents: a goal everyone agrees is important but nobody can
+place, because its size is unknown. That is not a priority problem, it is a
+missing-information problem, and reconnaissance is cheap.
+
+A worked example. *"Patch the SpecSoloist vulnerabilities"* looked like days and
+sat unplaceable. Ten minutes of looking established that all sixteen alerts were
+in the lock file rather than the code, that open-ended version ranges meant users
+resolving fresh were largely unaffected, that only two mattered for what the tool
+actually does, and that `uv lock --upgrade` clears most of them. It became a
+short goal plus one release decision — orderable, and much smaller than feared.
+
+**When you cannot tell whether a goal is one run, the first goal is the
+reconnaissance.** It is the same move as a research-lane decision brief, in
+build-lane clothing.
+
+### Not everything worth doing is a goal
+
+Some work is a decision before it is a task. A website that needs its purpose
+settled, a rename, a restructure — filing these as goals produces motion without
+direction.
+
+If the question "what would done look like?" cannot be answered in a sentence,
+it is a scoping conversation (§Session B), not a queue entry.
+
+Equally, resist goals that exist only to complete a policy. If nobody is
+affected by the gap, closing it is make-work — file it when something else
+brings you into that repository anyway.
+
 Score each goal on both axes and say which:
 
 - **Produces something usable** — does it yield a working artifact?

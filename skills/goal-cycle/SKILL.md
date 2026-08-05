@@ -68,6 +68,44 @@ Commit as you go at natural boundaries. Small commits are the record.
 Release the lock. Update the goal — done, or still in flight with what remains.
 Write the log entry. Commit the portfolio change separately from project work.
 
+## Resuming an interrupted goal
+
+Runs get cut off — usage limits, crashes, a closed laptop. Assume it will
+happen rather than designing as though it will not.
+
+**Stopping on purpose:** update the claim line with where you got to, then
+commit it.
+
+```markdown
+   *Claimed:* claude, 2026-08-05T14:22+09:30
+   *Progress:* pages audited, three broken links fixed. Next: the canvas sizing
+   on maze.html, which fails below 400px.
+```
+
+One line. It lives where the next agent already looks, and it carries the one
+thing the artifact cannot: what you were about to do.
+
+**Stopping without warning:** you write nothing, so the commits are the record.
+This is why `goal-cycle` commits at natural boundaries rather than once at the
+end — frequent commits are what make an ungraceful death recoverable.
+
+**Picking up a claimed goal.** If the top goal is already claimed:
+
+1. **Claimed by you, lock still held** — resume. Read the progress note, then
+   `git log` since the claim timestamp to see what actually landed.
+2. **Claimed by another agent, lock live** — leave it. Take the next goal.
+3. **Claim older than 24 hours, lock expired** — it was interrupted. Read the
+   progress note and the commits since the claim, re-claim it under your own
+   name, and note in `log/` that you took over. Never silently adopt a claim.
+4. **Claimed, but no commits and no progress note** — nothing was done. Re-claim
+   and start fresh.
+
+Reconstruct from the done-when, not from a guess at the previous agent's plan.
+The done-when is the contract; how it gets met is open.
+
+If resuming would mean redoing more than it would to restart, restart — and say
+so in the log.
+
 ## Deciding rather than blocking
 
 When a decision blocks progress, **take the default and keep going**. Record it.
