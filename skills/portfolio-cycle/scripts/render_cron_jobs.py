@@ -46,7 +46,7 @@ broaden, split, or reprioritise work.
 
 Complete at most one task. Follow task-cycle through implementation, tests,
 debrief, log housekeeping, and local commits. Never push, merge, rebase, or
-modify the project-portfolio repository. Report the slot, task, result, commits,
+modify the portfolio repository. Report the slot, task, result, commits,
 validation, and any user decision or review required.
 """
 

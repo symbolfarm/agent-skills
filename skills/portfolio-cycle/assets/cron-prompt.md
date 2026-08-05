@@ -23,4 +23,4 @@ bounded task as specified there; execution remains a separate invocation.
 Otherwise complete at most one filed task through task-cycle, including tests,
 debrief, task-log housekeeping, and local commits. Routine results remain local
 for consolidated reconciliation. Never push, merge, rebase, or modify the
-project-portfolio repository.
+portfolio repository.

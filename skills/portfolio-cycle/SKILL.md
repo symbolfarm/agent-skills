@@ -40,7 +40,7 @@ executes it.
 
 ## Portfolio repository
 
-Default location: `/workspace/project-portfolio`.
+Default location: `/workspace/portfolio`.
 
 - `PROJECTS.json`: project paths, strategic status, rank, cycle, automation policy,
   daily task limit, and generic skills.
@@ -104,7 +104,7 @@ WhatsApp. It must be conversational either way.
 
 For a WhatsApp-initiated session, use a one-shot cron kickoff with:
 
-- `workdir: /workspace/project-portfolio`
+- `workdir: /workspace/portfolio`
 - `skills: ["portfolio-cycle"]`
 - `deliver: whatsapp` or a more specific WhatsApp destination
 - `attach_to_session: true`
