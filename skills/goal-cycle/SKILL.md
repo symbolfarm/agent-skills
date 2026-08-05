@@ -1,0 +1,195 @@
+---
+name: goal-cycle
+description: >-
+  Execute one goal from the portfolio queue. Claim it, lock the repository, do
+  the work, take provisional defaults on reversible decisions, log what was
+  decided, and leave a way for the user to try the result. Use when working the
+  build lane — unattended or interactively — and whenever asked to "take the
+  next goal". Deliberately lighter than task-cycle: no briefs, no acceptance
+  criteria, no debriefs.
+license: MIT
+metadata:
+  author: Symbol Farm
+  version: "1"
+  category: productivity
+  tags: portfolio, goals, execution, build-lane
+---
+
+# Goal cycle
+
+Execution for the build lane. One goal per run.
+
+The artifact is the record. Git history is the debrief. This skill exists to
+keep the loop honest — claim before working, decide rather than block, log what
+was decided, and hand back something the user can actually try.
+
+**Use `task-cycle` instead** for research-lane work, where the decisions are
+low-level, the user stays involved, and a durable task record earns its weight.
+
+## The loop
+
+### 1. Choose
+
+Read `/workspace/portfolio/GOALS.md`. Take the **highest-priority unclaimed,
+unblocked** goal. Position is priority — do not re-rank, and do not skip a goal
+because a later one looks easier.
+
+Check `PROJECTS.json`: the goal's project must be `active` with a non-empty
+`agent_may`. If it is not, stop and report — the queue and registry disagree,
+and that is worth surfacing rather than working around.
+
+Read `CALIBRATION.md` before starting, not after a decision is already made.
+
+### 2. Claim
+
+Add a `*Claimed:*` line with agent and timestamp, then **commit it**. Claiming
+is a commit so races resolve as conflicts rather than as two agents doing the
+same work.
+
+Claim first, then work. Never work then claim.
+
+### 3. Lock
+
+Take `.tasks/.lock` in the project repository, per the portfolio's `LOCKING.md`.
+If another agent holds a live lock, release the claim and report a no-op — do
+not wait.
+
+Order is always: claim the goal, then take the repo lock, then edit.
+
+### 4. Work
+
+Do the thing. Follow the project's own conventions: read its `AGENTS.md` or
+`CLAUDE.md`, match the surrounding code, run its tests.
+
+Commit as you go at natural boundaries. Small commits are the record.
+
+### 5. Release
+
+Release the lock. Update the goal — done, or still in flight with what remains.
+Write the log entry. Commit the portfolio change separately from project work.
+
+## Deciding rather than blocking
+
+When a decision blocks progress, **take the default and keep going**. Record it.
+The user ratifies or overturns at the review. Wasted work is an accepted cost;
+nothing is learned from doing nothing.
+
+Check the class in `CALIBRATION.md` first:
+
+| Level | Do |
+|---|---|
+| **auto** | Decide, proceed, do not log it. |
+| **report** | Decide, proceed, log it with the reasoning. |
+| **ask** | Stop. Do not decide. Record what is needed and move on or halt. |
+
+If the class is not in the ledger, treat it as **report** and note that it is a
+new class — the review will place it.
+
+### Reversible means a git operation undoes it
+
+Including pushing and deploying. Public projects carry an experimental
+disclaimer; if someone starts depending on something they can say so.
+
+Never reversible, therefore never defaulted, regardless of ledger level:
+
+- **package-registry publishes** — crates.io never lets you unpublish, `yank`
+  only hides it. npm past 72 hours and PyPI are the same;
+- spending, or metered provider cost at scale;
+- third-party contact — email, issues on other people's repos, posts;
+- publishing under the user's name to a venue with a public edit history;
+- anything touching secrets, or deleting data with no other copy;
+- **anything at all in a `strict`-tier project**;
+- **what we believe** — that is the research lane's, and it is the user's.
+
+When one of these is in the way, that is a genuine block. Say so and stop.
+
+## Stopping
+
+Stop and report when:
+
+- the goal's done-when is met;
+- an `ask`-class or irreversible decision is required;
+- the goal turns out to be much larger than one run — say what it actually is;
+- the done-when is ambiguous enough that two people would disagree on it;
+- another agent holds the lock;
+- the registry and queue disagree.
+
+**A no-op is a correct result.** Never substitute unrelated work because the
+chosen goal did not pan out — that hides the fact that the queue needs
+attention.
+
+Partial progress is fine and normal. Leave the goal claimed only if resuming
+soon; otherwise release the claim and say what remains.
+
+## Logging
+
+Append to `/workspace/portfolio/log/YYYY-MM-DD.md`:
+
+```markdown
+## G-002 `garden-03` — closeout pass
+
+**Result:** done / partial / no-op / blocked
+**Commits:** 4 in garden-03
+**Try it:** https://tobylightheart.github.io/garden-03/ — the maze on the
+landing page was not loading; it is the quickest thing to check.
+
+**Decisions**
+- *dependency-choice (report):* dropped the unused analytics script rather than
+  updating it — nothing referenced it.
+- *public-copy (report):* reworded two error messages that referenced a dead URL.
+
+**Weakest point:** only checked in Firefox. The canvas sizing is the most likely
+thing to differ elsewhere.
+```
+
+Two parts are not optional:
+
+**Try it** — a command, path, or link. Where a goal produced something the user
+could experience, hand over the way in rather than describing it. Judging a
+summary is expensive and inaccurate; using the thing takes a minute and is
+accurate. For work that is understood rather than run, prefer a pinned visual —
+a mermaid diagram or self-contained HTML page.
+
+**Weakest point** — the part you would attack if reviewing this. One clause. It
+is cheap to produce and falsifiable: confidence that later proves misplaced is
+calibration evidence. Omit only when there genuinely is nothing; do not
+manufacture false modesty, and do not let it become boilerplate.
+
+## What this skill deliberately does not have
+
+No task briefs. No acceptance criteria beyond the goal's done-when. No
+`Touches` lists. No debriefs. No effort estimates.
+
+Debriefs exist to hand context between agents. Here the artifact is the record
+and the commits are the trail. If a piece of work genuinely needs that
+machinery, it is research-lane work and belongs in `task-cycle`.
+
+Resist adding ceremony here. The weight of this skill is a feature.
+
+## Pitfalls
+
+1. **Working before claiming.** The claim is what makes the queue safe for more
+   than one agent.
+2. **Re-ranking the queue.** Position is priority and it is the user's. Take the
+   top one.
+3. **Blocking on a reversible decision.** Take the default, log it, keep going.
+4. **Defaulting on an irreversible one.** Check the list above every time.
+5. **Logging `auto` decisions.** The ledger exists so the record gets shorter.
+6. **Describing the artifact instead of handing it over.** Give the way in.
+7. **Substituting work.** A no-op is correct; unrelated work is not.
+8. **Silent scope growth.** If the goal is bigger than it looked, say so rather
+   than quietly working for hours.
+9. **Touching a `strict` project.** AgentDesk takes no provisional defaults at
+   all.
+
+## Checklist
+
+- [ ] Goal was the top unclaimed, unblocked entry.
+- [ ] Project is `active` with a non-empty `agent_may`.
+- [ ] Claim committed before any work started.
+- [ ] Repo lock taken, and released on every exit path.
+- [ ] No irreversible action taken without asking.
+- [ ] Decisions logged at the level `CALIBRATION.md` specifies.
+- [ ] Log entry has a **Try it** and a **Weakest point**.
+- [ ] Portfolio changes committed separately from project work.
+- [ ] Goal marked done, or its remainder stated plainly.
