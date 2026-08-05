@@ -72,7 +72,8 @@ Read, in this order:
 2. `PROJECTS.json` — registry: paths, state, tier, what agents may do;
 3. `CALIBRATION.md` — which decision classes are **auto**, **report**, or **ask**;
 4. the most recent entries under `log/`;
-5. `briefs/` — count of Lane B decision briefs awaiting a ruling.
+5. `briefs/` — count of Lane B decision briefs awaiting a ruling;
+6. `TOBY.md` — the human queue: what only the user can do, and what is blocking.
 
 Then inspect the projects that actually moved: Git log since the last brief,
 goal-relevant state, and anything a goal's *done-when* refers to. Do not tour
@@ -186,6 +187,25 @@ Do not summarise their content, and do not apply a cap to how many may
 accumulate — they are read in a block, and throttling them would throttle the
 one channel where the user wants throughput.
 
+## Ending: state the next goal, do not ask for it
+
+The brief **closes by saying what happens next**, as a statement:
+
+> *Next: G-002, the garden-03 closeout, starting on the next run.*
+
+Not *"shall I take G-002?"*. The execution model already proceeds on reversible
+work without waiting for permission; a brief that asks permission to continue
+contradicts it, and it puts the user back in the loop the system exists to keep
+them out of. Silence means proceed.
+
+Ask a question **only** when something genuinely blocks — a decision in an `ask`
+class, an irreversible action, an empty queue, or a contradiction between the
+queue and the registry. Then ask exactly one, and it replaces the next-goal line
+rather than joining it.
+
+Mark the end of the brief plainly, so it is obvious where the report stops and
+any surrounding conversation starts.
+
 ## Format
 
 Short and scannable. No tables. Aim for 100–200 words; exceed 240 only for a
@@ -205,16 +225,17 @@ Decisions (3, all reversible): serde_json over a custom parser; JSON Lines for
 export; error copy reworded. Details in log/2026-08-05.md.
 
 Lane B: 3 briefs waiting, oldest 4 days.
+Yours: 2 open, none blocking. See TOBY.md.
 
-Needs you: nothing.
-
-Queue runs dry Thursday. Want to add goals, or shall I propose three?
+Next: G-014, finishing the export path. Then G-015.
+— end of brief —
 ```
 
 Rules:
 
 - Mention at most three goals; group the rest into counts.
-- At most one consequential question. Park the others.
+- Close with the next goal. Ask nothing unless something genuinely blocks.
+- At most one question, and only when blocked. Park the others.
 - Never enumerate routine commits or task mechanics.
 - Distinguish clearly between verified fact, inference, and proposal.
 - Never say a goal is done, queued, or approved unless evidence establishes it.
@@ -234,8 +255,8 @@ Rules:
 5. **Treating a proposal as filed.** Text in a message is not a queued goal.
 6. **Offering options without a recommendation.** Choose one and justify it.
 7. **Touring parked projects.** Noise, and it risks reviving them by accident.
-8. **Asking several questions.** Pick the one that most affects what happens
-   next.
+8. **Asking permission to continue.** The brief states the next goal. Asking
+   puts the user back in the loop the system exists to keep them out of.
 9. **Fixed UTC for a local-time promise.** Use the configured IANA timezone so
    daylight saving is handled.
 
@@ -250,4 +271,6 @@ Rules:
 - [ ] Exactly one option is recommended when proposals are present.
 - [ ] Completed work names its weakest point.
 - [ ] Where something is runnable or readable, the way in is included.
-- [ ] At most one consequential question, inviting an ordinary reply.
+- [ ] The brief closes by stating the next goal, not by asking for one.
+- [ ] A question appears only if something genuinely blocks.
+- [ ] The end of the brief is plainly marked.
