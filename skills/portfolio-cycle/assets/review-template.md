@@ -1,28 +1,28 @@
 # Portfolio review — YYYY-MM-DD
 
-**Plan:** `plans/YYYY-MM-DD.json`
-**Reviewed:** YYYY-MM-DD HH:MM TZ
+## Done
 
-## Summary
+- **G-00x** — what landed. Try it: <command, path, or link>
+- Grouped: N smaller goals across <projects>.
+- What went badly, plainly.
 
-- Completed: 0
-- Blocked: 0
-- Failed: 0
-- Deferred/not dispatched: 0
+## Doing
 
-## Packet outcomes
+- **G-00y** — in flight, on track / stalled because <reason>.
 
-### YYYY-MM-DD-01 — project-id / TASK-ID
+## Next
 
-- **Outcome:** completed / blocked / failed / deferred / not dispatched
-- **Evidence:** task log entry, debrief path, commit SHA, and verification result
-- **What happened:** concise factual summary
-- **Decision/review raised:** D-xxx / R-xxx / none
+- Current top of queue, as a proposal to react to.
 
-## Planning lessons
+## Decisions since last review
 
-- What should change in tomorrow's packet sizing, ordering, or constraints?
+Grouped by calibration class. Detail stays in `log/`.
 
-## Attention recommendation
+## Calibration
 
-- Keep or change project rank/attention, with a brief reason.
+- Class most expensive in user attention this week: <class>
+- Level moved: <class> report → auto, on <N> accepted instances / none this week.
+
+## Queue changes
+
+- Added / removed / re-ordered, with reasons.

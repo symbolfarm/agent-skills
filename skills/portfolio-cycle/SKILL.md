@@ -1,259 +1,245 @@
 ---
 name: portfolio-cycle
-description: Coordinate an interactive multi-project planning session, allocate scarce human attention, manage bounded autonomy envelopes, shape project-local backlogs, render one-shot Hermes cron jobs, and reconcile verified outcomes into concise digests. Use for cross-project priority, capacity, user decisions, low-attention operation, WhatsApp planning, or unattended scheduling. Repository state is evidence; discussion remains the source of strategy.
+description: >-
+  Run the interactive portfolio session: a twice-weekly review of what got done,
+  what is in flight, and what comes next; re-order the single goal queue; update
+  project states and the calibration ledger; and turn agreed direction into
+  filed goals. Use when the user asks for a review, wants to set or re-order
+  goals, asks where things are up to across projects, or wants to change a
+  project's state or trust level. Repository state is evidence; the conversation
+  is the source of strategy.
 license: MIT
 metadata:
   author: Symbol Farm
-  version: "5"
+  version: "6"
   category: productivity
-  tags: portfolio, planning, task-cycle, cron, whatsapp, multi-project
+  tags: portfolio, review, goals, planning, multi-project
 ---
 
 # Portfolio cycle
 
-Coordinate scarce human attention across independent repositories without
-creating a second task system. The portfolio layer decides where execution
-capacity goes. Each project repository defines what work means and `task-cycle`
-executes it.
+The interactive session where direction is set. Runs against
+`/workspace/portfolio`, works with no scheduler present, and needs nothing from
+any particular agent runtime.
 
-## Non-negotiable boundaries
+`portfolio-brief` reports between sessions. `goal-cycle` executes. This skill is
+where the user and the agent decide what should happen.
 
-- Begin with an interactive priority and trade-off discussion.
-- Treat Git, task, research, and test state as evidence, not automatic strategy.
-- Keep task descriptions, statuses, acceptance criteria, and debriefs in projects.
-- Keep project instructions in each repository's `AGENTS.md`, linked docs, and
-  scripts. Do not require or generate project-specific Hermes skills.
-- Limit simultaneous attention lanes; related repositories may form one programme
-  lane, and only one incubator should normally be active at a time.
-- Use priorities plus explicit slot allocations; rank alone can starve projects.
-- Twelve slots are maximum capacity, never a quota.
-- Unattended jobs complete at most one task per invocation.
-- By default, unattended execution may select only already-filed work and may not
-  invent, broaden, split, or reprioritise it. A project may derive and file one
-  task only when the user has approved a project-local autonomy envelope that
-  explicitly defines the goal, permitted actions, iteration budget, stopping
-  conditions, prohibited decisions, and escalation triggers.
-- Commit locally only when allowed. Never push unless the user explicitly changes
-  the portfolio policy.
-- Frozen plans are immutable. Supersede them rather than editing them.
-- Use supported Hermes cron APIs; never edit scheduler-internal JSON directly.
+## The three structures
 
-## Portfolio repository
+Keep these strictly apart. Conflating them is what produced the previous
+design's overlapping vocabularies.
 
-Default location: `/workspace/portfolio`.
+| File | Answers | Changes |
+|---|---|---|
+| `PROJECTS.json` | What exists, where, in what state, what agents may do there | Rarely |
+| `GOALS.md` | What to do next, in order | Constantly |
+| `CALIBRATION.md` | Which decision classes are delegated | Slowly, on evidence |
 
-- `PROJECTS.json`: project paths, strategic status, rank, cycle, automation policy,
-  daily task limit, and generic skills.
-- `PORTFOLIO.md`: concise human-facing dashboard.
-- `DECISIONS.md`: user decisions and review requests.
-- `plans/YYYY-MM-DD.json`: immutable execution authority once frozen.
-- `deployments/YYYY-MM-DD.json`: rendered cron payloads and, after deployment,
-  actual scheduler job IDs.
-- `reviews/YYYY-MM-DD.md`: verified outcomes and planning lessons.
-- `scripts/validate_portfolio.py`: schema and policy validation.
-- `scripts/render_cron_jobs.py`: deterministic schema-v2 plan-to-cron rendering.
+**Priority is not a property of a project.** It is position in `GOALS.md`. There
+is no project rank and no attention level.
 
-Projects remain authoritative for `AGENTS.md`, `TASKS.md`, `.tasks/LOG.jsonl`,
-active task files, autonomy envelopes, research records, tests, and Git history.
+## Boundaries
 
-## Low-attention operating model
+- Discussion is the source of strategy. Repository state is evidence.
+- Never file a goal the user has not agreed to.
+- Never move a calibration level on a single instance. Patterns only.
+- Never revive a `parked` project to fill capacity. Reviving is a priority
+  decision, made explicitly.
+- Goals belong only to `active` projects with a non-empty `agent_may`.
+- Keep task-level detail in the project. A goal names an outcome; `task-cycle`
+  and `goal-cycle` decide how.
+- One queue. Never a per-project queue.
 
-Use this mode when execution throughput exceeds the user's review capacity.
+---
 
-- Count tightly coupled repositories as one programme attention lane.
-- Keep at most two active lanes by default: one primary programme and one
-  time-bounded incubator. Park other incubators rather than assigning equal turns.
-- Choose weekly or fortnightly reconciliation unless urgency justifies a denser
-  cadence.
-- Execution jobs normally use local delivery. Notify the user immediately only
-  for a safety issue, destructive ambiguity, unexpected cost/external exposure,
-  or a genuinely blocking decision.
-- A later reconciliation job or interactive session verifies all outputs and
-  produces one concise digest: material change, verification, recommendation,
-  and at most one consequential user decision.
-- Review milestones, not commits. Human review is normally reserved for public
-  claims or publication, externally visible milestones, difficult-to-reverse
-  architecture, spending/provider/privacy/safety choices, or evidence that
-  invalidates the current direction.
-- An unresolved decision parks its affected lane; it does not accumulate a queue
-  of additional questions.
+## Session A: the review
 
-### Project-local autonomy envelopes
+**Cadence: once or twice a week.** This is the user's standing reflective
+practice — what I have done, what I am doing, what is next — carried over from
+research and day-job habit. It works because it is regular, short, and always
+the same shape.
 
-An autonomy envelope is an explicit delegation of bounded tactical authority,
-not permission to choose product strategy. Store it in the owning repository
-and link it from `AGENTS.md`. It must state:
+The division of labour is the point: **the agent assembles "done" from evidence;
+the user supplies "next".** Retrieval and compression are cheap for an agent and
+expensive for a person. Direction is the reverse.
 
-1. the stable outcome or question;
-2. actions and file boundaries the agent may initiate without review;
-3. objective validation and milestone criteria;
-4. maximum derived tasks or iterations before reconciliation;
-5. stopping and escalation conditions;
-6. prohibited product, research, cost, publication, provider, privacy, safety,
-   and difficult-to-reverse architectural decisions.
+### A1. Assemble, before the user arrives if possible
 
-Within an approved envelope, an unattended steward may file at most one concrete
-derived task per invocation, then either stop or let a later task-cycle slot
-execute it. It must not both create an open-ended backlog and execute through it.
-Outside an approved envelope, the existing filed-task-only rule applies.
+From `log/` entries, `GOALS.md`, project Git history, and `briefs/` since the
+last review:
 
-## Phase 0: establish the interactive venue
+- goals completed, with the artifact each produced;
+- goals in flight, and whether any have stalled;
+- decisions taken, grouped by calibration class;
+- decision briefs ruled on, and any still waiting;
+- notebook findings ratified or still provisional;
+- anything that turned out differently from what was expected.
 
-The session may happen in the current chat or through a gateway such as
-WhatsApp. It must be conversational either way.
+Compress hard. The user should not have to reconstruct context. Name artifacts
+they can open, not commits they would have to read.
 
-For a WhatsApp-initiated session, use a one-shot cron kickoff with:
+### A2. Present
 
-- `workdir: /workspace/portfolio`
-- `skills: ["portfolio-cycle"]`
-- `deliver: whatsapp` or a more specific WhatsApp destination
-- `attach_to_session: true`
-- a prompt that reads current portfolio evidence, sends a concise opening brief,
-  and invites the user to discuss priorities
+Three headings, in this order, and nothing else:
 
-The kickoff must not freeze a plan, deploy execution jobs, or answer its own
-strategy questions. The user's replies continue the attached session.
+**Done** — what actually landed, with what to try. Two or three items, grouped.
+**Doing** — what is in flight, and anything stalled with the reason.
+**Next** — the current top of the queue, as a proposal to react to.
 
-## Phase 1: collect evidence
+Say plainly what did not go well. A review that only reports progress stops
+being useful within a month.
 
-Inspect, without yet changing strategy:
+### A3. Discuss
 
-1. portfolio registry, latest plan/review, decisions, and deployments;
-2. each relevant project's `AGENTS.md`, task queue, research records, Git status,
-   recent commits, and validation state;
-3. material changes since the prior session;
-4. tasks blocked on user decisions or review;
-5. dirty, missing, ambiguous, or unsafe repositories.
+The user's part. Useful prompts, not a checklist to march through:
 
-Summarise only material evidence. Do not mechanically sort the queue and call it
-planning.
+- Has anything changed what matters most?
+- Is anything in the queue no longer worth doing?
+- Did anything take much longer, or turn out much easier, than expected?
+- Is anything blocked on them that they want to unblock, drop, or defer?
+- Is any project in the wrong state?
 
-## Phase 2: hold the priority conversation
+### A4. Act on what was agreed
 
-Discuss with the user:
+- Re-order `GOALS.md`. Remove goals that no longer earn their place; say so.
+- File new goals (§Filing goals below).
+- Update project states, tiers, or `agent_may`.
+- Update `CALIBRATION.md` counts, and move a level only on a pattern.
+- Write the review to `log/YYYY-MM-DD-review.md`.
+- Commit. Portfolio changes commit separately from any project work.
 
-- what outcome matters most now;
-- changes in urgency, value, risk, dependencies, or available attention;
-- whether a primary programme should continue receiving most capacity;
-- which single incubator, if any, deserves the other active attention lane;
-- which projects should be explicitly parked rather than kept nominally active;
-- what decisions or milestone reviews genuinely need the user's attention;
-- the decision budget for this cycle (normally zero or one);
-- how much unattended capacity should be used at all;
-- whether the cadence should be weekly, fortnightly, or temporarily denser;
-- the desired first slot time, delivery target, and any quiet-hours constraint.
+### A5. The one question worth asking every time
 
-Questions and proposals do not authorise edits by themselves. Make planning
-changes only after the user agrees to them.
+**Which class of decision cost the user the most attention this week, and can it
+move?**
 
-## Phase 3: shape project-local backlogs
+That is what makes the system cheaper over time. Skipping it means the ledger
+never moves and every week costs what the last one did.
 
-For projects being considered for execution:
+---
 
-1. enter the repository;
-2. read `AGENTS.md` and project documents;
-3. use `task-cycle` to add, split, clarify, or prioritise tasks;
-4. ensure acceptance criteria, dependencies, `Touches`, and validation commands
-   are concrete;
-5. separate user decisions from executable work;
-6. verify `TASKS.md`, `.tasks/LOG.jsonl`, and referenced task files agree;
-7. commit project-local planning changes independently when appropriate.
+## Session B: scoping
 
-Do not copy task descriptions or statuses into the portfolio plan. A slot grants
-capacity to a project; `task-cycle` chooses the highest-priority pending,
-unblocked task at execution time.
+Use when something arrives that is too unsettled to become goals — a new
+direction, a possible restructure, a project whose shape is in question.
 
-## Phase 4: allocate generated slots
+Do not file goals against an unsettled design. Work has to be discarded for the
+wrong reason, and it is the most demoralising kind of waste.
 
-Use schema-version 2 for new plans.
+Instead: talk it through, record the shape in a design note, and file goals only
+once the parts that would change the work are settled. A project can sit
+`active` with an empty `agent_may` and no goals for as long as this takes. That
+is a legitimate state, not a stalled one.
 
-- Capacity is at most 12 slots.
-- Slot timestamps are derived from one offset-aware `schedule.start_at` value.
-- `schedule.interval_hours` is 2.
-- Unallocated slots are omitted.
-- Multiple slots may target one project, subject to its `daily_task_limit`.
-- A frozen slot may target only an active `cron_allowed` project.
-- Execution defaults are one task, local commit, no push, stop on ambiguity.
-- In low-attention mode, execution delivery defaults to `local`; use WhatsApp for
-  the consolidated digest and exceptional escalations. Interactive or
-  high-attention cycles may still deliver individual results to WhatsApp.
+---
 
-Two-hour spacing reduces but does not eliminate collision risk. Each job must
-no-op if the repository is dirty or another task is already `in_progress`.
+## Filing goals
 
-## Phase 5: freeze and render
+A goal names an outcome and a way to check it. Nothing else.
 
-Before freezing:
-
-1. record the current registry Git revision;
-2. validate project paths beneath `/workspace`;
-3. verify allocated repositories contain `AGENTS.md`, `TASKS.md`, and
-   `.tasks/LOG.jsonl`;
-4. validate the draft plan;
-5. show the user the proposed allocation and schedule.
-
-After approval, mark the plan `frozen` and commit it. Render with:
-
-```bash
-python3 scripts/validate_portfolio.py .
-python3 scripts/render_cron_jobs.py plans/YYYY-MM-DD.json \
-  --output deployments/YYYY-MM-DD.json
+```markdown
+4. **G-004** `obsidian-toby` — Migrate the published vault to GitHub Pages.
+   *Done when:* the vault is served from Pages, content is readable by an agent
+   over plain HTTP, and the Obsidian Publish subscription can be cancelled.
 ```
 
-Review the generated manifest before deployment. Rendering has no scheduler side
-effect.
+Requirements:
 
-## Phase 6: deploy one-shot cron jobs
+- a **done-when** someone else could check without asking what was meant;
+- bounded enough for one `goal-cycle` run, or explicitly marked as a small batch;
+- tagged to one `active` project with a non-empty `agent_may`;
+- no decision in an `ask` class buried inside it.
 
-For every rendered payload, create a Hermes job through the supported cron API.
-The generated job must have:
+Deliberately absent: acceptance-criteria blocks, `Touches` lists, effort
+estimates, debriefs. If a goal needs that much ceremony it is Lane B work and
+belongs in `task-cycle`.
 
-- an ISO one-shot schedule and `repeat: 1`;
-- the assigned project as `workdir`;
-- only the generic `task-cycle` skill;
-- repository-local instructions loaded from `AGENTS.md`;
-- at most one task;
-- clean-worktree and no-`in_progress` preflight checks;
-- local commit and no push;
-- a fail-closed no-op on missing work, ambiguity, decisions, or stale allocation.
+Score each goal on both axes and say which:
 
-Record returned job IDs and deployed timestamps in `deployments/`. Do not mutate
-the frozen plan. If deployment is partial, record exactly which jobs exist and
-pause or remove them through the cron API before retrying.
+- **Produces something usable** — does it yield a working artifact?
+- **Teaches us about working with agents** — does it inform how we build with,
+  coordinate, or supervise agents?
 
-## Phase 7: reconcile
+High on both is the target. Low on both is the clearest possible drop. High on
+one is legitimate — name which one, so the trade-off is explicit rather than
+smuggled.
 
-At the next scheduled digest or interactive session:
+## Project states
 
-1. inspect scheduler outcomes and project Git/task state;
-2. verify claimed commits, tests, debriefs, and log transitions directly;
-3. classify each slot as completed, no-op, blocked, failed, or deferred;
-4. distinguish milestones requiring human review from routine verified commits;
-5. add only genuinely blocking user decisions/reviews to `DECISIONS.md`;
-6. write `reviews/YYYY-MM-DD.md` and update stale project focus text;
-7. produce one concise digest containing material change, verification,
-   recommendation, and at most one consequential decision;
-8. update the dashboard and registry only after approved strategy is clear;
-9. commit portfolio reconciliation separately from project work.
+| State | Meaning |
+|---|---|
+| `active` | May receive goals. |
+| `parked` | Might resume. Needs a priority decision, not spare capacity. |
+| `archived` | Kept for reference. Will not resume without a deliberate restart. |
+| `resource` | Read-only source material. Not a work target. |
 
-## Fail-closed conditions
+`agent_may` is a **separate axis** from state. An empty `agent_may` means the
+project is alive but human-only — the user works there and agents never schedule
+into it. Use it rather than inventing a new state.
 
-Do not execute or deploy a slot when:
+Archiving something that is publicly serving requires a closeout pass first:
+verify it still works, patch what does not, then archive. Archiving a broken
+public page is worse than leaving it active.
 
-- the plan is draft, invalid, stale, or superseded;
-- the project is not active and `cron_allowed`;
-- required repository-local instruction/task files are absent;
-- the worktree is dirty or a task is already `in_progress`;
-- no eligible task exists;
-- task scope or acceptance criteria are ambiguous;
-- a user decision or external review is required;
-- another slot or process is operating in the same repository;
-- the renderer output differs from the frozen allocation.
+Prefer archiving to parking. A parked project is a small standing cost — it
+appears in every triage and invites a decision each time. If it has been quiet
+for months with no thread back to current work, archive it and note the trigger
+that would bring it back.
 
-A no-op is a correct result. Never substitute unrelated work.
+## Provisional defaults
 
-## Historical schema
+Agents proceed on reversible decisions rather than blocking. Wasted work is an
+accepted cost; nothing is learned from doing nothing. The user ratifies or
+overturns at the review.
 
-Schema-version 1 packet plans remain valid historical execution records and may
-retain exact task/source snapshots. Do not rewrite them to match the current
-registry. New portfolio plans use generated schema-version 2 slots.
+Reversible means **a git operation undoes it** — including pushing and
+deploying. Public projects carry an experimental disclaimer; if someone starts
+depending on something they can say so.
+
+Never reversible, therefore never defaulted:
+
+- **package-registry publishes** — crates.io never lets you unpublish, `yank`
+  only hides. npm past 72 hours and PyPI are the same;
+- spending, third-party contact, publishing under the user's name;
+- anything touching secrets, or deleting data with no other copy;
+- anything in a `strict`-tier project;
+- **what we believe** — findings land provisional; ratification is the user's.
+
+## Unattended execution
+
+Scheduling and delivery are runtime-specific and live in
+[`references/hermes-deployment.md`](references/hermes-deployment.md). Nothing in
+this skill requires them. A session with no scheduler at all is fully
+functional — the queue is worked interactively or by whoever picks it up.
+
+Concurrency rules are in the portfolio repository's `LOCKING.md`: claim the goal,
+then take the repo lock, then edit. The clean-worktree check is a safety check,
+not a concurrency mechanism.
+
+## Pitfalls
+
+1. **Reviewing without changing anything.** If the queue order never changes, the
+   review is theatre. Something should move most weeks.
+2. **Filing goals against an unsettled design.** Scope first (§Session B).
+3. **Letting the ledger stagnate.** An unchanging `CALIBRATION.md` means the
+   system costs the same every week forever.
+4. **Reporting only progress.** Say what went badly, or the review loses value.
+5. **Parking by default.** Parked projects accumulate and each one costs a
+   decision at every triage.
+6. **Reintroducing per-project priority.** Rank and attention were priority in
+   disguise. Position in the queue is the only priority.
+7. **Filling capacity.** Available agent time is not a reason to add goals.
+8. **Copying task detail into goals.** The project owns how; the goal owns what.
+
+## Checklist
+
+- [ ] Review covered done, doing, and next, in that order.
+- [ ] What went badly was said plainly.
+- [ ] Every completion claim was checked against evidence, not reported as told.
+- [ ] The queue changed, or there is a reason it did not.
+- [ ] New goals have checkable done-whens and are scored on both axes.
+- [ ] No goal was filed the user did not agree to.
+- [ ] Calibration counts updated; levels moved only on patterns.
+- [ ] The attention question (§A5) was asked.
+- [ ] Review written to `log/` and committed separately from project work.

@@ -1,30 +1,32 @@
 {
-  "schema_version": 1,
-  "updated_at": "YYYY-MM-DDTHH:MM:SS+TZ",
+  "schema_version": 3,
+  "updated_at": "YYYY-MM-DD",
   "workspace_root": "/workspace",
   "timezone": "Australia/Adelaide",
-  "planning": {
-    "work_window": {"start": "10:00", "end": "15:00"},
-    "max_packets_per_day": 2,
-    "max_slots_per_plan": 12,
-    "slot_interval_hours": 2,
-    "max_parallel_projects": 2,
-    "commit": true,
-    "push": false
+  "_states": {
+    "active": "May receive goals.",
+    "parked": "Might resume. Needs a priority decision.",
+    "archived": "Kept for reference. Will not resume without a deliberate restart.",
+    "resource": "Read-only source material. Not a work target."
   },
+  "_tiers": {
+    "standard": "Push, deploy and publish freely under an experimental disclaimer.",
+    "strict": "Nothing lands without review. No provisional defaults."
+  },
+  "_agent_may": "Empty array means human-only: alive, but agents never schedule work there.",
   "projects": [
     {
       "id": "example",
-      "name": "Example project",
+      "name": "Example",
       "path": "/workspace/example",
-      "status": "candidate",
-      "rank": null,
-      "attention": "unranked",
-      "cycle": "task",
-      "skills": ["task-cycle"],
-      "automation": {"mode": "manual_only", "commit": true, "push": false},
-      "daily_task_limit": 1,
-      "notes": "Triage before activation."
+      "state": "parked",
+      "tier": "standard",
+      "agent_may": [
+        "edit",
+        "commit"
+      ],
+      "constraints": "Anything an agent must not do here.",
+      "notes": "Why it is in this state."
     }
   ]
 }
