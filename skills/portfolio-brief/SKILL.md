@@ -71,7 +71,9 @@ Read, in this order:
 1. `GOALS.md` — the single priority-ordered queue; position is priority;
 2. `PROJECTS.json` — registry: paths, state, tier, what agents may do;
 3. `CALIBRATION.md` — which decision classes are **auto**, **report**, or **ask**;
-4. the most recent entries under `log/`;
+4. the most recent entries under `log/`, including the gitignored
+   `log/.pusher-*.md` files the host pusher leaves — fold what they record into
+   your own committed entry, since the pusher deliberately cannot commit;
 5. `briefs/` — count of Lane B decision briefs awaiting a ruling;
 6. `TOBY.md` — the human queue: what only the user can do, and what is blocking.
 
