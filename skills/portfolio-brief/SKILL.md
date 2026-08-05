@@ -206,6 +206,22 @@ rather than joining it.
 Mark the end of the brief plainly, so it is obvious where the report stops and
 any surrounding conversation starts.
 
+## The human queue
+
+`TOBY.md` holds what only the user can do. Report it as a count, plus anything
+blocking, plus the age of the oldest item:
+
+> *Yours: 4 open, 1 blocking (enable the pusher — blocks G-002). Oldest 12 days.*
+
+The brief **may add** items that are genuinely blocked on the user, and **may
+tick off** items evidence shows are done. It may not invent speculative ones —
+see the rules in `TOBY.md` itself. A list anyone can add to becomes a guilt-list
+nobody reads, and the blocking items get lost in it.
+
+Report age because a long-sitting item is usually **mis-shaped** rather than
+neglected: too big, secretly blocked, or not actually important. Naming the age
+prompts reshaping it, which is more useful than another reminder.
+
 ## Format
 
 Short and scannable. No tables. Aim for 100–200 words; exceed 240 only for a
