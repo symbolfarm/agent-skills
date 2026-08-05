@@ -108,6 +108,15 @@ retain the report context instead of starting from an isolated delivery. Any
 subsequent strategy or queue change proceeds interactively under
 `portfolio-cycle`; a reply does not grant the brief extra authority.
 
+**Hermes v0.19.0 verification note:** that release's cron tool schema and
+scheduler support `attach_to_session`, but its registered tool handler omits the
+argument when forwarding calls. A tool update can therefore report success
+without persisting the field. Always read the stored job back and confirm
+`attach_to_session: true`. Until the handler is fixed, set it through Hermes's
+locked `cron.jobs.update_job` API rather than editing `jobs.json` directly. Do
+not enable global `cron.mirror_delivery` merely to work around one brief job;
+that changes continuation behaviour for unrelated deliveries.
+
 The `cronjob` toolset is read-only by policy in this job. It exists so the brief
 can inspect whether the morning executor ran or failed. The prompt and
 `portfolio-brief` authority explicitly prohibit scheduler mutation.
