@@ -107,11 +107,15 @@ end — frequent commits are what make an ungraceful death recoverable.
 
 1. **Claimed by you, lock still held** — resume. Read the progress note, then
    `git log` since the claim timestamp to see what actually landed.
-2. **Claimed by another agent, lock live** — leave it. Take the next goal.
-3. **Claim older than 24 hours, lock expired** — it was interrupted. Read the
+2. **Claimed by you, lock released after a deliberate partial result** — this is
+   the normal next-run path. Confirm the project worktree is clean, reacquire the
+   lock, read the progress note and commits, and resume the same goal. Do not skip
+   to the next unclaimed goal merely because the prior run released its lock.
+3. **Claimed by another agent, lock live** — leave it. Take the next goal.
+4. **Claim older than 24 hours, lock expired** — it was interrupted. Read the
    progress note and the commits since the claim, re-claim it under your own
    name, and note in `log/` that you took over. Never silently adopt a claim.
-4. **Claimed, but no commits and no progress note** — nothing was done. Re-claim
+5. **Claimed, but no commits and no progress note** — nothing was done. Re-claim
    and start fresh.
 
 Reconstruct from the done-when, not from a guess at the previous agent's plan.
