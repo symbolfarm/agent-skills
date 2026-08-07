@@ -2,7 +2,7 @@
 name: portfolio-brief
 description: >-
   Produce the recurring portfolio brief: report goal progress, decisions taken
-  under delegated authority, artifacts worth trying, and remaining goal runway;
+  under delegated authority, artifacts worth trying, and remaining goal counts;
   propose new goals before the queue runs dry; and surface the small number of
   things that genuinely need the user. Use for daily or scheduled WhatsApp
   check-ins on the build lane, and whenever the user asks "where is everything
@@ -25,7 +25,7 @@ It answers four questions, in this order:
 
 1. What moved since the last brief, and what can the user *try*?
 2. What decisions were taken under delegated authority?
-3. How much goal runway is left?
+3. How many goals remain, and are any blocked?
 4. What, if anything, genuinely needs the user?
 
 The brief is proactive about **direction** and passive about **permission**. Its
@@ -44,7 +44,7 @@ The brief **reports and proposes**. It may:
 
 - read the portfolio repository, project repositories, and Git history;
 - write its own dated entry under `log/` in the portfolio repository;
-- derive one to three **unfiled goal proposals** when runway is short;
+- derive one to three **unfiled goal proposals** when the queue is short;
 - recommend one of them and say why;
 - ask one ordinary conversational question.
 
@@ -97,40 +97,34 @@ class in `CALIBRATION.md`:
 | **report** | Named in one clause, with the choice made. Grouped, not enumerated. |
 | **ask** | Should not have been taken at all — escalate it as a blocker. |
 
-Group `report` decisions into a single line where possible: *"Decisions (3, all
-reversible): serde_json over a custom parser; JSON Lines for export; error copy
-reworded."* Detail goes in the `log/` entry, not the message.
+Group `report` decisions into a single line where possible: *"Decisions (3):
+serde_json over a custom parser; JSON Lines for export; error copy reworded."*
+Detail goes in the `log/` entry, not the message.
 
-Never report a decision without stating that it is reversible — or, if it is
-not, escalating it instead.
+Reversibility remains an explicit execution gate: an irreversible decision must
+not be taken and appears as a blocker. In the brief, reversibility is implicit
+for ordinary `report` decisions under that standing contract. State it only when
+it is non-obvious; always state irreversibility when consultation is required.
 
-## Goal runway
+## Goal count
 
-**Runway is the count of remaining unblocked goals, expressed in days at the
-current completion rate.** It is the anti-stall mechanism: the brief asks for
-direction *before* the queue empties, so the lane never idles waiting to be
-noticed.
+Report the raw queue state rather than estimating calendar runway: goals in
+progress, waiting, and blocked. The count is the anti-stall mechanism—the brief
+asks for direction before the queue empties without pretending that scheduled
+runs map cleanly to completion days.
 
-Calculate completion rate from recent **observed goal outcomes**, not from the
-maximum schedule frequency. A daily executor provides at most one opportunity
-per day; a partial or blocked run does not become a completed goal merely
-because another tick is scheduled tomorrow. Prefer the last three to seven real
-runs. With fewer than three runs, report a low-confidence range rather than
-false precision—for example, `7 goals (~7–14 days at the early observed rate)`.
-Always state the raw remaining-goal count even when the day estimate is uncertain.
-
-- **Runway ≥ 4 days:** report it, ask nothing.
-- **Runway 1–3 days:** ask for goals, and offer to propose some.
-- **Runway 0, or all remaining goals blocked:** propose goals using the protocol
-  below. Do not simply report that there is nothing to do.
+- **4 or more unblocked goals:** report the count, ask nothing.
+- **2–3 unblocked goals:** mention that goal scoping will soon be useful.
+- **0–1 unblocked goals, or all remaining goals blocked:** propose goals using
+  the protocol below. Do not simply report that there is nothing to do.
 
 An empty queue is never a reason to conclude that nothing is warranted. It is
 the trigger for a proposal.
 
 ## Proposing goals
 
-When runway is short, derive one to three candidate goals. Prefer two when there
-is a real trade-off; one when the evidence clearly dominates.
+When the goal count is short, derive one to three candidate goals. Prefer two
+when there is a real trade-off; one when the evidence clearly dominates.
 
 Ground every proposal in named evidence: an explicit next step in project
 documentation, an unresolved question, a seam exposed by finished work, missing
@@ -240,14 +234,14 @@ safety issue.
 ```text
 **Portfolio — Tue 5 Aug**
 
-Goals: 1 done, 2 advanced, 4 remaining (~3 days runway)
+Goals: 1 done, 2 advanced, 4 remaining; none blocked
 
 - **G-012 done** — Definitree manifest identity.
   Try it: `cd web-define-tree && npm run demo` — export twice, diff the manifests.
   Weakest point: only tested on trees under 100 nodes.
 - **G-014** in progress, no blockers.
 
-Decisions (3, all reversible): serde_json over a custom parser; JSON Lines for
+Decisions (3): serde_json over a custom parser; JSON Lines for
 export; error copy reworded. Details in log/2026-08-05.md.
 
 Lane B: 3 briefs waiting, oldest 4 days.
@@ -292,7 +286,7 @@ Rules:
 - [ ] Every completion claim is backed by checked evidence.
 - [ ] Decisions are reported at the level `CALIBRATION.md` specifies.
 - [ ] No decision in an **ask** class was taken silently.
-- [ ] Runway is stated, and short runway triggered a proposal.
+- [ ] Goal counts are stated, and a short queue triggered scoping or proposals.
 - [ ] Any proposal is grounded, bounded, scored on both axes, and marked unfiled.
 - [ ] Exactly one option is recommended when proposals are present.
 - [ ] Completed work names its weakest point.
