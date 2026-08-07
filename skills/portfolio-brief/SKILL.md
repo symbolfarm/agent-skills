@@ -111,6 +111,14 @@ current completion rate.** It is the anti-stall mechanism: the brief asks for
 direction *before* the queue empties, so the lane never idles waiting to be
 noticed.
 
+Calculate completion rate from recent **observed goal outcomes**, not from the
+maximum schedule frequency. A daily executor provides at most one opportunity
+per day; a partial or blocked run does not become a completed goal merely
+because another tick is scheduled tomorrow. Prefer the last three to seven real
+runs. With fewer than three runs, report a low-confidence range rather than
+false precision—for example, `7 goals (~7–14 days at the early observed rate)`.
+Always state the raw remaining-goal count even when the day estimate is uncertain.
+
 - **Runway ≥ 4 days:** report it, ask nothing.
 - **Runway 1–3 days:** ask for goals, and offer to propose some.
 - **Runway 0, or all remaining goals blocked:** propose goals using the protocol
