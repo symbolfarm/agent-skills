@@ -68,6 +68,20 @@ Commit as you go at natural boundaries. Small commits are the record.
 Release the lock. Update the goal — done, or still in flight with what remains.
 Write the log entry. Commit the portfolio change separately from project work.
 
+### Deployment barrier before removing push authority
+
+If completing a goal will archive a project, clear its `agent_may`, or otherwise
+remove the mechanism that publishes its commits, verify the project branch is
+already at remote parity **before** making that state transition. When the
+done-when includes deployment, also verify the deployed artifact rather than
+inferring deployment from a local commit.
+
+If commits are still ahead of the remote, leave the project active and the goal
+in flight with a progress note such as `awaiting publish, then verify and
+archive`. Return `partial`. Never archive first and expect an active-project
+pusher to publish afterward: removing push authority can strand the very commit
+that justified the closeout.
+
 ## Resuming an interrupted goal
 
 Runs get cut off — usage limits, crashes, a closed laptop. Assume it will
@@ -228,6 +242,8 @@ Resist adding ceremony here. The weight of this skill is a feature.
 - [ ] Repo lock taken, and released on every exit path.
 - [ ] No irreversible action taken without asking.
 - [ ] Decisions logged at the level `CALIBRATION.md` specifies.
+- [ ] A project was not archived or stripped of push authority while required
+  commits were still ahead of its remote.
 - [ ] Log entry has a **Try it** and a **Weakest point**.
 - [ ] Portfolio changes committed separately from project work.
 - [ ] Goal marked done, or its remainder stated plainly.
