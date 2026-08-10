@@ -2,7 +2,7 @@
   "schema_version": 3,
   "updated_at": "YYYY-MM-DD",
   "workspace_root": "/workspace",
-  "timezone": "Australia/Adelaide",
+  "timezone": "Area/City",
   "_states": {
     "active": "May receive goals.",
     "parked": "Might resume. Needs a priority decision.",

@@ -5,17 +5,23 @@ policy remains in `portfolio-cycle`, `portfolio-brief`, and `goal-cycle`; this
 file contains only runtime wiring: schedules, delivery, toolsets, workdirs,
 timezone handling, testing, and recovery.
 
-Portfolio repository: `/workspace/portfolio`.
+Portfolio repository: shown throughout as `/workspace/portfolio`. Substitute
+your own path; nothing here depends on that particular location.
+
+Times, timezone and delivery channel are likewise the reference deployment's,
+not requirements. Pick a morning slot for the executor and a slot for the brief
+that suits when the owner actually reads it.
 
 ## Topology
 
 Use two recurring jobs and one priority source:
 
-1. **Serial executor** — one `goal-cycle` invocation at 07:30 Adelaide time. It
+1. **Serial executor** — one `goal-cycle` invocation at 07:30 local time. It
    takes at most one goal from `GOALS.md` and leaves routine output local.
-2. **Continuable brief** — one `portfolio-brief` invocation at 12:20 Adelaide
-   time, delivered to WhatsApp ten minutes before Toby's lunch. It condenses the
-   morning result, decisions, runway, and anything needing attention.
+2. **Continuable brief** — one `portfolio-brief` invocation at 12:20 local
+   time, delivered to a chat channel shortly before a natural break in the
+   owner's day. It condenses the morning result, decisions, runway, and anything
+   needing attention.
 
 Do not create one cron job per goal. That duplicates queue state in the
 scheduler and lets schedules drift from `GOALS.md`. Do not let the brief create
@@ -29,15 +35,16 @@ shown useful throughput and the claim/lock path has been exercised.
 Recurring cron expressions use Hermes's configured IANA timezone. Verify:
 
 ```bash
-hermes config set timezone Australia/Adelaide
+hermes config set timezone <Area/City>
 ```
 
 If the timezone changed, restart the long-running gateway through its supported
 external mechanism **before** creating or testing the jobs; the scheduler caches
-timezone state. Never encode Adelaide as a fixed UTC offset.
+timezone state. Never encode the zone as a fixed UTC offset — a zone with
+daylight saving will silently drift by an hour.
 
 After creation and after every manual test, verify that `next_run_at` still has
-the correct Adelaide wall-clock time and seasonal offset. Successful delivery
+the correct local wall-clock time and seasonal offset. Successful delivery
 alone does not prove recurrence was recomputed in the intended timezone.
 
 Authoritative Hermes documentation:
@@ -74,7 +81,8 @@ goal, one goal, one run. The selected project still controls implementation via
 its own `AGENTS.md`, `CLAUDE.md`, tests, and repository state.
 
 A local delivery is deliberate. Routine completion, partial progress, and
-ordinary blockers wait for the brief rather than interrupting Toby at work.
+ordinary blockers wait for the brief rather than interrupting the owner at
+work.
 Safety incidents or unexpected external exposure are exceptions: stop, record
 the issue durably, and rely on the next brief unless the active platform policy
 provides an explicitly authorised urgent-alert path.
@@ -88,7 +96,7 @@ name: portfolio-brief-daily
 schedule: 20 12 * * *
 workdir: /workspace/portfolio
 skills: [portfolio-brief]
-deliver: whatsapp
+deliver: <chat-channel>
 enabled_toolsets: [file, terminal, skills, cronjob]
 attach_to_session: true
 ```
@@ -98,12 +106,12 @@ Prompt:
 ```text
 Run portfolio-brief against /workspace/portfolio. Reconcile repository evidence
 and the most recent portfolio-goal-cycle-morning status into one concise brief.
-Deliver the normal brief even when little moved. Condense anything needing Toby
+Deliver the normal brief even when little moved. Condense anything needing the owner
 rather than emitting separate routine executor notifications. Do not execute a
 goal, re-order the queue, approve a proposal, or change scheduled jobs.
 ```
 
-`attach_to_session` makes the delivered WhatsApp brief continuable: a reply can
+`attach_to_session` makes the delivered brief continuable: a reply can
 retain the report context instead of starting from an isolated delivery. Any
 subsequent strategy or queue change proceeds interactively under
 `portfolio-cycle`; a reply does not grant the brief extra authority.
@@ -139,7 +147,7 @@ For each job:
 1. List the job and inspect its full configuration.
 2. Confirm the attached skill exists and the workdir is exactly
    `/workspace/portfolio`.
-3. Confirm `next_run_at` represents 07:30 or 12:20 in `Australia/Adelaide`.
+3. Confirm `next_run_at` represents each intended time in the configured zone.
 4. Trigger one manual run.
 5. Confirm execution status and delivery status.
 6. Re-list the job and verify the recomputed next occurrence retains the correct
@@ -150,9 +158,9 @@ worktree, or decision boundary says it should. The test is successful when it
 follows the protocol and records the reason; do not substitute unrelated work to
 manufacture activity.
 
-For the brief, verify both WhatsApp delivery and continuation by replying to the
-test delivery. A manual test should be clearly labelled as a test so it cannot
-be mistaken for the scheduled lunch brief.
+For the brief, verify both delivery and continuation by replying to the test
+delivery. A manual test should be clearly labelled as a test so it cannot be
+mistaken for a scheduled brief.
 
 ## Host-side pusher
 

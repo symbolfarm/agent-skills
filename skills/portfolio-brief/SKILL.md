@@ -4,9 +4,9 @@ description: >-
   Produce the recurring portfolio brief: report goal progress, decisions taken
   under delegated authority, artifacts worth trying, and remaining goal counts;
   propose new goals before the queue runs dry; and surface the small number of
-  things that genuinely need the user. Use for daily or scheduled WhatsApp
-  check-ins on the build lane, and whenever the user asks "where is everything
-  up to". Reports and proposes; it does not execute, file, or approve.
+  things that genuinely need the user. Use for daily or scheduled chat check-ins
+  on the build lane, and whenever the user asks "where is everything up to".
+  Reports and proposes; it does not execute, file, or approve.
 metadata:
   author: symbolfarm
   version: "3"
@@ -84,7 +84,9 @@ intent is the user's.
 
 ## Evidence
 
-Portfolio repository: `/workspace/portfolio`.
+Portfolio repository: the repo holding `GOALS.md`, `PROJECTS.json`,
+`CALIBRATION.md`, `OWNER.md` and `log/`. The reference deployment keeps it at
+`/workspace/portfolio`; point the skill at wherever yours lives.
 
 Read, in this order:
 
@@ -95,7 +97,7 @@ Read, in this order:
    `log/.pusher-*.md` files the host pusher leaves — fold what they record into
    your own committed entry, since the pusher deliberately cannot commit;
 5. `briefs/` — count of Lane B decision briefs awaiting a ruling;
-6. `TOBY.md` — the human queue: what only the user can do, and what is blocking.
+6. `OWNER.md` — the human queue: what only the user can do, and what is blocking.
 
 Then inspect the projects that actually moved: Git log since the last brief,
 goal-relevant state, and anything a goal's *done-when* refers to. Do not tour
@@ -226,7 +228,7 @@ is calibration evidence.
 The brief covers the build lane. Research decision briefs are read in a working
 session, not on a phone. Report only the count and the oldest:
 
-> *Lane B: 3 briefs waiting, oldest 4 days (retention-bench keying strategy).*
+> *Lane B: 3 briefs waiting, oldest 4 days (retrieval keying strategy).*
 
 Do not summarise their content, and do not apply a cap to how many may
 accumulate — they are read in a block, and throttling them would throttle the
@@ -236,7 +238,7 @@ one channel where the user wants throughput.
 
 The brief **closes by saying what happens next**, as a statement:
 
-> *Next: G-002, the garden-03 closeout, starting on the next run.*
+> *Next: G-002, the puzzle-site closeout, starting on the next run.*
 
 Not *"shall I take G-002?"*. The execution model already proceeds on reversible
 work without waiting for permission; a brief that asks permission to continue
@@ -253,14 +255,14 @@ any surrounding conversation starts.
 
 ## The human queue
 
-`TOBY.md` holds what only the user can do. Report it as a count, plus anything
+`OWNER.md` holds what only the user can do. Report it as a count, plus anything
 blocking, plus the age of the oldest item:
 
 > *Yours: 4 open, 1 blocking (enable the pusher — blocks G-002). Oldest 12 days.*
 
 The brief **may add** items that are genuinely blocked on the user, and **may
 tick off** items evidence shows are done. It may not invent speculative ones —
-see the rules in `TOBY.md` itself. A list anyone can add to becomes a guilt-list
+see the rules in `OWNER.md` itself. A list anyone can add to becomes a guilt-list
 nobody reads, and the blocking items get lost in it.
 
 Report age because a long-sitting item is usually **mis-shaped** rather than
@@ -273,20 +275,20 @@ Short and scannable. No tables. Aim for 100–200 words; exceed 240 only for a
 safety issue.
 
 ```text
-**Portfolio — Tue 5 Aug**
+**Portfolio — Tue 5 Mar**
 
 Goals: 1 done, 2 advanced, 4 remaining; none blocked
 
-- **G-012 done** — Definitree manifest identity.
-  Try it: `cd web-define-tree && npm run demo` — export twice, diff the manifests.
+- **G-012 done** — manifest identity in the tree editor.
+  Try it: `cd tree-editor && npm run demo` — export twice, diff the manifests.
   Weakest point: only tested on trees under 100 nodes.
 - **G-014** in progress, no blockers.
 
 Decisions (3): serde_json over a custom parser; JSON Lines for
-export; error copy reworded. Details in log/2026-08-05.md.
+export; error copy reworded. Details in log/2026-03-05.md.
 
 Lane B: 3 briefs waiting, oldest 4 days.
-Yours: 2 open, none blocking. See TOBY.md.
+Yours: 2 open, none blocking. See OWNER.md.
 
 Next: G-014, finishing the export path. Then G-015.
 — end of brief —

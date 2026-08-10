@@ -70,7 +70,7 @@ def validate_registry(data: Any, root: Path) -> tuple[list[str], list[str], dict
 
     timezone = require_nonempty_string(obj.get("timezone"), "PROJECTS.json timezone", errors)
     if timezone and "/" not in timezone:
-        warnings.append("PROJECTS.json timezone should normally be an IANA name such as Australia/Adelaide")
+        warnings.append("PROJECTS.json timezone should normally be an IANA name such as Region/City")
 
     planning = require_dict(obj.get("planning"), "PROJECTS.json planning", errors)
     if planning is not None:

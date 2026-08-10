@@ -9,6 +9,34 @@ The skill content is plain Markdown with no hard dependency on any single agent
 runtime, so the same source can drive Claude Code, gemini-cli, codex, or anything
 else that loads instruction files. Discovery differs per agent (see **Install**).
 
+## Status: experimental
+
+**These skills are experimental, developed for our own use, and change without
+warning.** There is no stability guarantee, no deprecation policy, and no
+migration path between revisions — instructions get rewritten whenever we learn
+something, and a skill can change shape or disappear entirely between commits.
+They are published because someone may find them useful to read or adapt, not as
+a product.
+
+If you want to depend on them, pin a revision and treat your copy as yours:
+
+```bash
+git checkout <tag-or-sha>
+```
+
+Issues and pull requests are welcome but may go unanswered.
+
+### A note on the portfolio skills
+
+`portfolio-cycle`, `portfolio-brief` and `goal-cycle` assume a **separate,
+private portfolio repository** holding `GOALS.md`, `PROJECTS.json`,
+`CALIBRATION.md`, `OWNER.md` and `log/`. That repository is where anything
+specific to you belongs: real project names, schedules, delegated authority, and
+what only you can do. Keep this repository generic — it is public, and the
+portfolio is the half that is not.
+
+The examples throughout use invented projects for that reason.
+
 ## Skills
 
 | Skill | What it does |
@@ -70,4 +98,5 @@ tracking `main`.
 
 ## License
 
-MIT, per skill — see each skill's `LICENSE.txt`.
+MIT — see [`LICENSE`](./LICENSE) at the root, and each skill's own
+`LICENSE.txt` for skills vendored individually.

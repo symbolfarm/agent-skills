@@ -30,9 +30,14 @@ low-level, the user stays involved, and a durable task record earns its weight.
 
 ### 1. Choose
 
-Read `/workspace/portfolio/GOALS.md`. Take the **highest-priority unclaimed,
-unblocked** goal. Position is priority — do not re-rank, and do not skip a goal
-because a later one looks easier.
+Read `GOALS.md` in the portfolio repository. Take the **highest-priority
+unclaimed, unblocked** goal. Position is priority — do not re-rank, and do not
+skip a goal because a later one looks easier.
+
+> **Portfolio location.** These skills assume one portfolio repository holding
+> `GOALS.md`, `PROJECTS.json`, `CALIBRATION.md`, `OWNER.md` and `log/`. Point
+> them at wherever yours lives; the reference deployment uses
+> `/workspace/portfolio`.
 
 Check `PROJECTS.json`: the goal's project must be `active` with a non-empty
 `agent_may`. If it is not, stop and report — the queue and registry disagree,
@@ -175,17 +180,17 @@ So when a run establishes that a goal cannot proceed without the user:
 2. **Move the entry to the `## Blocked` section** of `GOALS.md`, keeping its
    `G-NNN` identifier, and add a `*Blocked:*` line naming what is needed, who it
    is on, and the date.
-3. **File the unblock in `TOBY.md`**, under the heading it belongs to, naming
+3. **File the unblock in `OWNER.md`**, under the heading it belongs to, naming
    the goal it blocks. That file is where the user looks; the queue's `Blocked`
    section is where agents look.
 4. **Take the next eligible goal in the same run.** A block is not a reason to
    end the run.
 
 ```markdown
-- **G-004** `specsoloist` — Clear the dependency alerts.
+- **G-014** `example-tool` — Clear the dependency alerts.
   *Done when:* …
-  *Blocked:* needs the authenticated Dependabot alert list; the scheduled
-  environment has no GitHub credentials (401). On Toby, 2026-08-09.
+  *Blocked:* needs the authenticated vulnerability-alert list; the scheduled
+  environment has no forge credentials (401). On the owner, 2026-03-09.
 ```
 
 Restoring a demoted goal to the queue is a **priority decision**, made at a
@@ -219,15 +224,15 @@ user's, demote it rather than leaving it claimed.
 
 ## Logging
 
-Append to `/workspace/portfolio/log/YYYY-MM-DD.md`:
+Append to `log/YYYY-MM-DD.md` in the portfolio repository:
 
 ```markdown
-## G-002 `garden-03` — closeout pass
+## G-002 `puzzle-site` — closeout pass
 
 **Result:** done / partial / no-op / blocked
-**Commits:** 4 in garden-03
-**Try it:** https://tobylightheart.github.io/garden-03/ — the maze on the
-landing page was not loading; it is the quickest thing to check.
+**Commits:** 4 in puzzle-site
+**Try it:** https://example.github.io/puzzle-site/ — the maze on the landing
+page was not loading; it is the quickest thing to check.
 
 **Decisions**
 - *dependency-choice (report):* dropped the unused analytics script rather than
@@ -279,8 +284,8 @@ Resist adding ceremony here. The weight of this skill is a feature.
    run every cycle and starves everything behind it. Demote it and continue.
 10. **Inventing a calibration class.** Log it `unclassified`; the review names
    it.
-11. **Touching a `strict` project.** AgentDesk takes no provisional defaults at
-   all.
+11. **Touching a `strict` project.** A `strict`-tier project takes no provisional
+   defaults at all.
 
 ## Checklist
 
@@ -296,6 +301,6 @@ Resist adding ceremony here. The weight of this skill is a feature.
 - [ ] Portfolio changes committed separately from project work.
 - [ ] Goal marked done, or its remainder stated plainly.
 - [ ] A goal blocked on the user was demoted to `Blocked`, its claim released,
-  the unblock filed in `TOBY.md`, and the next goal taken.
+  the unblock filed in `OWNER.md`, and the next goal taken.
 - [ ] No new calibration class was invented; unfamiliar decisions logged
   `unclassified`.

@@ -64,7 +64,7 @@ task.
 **Cross-repo dependencies.** `blocked_by` holds task IDs *within the
 same repo* only. To record a dependency on another repo's task, add a
 `Depends-on (external):` line to the task header (e.g.
-`Depends-on (external): retention-bench RB-7`) and explain the seam in
+`Depends-on (external): sibling-repo T-7`) and explain the seam in
 the body. These are resolved by hand — there is no automated cross-repo
 blocking, so a dispatcher must check the named sibling task landed
 before starting.

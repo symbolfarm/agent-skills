@@ -18,9 +18,13 @@ metadata:
 
 # Portfolio cycle
 
-The interactive session where direction is set. Runs against
-`/workspace/portfolio`, works with no scheduler present, and needs nothing from
-any particular agent runtime.
+The interactive session where direction is set. Runs against the portfolio
+repository, works with no scheduler present, and needs nothing from any
+particular agent runtime.
+
+> **Portfolio location.** These skills assume one repository holding `GOALS.md`,
+> `PROJECTS.json`, `CALIBRATION.md`, `OWNER.md` and `log/`. Point them at
+> wherever yours lives; the reference deployment uses `/workspace/portfolio`.
 
 `portfolio-brief` reports between sessions. `goal-cycle` executes. This skill is
 where the user and the agent decide what should happen.
@@ -139,9 +143,10 @@ is a legitimate state, not a stalled one.
 A goal names an outcome and a way to check it. Nothing else.
 
 ```markdown
-- **G-004** `obsidian-toby` — Migrate the published vault to GitHub Pages.
-  *Done when:* the vault is served from Pages, content is readable by an agent
-  over plain HTTP, and the Obsidian Publish subscription can be cancelled.
+- **G-004** `notes-vault` — Migrate the published vault to static hosting.
+  *Done when:* the vault is served from the static host, content is readable by
+  an agent over plain HTTP, and the paid publishing subscription can be
+  cancelled.
 ```
 
 Requirements:
@@ -176,12 +181,17 @@ The failure this prevents: a goal everyone agrees is important but nobody can
 place, because its size is unknown. That is not a priority problem, it is a
 missing-information problem, and reconnaissance is cheap.
 
-A worked example. *"Patch the SpecSoloist vulnerabilities"* looked like days and
-sat unplaceable. Ten minutes of looking established that all sixteen alerts were
-in the lock file rather than the code, that open-ended version ranges meant users
-resolving fresh were largely unaffected, that only two mattered for what the tool
-actually does, and that `uv lock --upgrade` clears most of them. It became a
-short goal plus one release decision — orderable, and much smaller than feared.
+A worked example. *"Patch the dependency vulnerabilities"* in one small tool
+looked like days of work and sat unplaceable for weeks. Ten minutes of actually
+looking established where the alerts lived, which of them the tool's own usage
+could even reach, and that refreshing the lock file cleared the bulk of them. It
+became a short goal plus one release decision — orderable, and much smaller than
+feared.
+
+Note what the reconnaissance produced besides an estimate: findings about a
+security posture. Keep those in the private portfolio. A public skills
+repository is the wrong place to record which of a project's vulnerabilities
+were judged not worth fixing.
 
 **When you cannot tell whether a goal is one run, the first goal is the
 reconnaissance.** It is the same move as a research-lane decision brief, in
