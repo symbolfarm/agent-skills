@@ -138,8 +138,11 @@ Check the class in `CALIBRATION.md` first:
 | **report** | Decide, proceed, log it with the reasoning. |
 | **ask** | Stop. Do not decide. Record what is needed and move on or halt. |
 
-If the class is not in the ledger, treat it as **report** and note that it is a
-new class — the review will place it.
+If the class is not in the ledger, treat it as **report**, log the decision as
+`unclassified`, and describe what kind of decision it was. **Do not invent a
+class name.** Only a `portfolio-cycle` review creates classes or moves levels;
+a run that mints its own leaves the ledger with rows nobody agreed to and
+counts that never accumulate.
 
 ### Reversible means a git operation undoes it
 
@@ -159,6 +162,41 @@ Never reversible, therefore never defaulted, regardless of ledger level:
 
 When one of these is in the way, that is a genuine block. Say so and stop.
 
+## When the block is the user's, demote the goal
+
+A goal blocked on the user must not stay at the head of the queue. Holding the
+claim there costs a run every cycle, produces nothing, and starves everything
+behind it. The user comes back to these in their own time, which is often days.
+
+So when a run establishes that a goal cannot proceed without the user:
+
+1. **Release the claim.** Delete the `*Claimed:*` line. A blocked goal is not
+   in flight and should not look like it.
+2. **Move the entry to the `## Blocked` section** of `GOALS.md`, keeping its
+   `G-NNN` identifier, and add a `*Blocked:*` line naming what is needed, who it
+   is on, and the date.
+3. **File the unblock in `TOBY.md`**, under the heading it belongs to, naming
+   the goal it blocks. That file is where the user looks; the queue's `Blocked`
+   section is where agents look.
+4. **Take the next eligible goal in the same run.** A block is not a reason to
+   end the run.
+
+```markdown
+- **G-004** `specsoloist` — Clear the dependency alerts.
+  *Done when:* …
+  *Blocked:* needs the authenticated Dependabot alert list; the scheduled
+  environment has no GitHub credentials (401). On Toby, 2026-08-09.
+```
+
+Restoring a demoted goal to the queue is a **priority decision**, made at a
+`portfolio-cycle` review once the block clears — not automatically by the next
+run that notices it is unblocked. Position on return is the user's to choose.
+
+**Distinguish this from a partial result.** Partial means the work is real and
+resumable by an agent — keep the claim, add a `*Progress:*` line, resume next
+run. Blocked means no agent run can advance it. Two runs producing the same
+"still blocked" note is the signal that a partial was really a block.
+
 ## Stopping
 
 Stop and report when:
@@ -172,10 +210,12 @@ Stop and report when:
 
 **A no-op is a correct result.** Never substitute unrelated work because the
 chosen goal did not pan out — that hides the fact that the queue needs
-attention.
+attention. A goal *demoted* to `Blocked` is the exception rather than a
+substitution: the queue moved, so continuing to the next goal is correct.
 
 Partial progress is fine and normal. Leave the goal claimed only if resuming
-soon; otherwise release the claim and say what remains.
+soon; otherwise release the claim and say what remains. If what remains is the
+user's, demote it rather than leaving it claimed.
 
 ## Logging
 
@@ -235,7 +275,11 @@ Resist adding ceremony here. The weight of this skill is a feature.
 7. **Substituting work.** A no-op is correct; unrelated work is not.
 8. **Silent scope growth.** If the goal is bigger than it looked, say so rather
    than quietly working for hours.
-9. **Touching a `strict` project.** AgentDesk takes no provisional defaults at
+9. **Leaving a user-blocked goal claimed at the head of the queue.** It costs a
+   run every cycle and starves everything behind it. Demote it and continue.
+10. **Inventing a calibration class.** Log it `unclassified`; the review names
+   it.
+11. **Touching a `strict` project.** AgentDesk takes no provisional defaults at
    all.
 
 ## Checklist
@@ -251,3 +295,7 @@ Resist adding ceremony here. The weight of this skill is a feature.
 - [ ] Log entry has a **Try it** and a **Weakest point**.
 - [ ] Portfolio changes committed separately from project work.
 - [ ] Goal marked done, or its remainder stated plainly.
+- [ ] A goal blocked on the user was demoted to `Blocked`, its claim released,
+  the unblock filed in `TOBY.md`, and the next goal taken.
+- [ ] No new calibration class was invented; unfamiliar decisions logged
+  `unclassified`.

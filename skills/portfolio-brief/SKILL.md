@@ -52,7 +52,7 @@ It must **not**:
 
 - edit any project file, or change Git state in a project;
 - add, reorder, or complete goals in `GOALS.md`;
-- change project state, tier, or constraints in the registry;
+- change project state, tier, or `agent_may` in the registry;
 - write to the calibration ledger;
 - create, change, or remove scheduled jobs;
 - present a proposal as queued, approved, or authorised;
@@ -61,6 +61,26 @@ It must **not**:
 Proposing is permission to reason ahead, not permission to mutate state. If the
 user approves a proposal, the goal is added under `portfolio-cycle` and executed
 under `goal-cycle` — never inside the brief itself.
+
+### The one exception: recording observed fact
+
+Recording what is demonstrably true is not a strategy change, and the registry
+going stale between reviews is a real cost — it misroutes runs and it wastes
+review time re-establishing what happened. So the brief **may** correct registry
+fields that are matters of verifiable fact:
+
+- `visibility`, checked against the repository's actual state;
+- a `constraints` string whose stated condition is **demonstrably discharged** —
+  a hold naming a task that is now complete, a release that has shipped.
+
+Rules for using it: verify against the repository, never against a log entry's
+claim; state the correction in the brief in one clause; and if the correction is
+anything other than mechanical — if it needs a judgement about what the field
+*should* say — leave it and flag it for the review instead.
+
+Everything else in the registry stays `portfolio-cycle`'s: state, tier,
+`agent_may`, notes, and adding or removing projects. Those encode intent, and
+intent is the user's.
 
 ## Evidence
 
@@ -85,6 +105,27 @@ unless a goal or the user names them.
 Repository state is evidence, not strategy. A clean worktree, a passing test
 suite, or a long queue does not by itself establish that anything valuable
 happened.
+
+### Freshness check
+
+Before writing the brief, reconcile the registry against what the last
+`goal-cycle` or `task-cycle` outcome actually did. This is deliberately shallow
+— seconds, not a tour — and covers only the projects that moved:
+
+- does recorded `visibility` match the repository?
+- does any `constraints` hold name work that has since completed?
+- does any project the log says was archived still carry `agent_may`?
+- is a goal in `GOALS.md` claimed against a project the registry no longer
+  permits?
+
+Correct the two mechanical fields under the exception above; report the rest as
+drift for the review to settle. Drift is worth one line in the brief even when
+you fixed it, because a field that goes stale repeatedly is evidence about the
+process, not about the field.
+
+The deeper reconciliation — whether a project is in the right *state*, whether
+`agent_may` still reflects intent, whether the queue's shape still matches where
+the work is going — belongs to `portfolio-cycle`, alongside choosing new goals.
 
 ## Reporting decisions
 
