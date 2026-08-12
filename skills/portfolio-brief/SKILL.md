@@ -108,6 +108,40 @@ Repository state is evidence, not strategy. A clean worktree, a passing test
 suite, or a long queue does not by itself establish that anything valuable
 happened.
 
+### Gap check — lead with silence
+
+**Before anything else, establish when the lane last actually produced
+something,** and if that was not since the previous brief, say so in the brief's
+first line.
+
+A scheduled lane can stop for reasons no agent inside it can see: the machine was
+off, the network was down, the scheduler did not fire, credentials expired. From
+inside, every one of these looks identical to a quiet week — and a brief that
+reports the queue as though the last run happened normally actively conceals the
+outage. The user then discovers it only by asking, which is the one thing the
+brief exists to prevent.
+
+So compute the gap from evidence, not from assumption:
+
+- the timestamp of the most recent `log/` entry and the most recent commit in the
+  portfolio repository;
+- the most recent successful scheduled run of any kind;
+- whether the host pusher's latest `log/.pusher-*.md` records a refusal, and for
+  how many consecutive runs.
+
+If runs are landing normally, say nothing — this must not become a line of
+boilerplate on every healthy day. If there is a gap, open with it:
+
+> *No runs since Sun 9 Mar — three scheduled cycles missed. Cause not visible
+> from here; the pusher has refused every run since, which is consistent with an
+> outage rather than a code failure.*
+
+State the gap and the best-supported explanation, and **do not diagnose past the
+evidence**. "The machine may have been off" is a hypothesis; "the pusher refused
+eleven repositories for network or auth reasons" is a fact. Give the user the
+fact and let them supply the cause — they usually know it instantly, and it is
+almost never something an agent can fix.
+
 ### Freshness check
 
 Before writing the brief, reconcile the registry against what the last
@@ -296,6 +330,8 @@ Next: G-014, finishing the export path. Then G-015.
 
 Rules:
 
+- Open with the gap when the lane has been silent since the last brief; say
+  nothing about it when runs are landing normally.
 - Mention at most three goals; group the rest into counts.
 - Close with the next goal. Ask nothing unless something genuinely blocks.
 - At most one question, and only when blocked. Park the others.
@@ -325,6 +361,8 @@ Rules:
 
 ## Before sending
 
+- [ ] The gap since the last successful run was checked, and led the brief if
+      there was one.
 - [ ] Nothing was edited outside the portfolio `log/` entry.
 - [ ] Every completion claim is backed by checked evidence.
 - [ ] Decisions are reported at the level `CALIBRATION.md` specifies.
