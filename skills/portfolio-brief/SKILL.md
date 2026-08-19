@@ -289,23 +289,46 @@ any surrounding conversation starts.
 
 ## The human queue
 
-`OWNER.md` holds what only the user can do. Report it as a count, plus anything
-blocking, plus the age of the oldest item:
+`OWNER.md` holds what only the user can do. Report the count, anything blocking,
+and the age of the oldest item — **and then put exactly one item forward.**
 
-> *Yours: 4 open, 1 blocking (enable the pusher — blocks G-002). Oldest 12 days.*
+> *Yours: 4 open, 1 blocking. Oldest 12 days.*
+> *Today's one: the pusher is still off, which blocks G-002. The remaining step
+> is enabling the systemd unit on the host — about two minutes. Want it back on?*
+
+A count alone does not move this queue. It reports a number the user already
+feels bad about and asks nothing, so nothing happens. Summarising and asking for
+**one** decision is what turns the brief from a status line into something that
+can actually close an item.
+
+The rules that keep this a prod rather than a guilt-list:
+
+- **Exactly one item per brief. Never two.** This is the whole safeguard. The
+  moment the brief lists the backlog, it becomes the unread guilt-list that
+  `OWNER.md`'s own rules exist to prevent.
+- **Choose in this order:** anything blocking a goal, then the oldest, then the
+  cheapest to close. Prefer one that can be answered in a single reply.
+- **Rotate.** Do not surface the same item on consecutive briefs; a daily
+  repetition of one line is how a prod becomes noise that gets filtered out.
+- **State the smallest next action and the honest size**, not the item's title.
+  "Enable the systemd unit, about two minutes" is actionable; "the pusher
+  rollout" is a project.
+- **Three strikes, then stop asking.** If an item has been put forward three
+  times without movement, do not ask a fourth. Say it looks mis-shaped and
+  propose the reshape or the drop instead.
 
 The brief **may add** items that are genuinely blocked on the user, and **may
 tick off** items evidence shows are done. It may not invent speculative ones —
-see the rules in `OWNER.md` itself. A list anyone can add to becomes a guilt-list
-nobody reads, and the blocking items get lost in it.
+see the rules in `OWNER.md` itself.
 
 Report age because a long-sitting item is usually **mis-shaped** rather than
 neglected: too big, secretly blocked, or not actually important. Naming the age
-prompts reshaping it, which is more useful than another reminder.
+prompts reshaping it, which is more useful than another reminder — and the
+three-strikes rule above is what converts that observation into an action.
 
 ## Format
 
-Short and scannable. No tables. Aim for 100–200 words; exceed 240 only for a
+Short and scannable. No tables. Aim for 100–220 words; exceed 260 only for a
 safety issue.
 
 ```text
@@ -322,7 +345,9 @@ Decisions (3): serde_json over a custom parser; JSON Lines for
 export; error copy reworded. Details in log/2026-03-05.md.
 
 Lane B: 3 briefs waiting, oldest 4 days.
-Yours: 2 open, none blocking. See OWNER.md.
+Yours: 2 open, none blocking. Oldest 5 days.
+Today's one: the SpecSoloist roadmap session — 30 minutes to decide what the
+project is for, which unblocks the deferred floor raise. Worth booking?
 
 Next: G-014, finishing the export path. Then G-015.
 — end of brief —
