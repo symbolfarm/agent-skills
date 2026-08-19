@@ -78,21 +78,46 @@ last review:
 - decisions taken, grouped by calibration class;
 - decision briefs ruled on, and any still waiting;
 - notebook findings ratified or still provisional;
-- anything that turned out differently from what was expected.
+- anything that turned out differently from what was expected;
+- **the human queue**: how many items, which block a goal, which are oldest,
+  and — the part that takes actual thought — which one is most worth the user's
+  attention this week. Come with a recommendation, not an inventory.
 
 Compress hard. The user should not have to reconstruct context. Name artifacts
 they can open, not commits they would have to read.
 
 ### A2. Present
 
-Three headings, in this order, and nothing else:
+Four headings, in this order, and nothing else:
 
 **Done** — what actually landed, with what to try. Two or three items, grouped.
 **Doing** — what is in flight, and anything stalled with the reason.
 **Next** — the current top of the queue, as a proposal to react to.
+**Yours** — the human queue, ranked, with the top one or two put forward as
+decisions to make *now*, in this session.
 
 Say plainly what did not go well. A review that only reports progress stops
 being useful within a month.
+
+#### Why "Yours" is a heading and not a footnote
+
+The first three headings are all about agent work, which is the half that
+already moves on its own. A review made only of those reports on the part of
+the system that is not stuck.
+
+**The review is the one moment the user is reliably present.** That is what it
+is for. If their queue is not put in front of them here, the only remaining
+mechanism is that they remember to open a file — and remembering to open a file
+is not a mechanism, it is a hope.
+
+So: rank the items, say which you would do first and why, and drive at least one
+to an actual decision before the session ends. Ranking is the part that helps
+most. A user short on time and energy is not helped by a list; they are helped by
+someone saying *this one, now, it takes ten minutes, here is what you need to
+know to decide it.*
+
+Do not let this become a full read-out of the backlog. One or two, chosen and
+argued for. The rest stay in the file.
 
 ### A3. Discuss
 
@@ -110,6 +135,10 @@ The user's part. Useful prompts, not a checklist to march through:
 - File new goals (§Filing goals below).
 - Update project states, tiers, or `agent_may`.
 - Update `CALIBRATION.md` counts, and move a level only on a pattern.
+- **Close or advance at least one item in the human queue**, and record the
+  outcome. "Discussed" is not an outcome; decided, done, reshaped, deferred with
+  a date, or dropped are. An item that survives a review untouched three times
+  running is evidence the review is not doing this job.
 - Write the review to `log/YYYY-MM-DD-review.md`.
 - Commit. Portfolio changes commit separately from any project work.
 
@@ -280,12 +309,22 @@ not a concurrency mechanism.
 3. **Letting the ledger stagnate.** An unchanging `CALIBRATION.md` means the
    system costs the same every week forever.
 4. **Reporting only progress.** Say what went badly, or the review loses value.
-5. **Parking by default.** Parked projects accumulate and each one costs a
+5. **Treating the human queue as out of scope.** The three original headings
+   covered agent work only, which is the half that already moves. If the review
+   never puts the user's own decisions in front of them, the queue's sole
+   remaining mechanism is their memory — and a queue defended by memory is a
+   queue that grows. Rank it and land one.
+6. **Explaining a stalled item as "mis-shaped" when it is simply neglected.**
+   Reshaping is sometimes right, but reaching for it first is a way of sounding
+   thoughtful while letting a backlog rot. Ask the user which it is; they know,
+   and their answer beats the inference. Time and energy are finite and that is
+   not a defect in the item.
+7. **Parking by default.** Parked projects accumulate and each one costs a
    decision at every triage.
-6. **Reintroducing per-project priority.** Rank and attention were priority in
+8. **Reintroducing per-project priority.** Rank and attention were priority in
    disguise. Position in the queue is the only priority.
-7. **Filling capacity.** Available agent time is not a reason to add goals.
-8. **Copying task detail into goals.** The project owns how; the goal owns what.
+9. **Filling capacity.** Available agent time is not a reason to add goals.
+10. **Copying task detail into goals.** The project owns how; the goal owns what.
 
 ## Checklist
 
@@ -297,4 +336,5 @@ not a concurrency mechanism.
 - [ ] No goal was filed the user did not agree to.
 - [ ] Calibration counts updated; levels moved only on patterns.
 - [ ] The attention question (§A5) was asked.
+- [ ] At least one human-queue item was closed, advanced, or explicitly dropped.
 - [ ] Review written to `log/` and committed separately from project work.
