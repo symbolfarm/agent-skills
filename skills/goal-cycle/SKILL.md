@@ -43,6 +43,21 @@ Check `PROJECTS.json`: the goal's project must be `active` with a non-empty
 `agent_may`. If it is not, stop and report — the queue and registry disagree,
 and that is worth surfacing rather than working around.
 
+**Capability skip.** If the project declares `requires`, verify your
+environment provides each capability *before* claiming. If it does not, skip to
+the next goal and **name the skipped goal and the missing capability in your
+report**.
+
+This is the only permitted exception to "do not skip a goal", and it is narrow
+deliberately: skip only for a declared, objectively checkable capability your
+environment lacks — a GPU, a framework, a network route. Never for difficulty,
+length, or preference. The report is what keeps it honest; a skip nobody sees
+is indistinguishable from cherry-picking.
+
+A skipped goal is **not blocked**. It keeps its position, stays unclaimed, and
+waits for an agent that can run it. Do not move it to `## Blocked`, and do not
+file anything in `OWNER.md` — nothing is required of the user.
+
 Read `CALIBRATION.md` before starting, not after a decision is already made.
 
 ### 2. Claim
