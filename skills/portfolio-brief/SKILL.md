@@ -306,16 +306,28 @@ The rules that keep this a prod rather than a guilt-list:
 - **Exactly one item per brief. Never two.** This is the whole safeguard. The
   moment the brief lists the backlog, it becomes the unread guilt-list that
   `OWNER.md`'s own rules exist to prevent.
-- **Choose in this order:** anything blocking a goal, then the oldest, then the
-  cheapest to close. Prefer one that can be answered in a single reply.
-- **Rotate.** Do not surface the same item on consecutive briefs; a daily
-  repetition of one line is how a prod becomes noise that gets filtered out.
+- **Rank, do not rotate.** Choose in this order: anything blocking a goal, then
+  anything **decaying** — where waiting makes the item worse or the opportunity
+  smaller — then the cheapest to close. Prefer one that can be answered in a
+  single reply.
+- **The same item may be surfaced on consecutive briefs, and should be if it is
+  still the top-ranked one.** This rule previously said to rotate, on the theory
+  that repetition becomes noise. Rotation is a fairness heuristic, and fairness
+  is not what the user needs from this queue: it will cheerfully show a stale
+  item while a decaying one gets quietly worse. Corrected at a user's explicit
+  direction — *some things are more urgent, and should be brought up on repeat
+  until they happen.*
 - **State the smallest next action and the honest size**, not the item's title.
   "Enable the systemd unit, about two minutes" is actionable; "the pusher
   rollout" is a project.
-- **Three strikes, then stop asking.** If an item has been put forward three
-  times without movement, do not ask a fourth. Say it looks mis-shaped and
-  propose the reshape or the drop instead.
+- **Do not diagnose an item that keeps not moving.** Report that it has been
+  put forward *n* times and let the user say why. This rule previously said to
+  stop asking after three strikes and propose a reshape or a drop instead —
+  which is the exact inference `OWNER.md`'s own aging section was corrected on
+  2026-08-19 for making. The ordinary cause is that the user is short of time
+  and energy, not that the item is mis-shaped, and an agent that reshapes a
+  neglected item is sounding thoughtful while letting the backlog rot.
+  Only the user drops or reshapes their own items.
 
 The brief **may add** items that are genuinely blocked on the user, and **may
 tick off** items evidence shows are done. It may not invent speculative ones —

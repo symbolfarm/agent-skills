@@ -43,10 +43,26 @@ Check `PROJECTS.json`: the goal's project must be `active` with a non-empty
 `agent_may`. If it is not, stop and report — the queue and registry disagree,
 and that is worth surfacing rather than working around.
 
-**Capability skip.** If the project declares `requires`, verify your
-environment provides each capability *before* claiming. If it does not, skip to
-the next goal and **name the skipped goal and the missing capability in your
-report**.
+**Capability skip.** A goal's requirements are the union of its own
+`*Requires:*` line and its project's `requires` in `PROJECTS.json`, where the
+project value is a **default for goals that do not state their own**. A goal
+with an explicit `*Requires:*` line overrides the project default entirely,
+including overriding it with nothing. Verify your environment provides each
+capability *before* claiming. If it does not, skip to the next goal and **name
+the skipped goal and the missing capability in your report**.
+
+Prefer stating `requires` on the goal. A project-level value is a blunt
+instrument: it tags every goal in the project with the heaviest requirement any
+of them has, which mispositions the light ones and makes the queue look emptier
+than it is.
+
+A worked example. A project doing machine-learning work declared
+`["gpu", "pytorch"]` at the project level, which was true of most of its goals.
+One goal was to implement a backend against a *hosted* API — no GPU, no
+framework, nothing but a network route and a key. It inherited the tag anyway,
+every scheduled run skipped it, and the queue read as empty while a perfectly
+runnable goal sat in it. Nobody had made a wrong decision; the tag was simply
+recorded at the wrong altitude.
 
 This is the only permitted exception to "do not skip a goal", and it is narrow
 deliberately: skip only for a declared, objectively checkable capability your
@@ -216,6 +232,31 @@ run that notices it is unblocked. Position on return is the user's to choose.
 resumable by an agent — keep the claim, add a `*Progress:*` line, resume next
 run. Blocked means no agent run can advance it. Two runs producing the same
 "still blocked" note is the signal that a partial was really a block.
+
+### A gate you create for a *later* goal is filed the same way
+
+The rule above covers the goal you are working. The easier case to miss is when
+a completed goal establishes that something is required of the user **before a
+different, queued goal can start** — an interface to review, an account to
+create, a key to issue.
+
+Writing that into your own completion record is not filing it. The completion
+record is history; nobody reads it looking for today's work. Do all three:
+
+1. say it in the completion entry, and
+2. add a `*Blocked:*` line to the goal it gates, and
+3. **file it in `OWNER.md`**, naming the goal.
+
+Otherwise the gate is invisible to the queue, invisible to the owner queue, and
+invisible to the brief's blocked count — the goal sits at the head looking
+takeable, and the next run claims something it cannot finish.
+
+This is a real failure and an easy one, because writing the sentence *feels*
+like filing it. A goal that pinned a core interface finished by noting "the
+interface needs an owner review before the next goal starts" in its own
+completion entry, and nowhere else. The gate held for three days without
+appearing in any list anyone consults, and was found only because a brief
+happened to compare the two files.
 
 ## Stopping
 
