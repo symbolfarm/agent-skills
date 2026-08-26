@@ -11,7 +11,7 @@ description: >-
 license: MIT
 metadata:
   author: Symbol Farm
-  version: "6"
+  version: "7"
   category: productivity
   tags: portfolio, review, goals, planning, multi-project
 ---
@@ -300,6 +300,31 @@ functional — the queue is worked interactively or by whoever picks it up.
 Concurrency rules are in the portfolio repository's `LOCKING.md`: claim the goal,
 then take the repo lock, then edit. The clean-worktree check is a safety check,
 not a concurrency mechanism.
+
+## Changing the process
+
+These skills and the portfolio's conventions are ours to edit, and the review
+session is where that happens. Where the evidence lives, and what may not
+change itself.
+
+**`CALIBRATION.md` is the register.** Process hypotheses do not get their own
+file. A separate register accumulates one instance per row, which is a sample
+size that never moves a level — the portfolio kept one from 2026-07 to 2026-08
+and retired it without a single row graduating. The ledger works because it is
+keyed by decision class and every run feeds it.
+
+**The self-review boundary.** A review may inspect anything — logs, decisions,
+goal outcomes, runtime, how much steering the user had to supply — and may
+propose changes. It may not, on its own initiative, rewrite its governing skill,
+change strategic priority, mutate an agreed plan, expand unattended authority, or
+treat more automation as self-evidently better. Propose; the user rules.
+
+**Reject an improvement that** mainly adds ceremony, optimises a rare edge case,
+creates reporting nobody reads, measures activity instead of decision quality, or
+moves strategy from the user into automation. Changing something promptly is
+right when current behaviour is unsafe, can execute unintended work, documents a
+command or API that is wrong, or makes the workflow impossible. Everything else
+waits for a repeated pattern.
 
 ## Pitfalls
 
