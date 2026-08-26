@@ -258,6 +258,46 @@ completion entry, and nowhere else. The gate held for three days without
 appearing in any list anyone consults, and was found only because a brief
 happened to compare the two files.
 
+## Mark an inference as an inference
+
+Everything a run writes into a durable file — a completion record, an owner-queue
+item, a note on a goal — is read later by someone with no memory of writing it.
+Usually that someone is another agent run.
+
+So when you record a fact, make its provenance visible in the sentence:
+
+- **measured** — "`df` reports the filesystem 85% full";
+- **inferred** — "`df` reports 85% full, **so** the image store should move";
+- **assumed** — "assuming images live under the daemon's data-root".
+
+The cost is one conjunction. The benefit is that a later reader can test the
+arrow in seconds instead of inheriting the conclusion.
+
+The failure this prevents is not exotic. An observation and an inference drawn
+from it, written in the same flat declarative register, become indistinguishable
+within a day — and the inference is then reused, repeatedly, by readers who
+would have caught it had they known it was derived. One portfolio recorded "`/`
+is 85% full" (true, and still true) alongside "so Docker's data root must move"
+(false — that host kept its image layers under containerd, and the daemon's
+data-root held 550 MB). The second claim survived three readings and a
+half-finished migration before a human noticed a number that did not fit.
+
+**This matters more for an agent than for a person.** A human writing notes
+remembers which parts they were unsure about. A run does not: the note is the
+only record of its own confidence, and prose written at uniform assurance
+destroys that information for the next reader — who is usually the same model,
+finding its own voice maximally persuasive.
+
+Two consequences worth keeping:
+
+- **Re-reading is not the fix.** Stale claims are caught by contact with
+  reality — a check that renders the page, a command that measures the disk —
+  not by auditing prose. When something looks stale, prefer arranging a cheap
+  measurement over re-reasoning about it.
+- **Surprise is the trigger.** When a number does not fit the story, re-derive
+  the whole chain rather than just the number. Good news deserves this more than
+  bad news, because it is far less often examined.
+
 ## Stopping
 
 Stop and report when:
