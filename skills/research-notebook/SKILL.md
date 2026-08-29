@@ -8,10 +8,9 @@ description: >-
   correcting or superseding an earlier claim, capturing reading notes
   on an external paper, or orienting on the project's current theory
   before starting research work. This skill defines the notebook
-  substrate (layout, note types, statuses, correction discipline);
-  the research-cycle skill drives the workflow around it, and
-  task-cycle tracks what happened while the notebook tracks what we
-  now think.
+  substrate (layout, note types, statuses, correction discipline), while
+  work-cycle records execution and distills findings at close-out and
+  portfolio-cycle drives learning and planning.
 metadata:
   author: symbolfarm
   version: "2"
@@ -25,9 +24,9 @@ A research project produces three distinct streams of writing, and
 mixing them is what makes project docs rot:
 
 1. **The queue** — work orders and their lifecycle. Owned by the
-   `task-cycle` skill (`TASKS.md`, `.tasks/`, `LOG.jsonl`).
+   `work-cycle` skill (`TASKS.md`, `.tasks/`, `LOG.jsonl`).
 2. **The event record** — what happened, immutably. Owned by
-   `task-cycle` (debriefs, git history).
+   `work-cycle` (debriefs, git history).
 3. **The current understanding** — what we presently believe is true,
    what's been ruled out, and why. Owned by **this skill**, in
    `notebook/`.
@@ -189,7 +188,7 @@ same session and note it in today's log.
 
 ---
 
-## Working with task-cycle
+## Working with work-cycle
 
 The two skills interlock at three points in the task lifecycle:
 
@@ -200,7 +199,7 @@ When *filing* a task, link the relevant notebook notes in the brief's
 without a full history replay.
 
 **At task completion (the distill step — findings only).** After
-writing the debrief (task-cycle "Completing a task", step 1), ask one
+writing the debrief (work-cycle "Completing a task", step 1), ask one
 gating question: *did this task produce a finding — change what we
 believe, rule something out, or develop the theory?* Chores and pure
 plumbing (env setup, refactors, harness wiring) answer no: skip the
@@ -231,12 +230,12 @@ that's the notebook's job.
 Notebook-only changes outside a task (a correction, a new hunch worth
 recording, a session log for exploratory work) are committed directly
 as `notebook: <what>` — they are the notebook's analogue of
-task-cycle's small chores, and never need a task filed.
+work-cycle's small chores, and never need a task filed.
 
-The *workflow* that drives writing into this substrate — regular
-learning sessions to sync the human, converting direction into filed
-tasks, and closing the loop when an experiment concludes — is the
-`research-cycle` skill. This skill only defines the artifact.
+The workflows that write into this substrate live in two places:
+`portfolio-cycle` runs learning sessions and turns agreed direction into
+allocated goals and tasks; `work-cycle` closes findings from execution back into
+the notebook. This skill defines the artifact they share.
 
 ---
 

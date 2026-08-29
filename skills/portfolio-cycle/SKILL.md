@@ -3,11 +3,11 @@ name: portfolio-cycle
 description: >-
   Run the interactive portfolio session: a twice-weekly review of what got done,
   what is in flight, and what comes next; re-order the single goal queue; update
-  project states and the calibration ledger; and turn agreed direction into
-  filed goals. Use when the user asks for a review, wants to set or re-order
-  goals, asks where things are up to across projects, or wants to change a
-  project's state or trust level. Repository state is evidence; the conversation
-  is the source of strategy.
+  project states and the calibration ledger; teach the state of a research
+  project in depth; and turn agreed direction into allocated goals and tasks.
+  Use when the user asks for a review, wants to learn or set direction, wants to
+  set or re-order goals, or wants to change a project's state or trust level.
+  Repository state is evidence; the conversation is the source of strategy.
 license: MIT
 metadata:
   author: Symbol Farm
@@ -26,7 +26,7 @@ particular agent runtime.
 > `PROJECTS.json`, `CALIBRATION.md`, `OWNER.md` and `log/`. Point them at
 > wherever yours lives; the reference deployment uses `/workspace/portfolio`.
 
-`portfolio-brief` reports between sessions. `goal-cycle` executes. This skill is
+`portfolio-brief` reports between sessions. `work-cycle` executes. This skill is
 where the user and the agent decide what should happen.
 
 ## The three structures
@@ -51,8 +51,8 @@ is no project rank and no attention level.
 - Never revive a `parked` project to fill capacity. Reviving is a priority
   decision, made explicitly.
 - Goals belong only to `active` projects with a non-empty `agent_may`.
-- Keep task-level detail in the project. A goal names an outcome; `task-cycle`
-  and `goal-cycle` decide how.
+- Keep task-level detail in the project. A goal names an outcome; `work-cycle`
+  decides how and manages implementation tasks.
 - One queue. Never a per-project queue.
 
 ---
@@ -140,6 +140,9 @@ The user's part. Useful prompts, not a checklist to march through:
   a date, or dropped are. An item that survives a review untouched three times
   running is evidence the review is not doing this job.
 - Write the review to `log/YYYY-MM-DD-review.md`.
+- End by allocating the agreed work to both parties: goals and agent-authored
+  implementation tasks for agents; queue items with `assignee: <user>` for the
+  user's work. Do not leave either side as an implied checklist in prose.
 - Commit. Portfolio changes commit separately from any project work.
 
 ### A5. The one question worth asking every time
@@ -167,6 +170,49 @@ is a legitimate state, not a stalled one.
 
 ---
 
+## Research depth mode: learn, then plan
+
+When a review touches a research project and the user asks to get up to speed,
+decide what the evidence means, or plan the next experiment, deepen the ordinary
+review rather than invoking a separate research cycle.
+
+### Learning
+
+1. Find the most recent learning entry in `notebook/log/`; if none exists,
+   orient from `notebook/INDEX.md`.
+2. Assemble the delta: changed notes and experiments, new lab-log entries,
+   completed-task debriefs, and implementation changes that bear on theory.
+3. Walk the delta as a conversation, most significant finding first. Do not
+   dump a report. Stress the load-bearing notes: ask why a result occurred, what
+   would falsify it, and which assumption carries the next decision.
+4. Repair notes when explanation exposes ambiguity or staleness. Explanation
+   failure is a note-quality test, not something to talk around.
+5. Converge on a direction with the user. Record a `Session — learning` entry
+   ending in a **Direction** block, including the important alternatives not
+   taken, and update `INDEX.md` if open questions changed.
+
+The output is a user who can state the project's position in their own words,
+plus a written direction. What the research record says we believe is never a
+provisional agent default; the user ratifies it.
+
+### Planning and allocation
+
+With a direction agreed, decompose it in conversation. Goals express outcomes
+and are authored by the user in this review. Tasks express implementation and
+are authored by an agent under `work-cycle`. This is an outcome/implementation
+axis, not a size axis.
+
+For each experiment task, pre-register a notebook experiment stub with
+Hypothesis and Setup drafted and `verdict` unset. Link the relevant notebook
+notes from the task brief so a cold-starting agent inherits the theory. File the
+tasks and dependency order through `work-cycle`, and update the Direction entry
+with the IDs it spawned.
+
+Do not add an involvement field to goals or tasks. Human involvement is decided
+per decision class in `CALIBRATION.md`, where evidence can accumulate.
+
+---
+
 ## Filing goals
 
 A goal names an outcome and a way to check it. Nothing else.
@@ -181,7 +227,7 @@ A goal names an outcome and a way to check it. Nothing else.
 Requirements:
 
 - a **done-when** someone else could check without asking what was meant;
-- bounded enough for one `goal-cycle` run, or explicitly marked as a small batch;
+- bounded enough for one `work-cycle` run, or explicitly marked as a small batch;
 - tagged to one `active` project with a non-empty `agent_may`;
 - no decision in an `ask` class buried inside it.
 
@@ -190,8 +236,17 @@ physical position is priority. Removing or moving a goal must not require
 renumbering the rest of the queue.
 
 Deliberately absent: acceptance-criteria blocks, `Touches` lists, effort
-estimates, debriefs. If a goal needs that much ceremony it is Lane B work and
-belongs in `task-cycle`.
+estimates, debriefs. If implementation needs that machinery, file project tasks
+and execute them through `work-cycle`.
+
+### User-assigned items
+
+Do not keep the user's executable work as checklist bullets hidden in prose.
+Represent it in the same merged queue substrate with `assignee: <user>`. Add
+`Requires: computer` when it needs a desk; those items are raised in the
+interactive review. Items without that requirement may be routed through the
+recurring brief. The requirement field has the same capability-routing meaning
+for users and agents—do not invent a second routing concept.
 
 ### Shape, not size
 
@@ -350,6 +405,14 @@ waits for a repeated pattern.
    disguise. Position in the queue is the only priority.
 9. **Filling capacity.** Available agent time is not a reason to add goals.
 10. **Copying task detail into goals.** The project owns how; the goal owns what.
+11. **Re-explaining the same research confusion.** Rewrite the note that keeps
+    failing instead of spending another session narrating around it.
+12. **Batch-repairing a stale notebook index.** Repeated drift means execution
+    is skipping its findings distill; fix that close-out habit.
+13. **Refining briefs when direction is ambiguous.** Return to learning and
+    settle the question with the user before producing more implementation text.
+14. **Leaving the user's work in prose.** Allocate it as assignee-marked items so
+    the merged queue and recurring brief can see it.
 
 ## Checklist
 
@@ -362,4 +425,5 @@ waits for a repeated pattern.
 - [ ] Calibration counts updated; levels moved only on patterns.
 - [ ] The attention question (§A5) was asked.
 - [ ] At least one human-queue item was closed, advanced, or explicitly dropped.
+- [ ] Agreed next work was allocated to both agents and the user as actual items.
 - [ ] Review written to `log/` and committed separately from project work.

@@ -1,9 +1,9 @@
 # Tasks
 
 > **Agents:** read this file at the start of every session, then consult
-> `.tasks/LOG.jsonl` for the current task queue. The `task-cycle` skill
-> (in `skills/task-cycle/SKILL.md`) describes how to start and complete
-> tasks. Use `skills/task-cycle/assets/task-template.md` when creating
+> `.tasks/LOG.jsonl` for the current task queue. The `work-cycle` skill
+> (in `skills/work-cycle/SKILL.md`) describes how to start and complete
+> tasks. Use `skills/work-cycle/assets/task-template.md` when creating
 > new task files.
 
 ## Current focus
@@ -31,6 +31,6 @@ corresponding file in `.tasks/`.
 | Full task queue | `.tasks/LOG.jsonl` |
 | Active task files | `.tasks/*.md` |
 | Completed debriefs | `.tasks/debriefs/` |
-| Task template | `skills/task-cycle/assets/task-template.md` |
-| Debrief template | `skills/task-cycle/assets/debrief-template.md` |
-| Skill instructions | `skills/task-cycle/SKILL.md` |
+| Task template | `skills/work-cycle/assets/task-template.md` |
+| Debrief template | `skills/work-cycle/assets/debrief-template.md` |
+| Skill instructions | `skills/work-cycle/SKILL.md` |

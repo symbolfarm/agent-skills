@@ -60,7 +60,7 @@ It must **not**:
 
 Proposing is permission to reason ahead, not permission to mutate state. If the
 user approves a proposal, the goal is added under `portfolio-cycle` and executed
-under `goal-cycle` — never inside the brief itself.
+under `work-cycle` — never inside the brief itself.
 
 ### The one exception: recording observed fact
 
@@ -145,7 +145,7 @@ almost never something an agent can fix.
 ### Freshness check
 
 Before writing the brief, reconcile the registry against what the last
-`goal-cycle` or `task-cycle` outcome actually did. This is deliberately shallow
+`work-cycle` outcome actually did. This is deliberately shallow
 — seconds, not a tour — and covers only the projects that moved:
 
 - does recorded `visibility` match the repository?
@@ -211,7 +211,7 @@ completed work usable.
 Each proposal must be:
 
 - tied to an `active` project in the registry;
-- bounded enough for one `goal-cycle` run;
+- bounded enough for one `work-cycle` run;
 - expressed with a concrete **done-when** that someone else could check;
 - free of decisions in an **ask** class;
 - clearly labelled an **unfiled proposal**.

@@ -28,25 +28,27 @@ Issues and pull requests are welcome but may go unanswered.
 
 ### A note on the portfolio skills
 
-`portfolio-cycle`, `portfolio-brief` and `goal-cycle` assume a **separate,
+`portfolio-cycle`, `portfolio-brief` and `work-cycle` assume a **separate,
 private portfolio repository** holding `GOALS.md`, `PROJECTS.json`,
 `CALIBRATION.md`, `OWNER.md` and `log/`. That repository is where anything
 specific to you belongs: real project names, schedules, delegated authority, and
 what only you can do. Keep this repository generic — it is public, and the
 portfolio is the half that is not.
 
-The examples throughout use invented projects for that reason.
+**Public/private rule: mechanisms go in this public repository; motivating
+examples stay in the private portfolio.** The examples here are invented for
+that reason. `scripts/check-public-boundary.py` enforces a baseline denylist at
+pre-commit time and can read additional local terms from the Git metadata
+directory without committing those private terms.
 
 ## Skills
 
 | Skill | What it does |
 | --- | --- |
-| [`task-cycle`](./skills/task-cycle) | Manage the task lifecycle for a repo — find the next task, mark it in-progress, write the debrief, update `LOG.jsonl`, and commit. |
-| [`research-notebook`](./skills/research-notebook) | Maintain a project's living research notebook (`notebook/`) — Obsidian-compatible Markdown notes, dated lab logs, experiment records, reference reading notes, and a correction/supersession discipline; interlocks with `task-cycle` via a findings-gated distill step at task completion. |
-| [`research-cycle`](./skills/research-cycle) | Drive the research workflow over the notebook: **learning** sessions that sync the human and set direction, **planning** that breaks direction into filed `task-cycle` tasks with pre-registered experiment stubs, and **logging** that closes findings back into the notebook. |
-| [`portfolio-cycle`](./skills/portfolio-cycle) | Run the interactive portfolio review: assemble done/doing/next, re-order the single goal queue, file agreed goals, and update project state and decision calibration. Runtime-specific unattended deployment is isolated in its Hermes reference. |
-| [`portfolio-brief`](./skills/portfolio-brief) | Produce the concise recurring portfolio report: goal progress, decisions, runway, artifacts to try, and bounded unfiled proposals when direction is running short. |
-| [`goal-cycle`](./skills/goal-cycle) | Execute at most one goal from the portfolio queue: claim it, lock its repository, work and verify, log decisions, and leave an artifact the user can try. |
+| [`work-cycle`](./skills/work-cycle) | Execute one durable item: claim and deliver a portfolio goal, or start, complete, and debrief a repository implementation task. |
+| [`research-notebook`](./skills/research-notebook) | Maintain the living research record: dated lab logs, experiment and source notes, current claims, and explicit correction/supersession. |
+| [`portfolio-cycle`](./skills/portfolio-cycle) | Run the interactive review, teach research state in depth, set direction, re-order goals, allocate tasks to agents and people, and update project and calibration state. |
+| [`portfolio-brief`](./skills/portfolio-brief) | Produce the recurring concise report: progress, delegated decisions, artifacts to try, queue state, and bounded unfiled proposals. |
 
 ## Install
 
@@ -62,7 +64,7 @@ them selectively):
 
 ```bash
 git clone https://github.com/symbolfarm/agent-skills.git
-ln -s "$PWD/agent-skills/skills/task-cycle" ~/.claude/skills/task-cycle
+ln -s "$PWD/agent-skills/skills/work-cycle" ~/.claude/skills/work-cycle
 ```
 
 Use a project-local `.claude/skills/` instead of `~/.claude/skills/` to scope a

@@ -1,7 +1,7 @@
 # Hermes deployment
 
 This reference deploys the portable portfolio workflow on Hermes Agent. The
-policy remains in `portfolio-cycle`, `portfolio-brief`, and `goal-cycle`; this
+policy remains in `portfolio-cycle`, `portfolio-brief`, and `work-cycle`; this
 file contains only runtime wiring: schedules, delivery, toolsets, workdirs,
 timezone handling, testing, and recovery.
 
@@ -16,7 +16,7 @@ that suits when the owner actually reads it.
 
 Use two recurring jobs and one priority source:
 
-1. **Serial executor** — one `goal-cycle` invocation at 07:30 local time. It
+1. **Serial executor** — one `work-cycle` invocation at 07:30 local time. It
    takes at most one goal from `GOALS.md` and leaves routine output local.
 2. **Continuable brief** — one `portfolio-brief` invocation at 12:20 local
    time, delivered to a chat channel shortly before a natural break in the
@@ -55,10 +55,10 @@ https://hermes-agent.nousresearch.com/docs/user-guide/features/cron
 Configuration:
 
 ```text
-name: portfolio-goal-cycle-morning
+name: portfolio-work-cycle-morning
 schedule: 30 7 * * *
 workdir: /workspace/portfolio
-skills: [goal-cycle]
+skills: [work-cycle]
 deliver: local
 enabled_toolsets: [file, terminal, skills, web, browser]
 attach_to_session: false
@@ -67,7 +67,7 @@ attach_to_session: false
 Prompt:
 
 ```text
-Run one goal-cycle against /workspace/portfolio. Execute at most one goal. The
+Run one work-cycle against /workspace/portfolio. Execute at most one goal. The
 queue is the sole priority source: do not create replacement work, re-rank it,
 or enter a project not named by the selected goal. Commit project and portfolio
 changes, but do not push; the host-side pusher owns automatic pushes. Routine
@@ -105,7 +105,7 @@ Prompt:
 
 ```text
 Run portfolio-brief against /workspace/portfolio. Reconcile repository evidence
-and the most recent portfolio-goal-cycle-morning status into one concise brief.
+and the most recent portfolio-work-cycle-morning status into one concise brief.
 Deliver the normal brief even when little moved. Condense anything needing the owner
 rather than emitting separate routine executor notifications. Do not execute a
 goal, re-order the queue, approve a proposal, or change scheduled jobs.
@@ -165,7 +165,7 @@ mistaken for a scheduled brief.
 ## Host-side pusher
 
 Agents create ordinary commits where `PROJECTS.json` permits `commit`; they do
-not push from `goal-cycle`. The host-side pusher is the only automatic push path.
+not push from `work-cycle`. The host-side pusher is the only automatic push path.
 Its contract remains:
 
 - read `agent_may` from `/workspace/portfolio/PROJECTS.json`;
