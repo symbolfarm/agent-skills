@@ -5,11 +5,11 @@ description: >-
   under delegated authority, artifacts worth trying, and remaining goal counts;
   propose new goals before the queue runs dry; and surface the small number of
   things that genuinely need the user. Use for daily or scheduled chat check-ins
-  on the build lane, and whenever the user asks "where is everything up to".
+  on the portfolio, and whenever the user asks "where is everything up to".
   Reports and proposes; it does not execute, file, or approve.
 metadata:
   author: symbolfarm
-  version: "3"
+  version: "4"
   status: draft
   supersedes: portfolio-review-gate
 ---
@@ -18,7 +18,7 @@ metadata:
 
 ## Overview
 
-The brief is the standing report from the build lane. It exists so the user can
+The brief is the standing report from portfolio execution. It exists so the user can
 stay oriented and keep supplying direction without reading repository history.
 
 It answers four questions, in this order:
@@ -85,7 +85,7 @@ intent is the user's.
 ## Evidence
 
 Portfolio repository: the repo holding `GOALS.md`, `PROJECTS.json`,
-`CALIBRATION.md`, `OWNER.md` and `log/`. The reference deployment keeps it at
+`CALIBRATION.md` and `log/`. The reference deployment keeps it at
 `/workspace/portfolio`; point the skill at wherever yours lives.
 
 Read, in this order:
@@ -96,8 +96,10 @@ Read, in this order:
 4. the most recent entries under `log/`, including the gitignored
    `log/.pusher-*.md` files the host pusher leaves — fold what they record into
    your own committed entry, since the pusher deliberately cannot commit;
-5. `briefs/` — count of Lane B decision briefs awaiting a ruling;
-6. `OWNER.md` — the human queue: what only the user can do, and what is blocking.
+5. the derived merged item view, when the portfolio provides one, or otherwise
+   the open task records of active repositories — use it to find assignee-marked
+   user work and implementation tasks without copying their state;
+6. `briefs/` — count of decision briefs awaiting a ruling.
 
 Then inspect the projects that actually moved: Git log since the last brief,
 goal-relevant state, and anything a goal's *done-when* refers to. Do not tour
@@ -257,12 +259,12 @@ false modesty, and do not let it become boilerplate.
 This is cheap to produce and falsifiable: confidence that later proves misplaced
 is calibration evidence.
 
-## Lane B
+## Decision briefs
 
-The brief covers the build lane. Research decision briefs are read in a working
-session, not on a phone. Report only the count and the oldest:
+Research decision briefs are read in a working session, not on a phone. Report
+only the count and the oldest:
 
-> *Lane B: 3 briefs waiting, oldest 4 days (retrieval keying strategy).*
+> *Decision briefs: 3 waiting, oldest 4 days (retrieval keying strategy).*
 
 Do not summarise their content, and do not apply a cap to how many may
 accumulate — they are read in a block, and throttling them would throttle the
@@ -287,10 +289,11 @@ rather than joining it.
 Mark the end of the brief plainly, so it is obvious where the report stops and
 any surrounding conversation starts.
 
-## The human queue
+## User-assigned items
 
-`OWNER.md` holds what only the user can do. Report the count, anything blocking,
-and the age of the oldest item — **and then put exactly one item forward.**
+Filter the merged item view for `assignee: <user>`. Report the count, anything
+blocking, and the age of the oldest item — **and then put exactly one item
+forward.** Do not maintain a second checklist in prose.
 
 > *Yours: 4 open, 1 blocking. Oldest 12 days.*
 > *Today's one: the pusher is still off, which blocks G-002. The remaining step
@@ -304,8 +307,7 @@ can actually close an item.
 The rules that keep this a prod rather than a guilt-list:
 
 - **Exactly one item per brief. Never two.** This is the whole safeguard. The
-  moment the brief lists the backlog, it becomes the unread guilt-list that
-  `OWNER.md`'s own rules exist to prevent.
+  moment the brief lists the backlog, it becomes an unread guilt-list.
 - **Rank, do not rotate.** Choose in this order: anything blocking a goal, then
   anything **decaying** — where waiting makes the item worse or the opportunity
   smaller — then the cheapest to close. Prefer one that can be answered in a
@@ -323,20 +325,17 @@ The rules that keep this a prod rather than a guilt-list:
 - **Do not diagnose an item that keeps not moving.** Report that it has been
   put forward *n* times and let the user say why. This rule previously said to
   stop asking after three strikes and propose a reshape or a drop instead —
-  which is the exact inference `OWNER.md`'s own aging section was corrected on
-  2026-08-19 for making. The ordinary cause is that the user is short of time
+  which is an inference the user previously corrected. The ordinary cause is
+  that the user is short of time
   and energy, not that the item is mis-shaped, and an agent that reshapes a
   neglected item is sounding thoughtful while letting the backlog rot.
   Only the user drops or reshapes their own items.
 
-The brief **may add** items that are genuinely blocked on the user, and **may
-tick off** items evidence shows are done. It may not invent speculative ones —
-see the rules in `OWNER.md` itself.
-
-Report age because a long-sitting item is usually **mis-shaped** rather than
-neglected: too big, secretly blocked, or not actually important. Naming the age
-prompts reshaping it, which is more useful than another reminder — and the
-three-strikes rule above is what converts that observation into an action.
+The brief does not add, complete, or reshape items; its authority remains
+report-only. If evidence shows an item is already done, report the discrepancy
+for the next `portfolio-cycle` session rather than silently mutating the queue.
+Report age as a fact and let the user say whether it reflects neglect, shape, or
+changed priority.
 
 ## Format
 
@@ -356,7 +355,7 @@ Goals: 1 done, 2 advanced, 4 remaining; none blocked
 Decisions (3): serde_json over a custom parser; JSON Lines for
 export; error copy reworded. Details in log/2026-03-05.md.
 
-Lane B: 3 briefs waiting, oldest 4 days.
+Decision briefs: 3 waiting, oldest 4 days.
 Yours: 2 open, none blocking. Oldest 5 days.
 Today's one: the SpecSoloist roadmap session — 30 minutes to decide what the
 project is for, which unblocks the deferred floor raise. Worth booking?

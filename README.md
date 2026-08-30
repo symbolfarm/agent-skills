@@ -50,6 +50,14 @@ directory without committing those private terms.
 | [`portfolio-cycle`](./skills/portfolio-cycle) | Run the interactive review, teach research state in depth, set direction, re-order goals, allocate tasks to agents and people, and update project and calibration state. |
 | [`portfolio-brief`](./skills/portfolio-brief) | Produce the recurring concise report: progress, delegated decisions, artifacts to try, queue state, and bounded unfiled proposals. |
 
+The operating model has one portfolio-owned outcome queue and repository-owned
+implementation tasks. `work-cycle` executes either kind; `portfolio-cycle`
+handles review, scoping, research learning and allocation; `research-notebook`
+holds findings; and `portfolio-brief` is the light recurring report. Executable
+human work is represented as assignee-marked items in the same derived view,
+not as a second checklist. Delegation remains keyed by decision class in the
+private portfolio's calibration ledger rather than being copied onto items.
+
 ## Install
 
 There is no universal cross-agent install command — each agent discovers skills

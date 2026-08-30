@@ -11,7 +11,7 @@ description: >-
 license: MIT
 metadata:
   author: Symbol Farm
-  version: "7"
+  version: "8"
   category: productivity
   tags: portfolio, review, goals, planning, multi-project
 ---
@@ -23,7 +23,9 @@ repository, works with no scheduler present, and needs nothing from any
 particular agent runtime.
 
 > **Portfolio location.** These skills assume one repository holding `GOALS.md`,
-> `PROJECTS.json`, `CALIBRATION.md`, `OWNER.md` and `log/`. Point them at
+> `PROJECTS.json`, `CALIBRATION.md` and `log/`. It may also keep an `OWNER.md`
+> for standing prose and context, but executable user work belongs in the merged
+> item queue rather than a second checklist. Point the skills at
 > wherever yours lives; the reference deployment uses `/workspace/portfolio`.
 
 `portfolio-brief` reports between sessions. `work-cycle` executes. This skill is
@@ -79,7 +81,8 @@ last review:
 - decision briefs ruled on, and any still waiting;
 - notebook findings ratified or still provisional;
 - anything that turned out differently from what was expected;
-- **the human queue**: how many items, which block a goal, which are oldest,
+- **the user's filtered queue view**: from the same merged item queue, count
+  items whose `assignee` is the user, identify which block a goal and which are oldest,
   and — the part that takes actual thought — which one is most worth the user's
   attention this week. Come with a recommendation, not an inventory.
 
@@ -93,19 +96,21 @@ Four headings, in this order, and nothing else:
 **Done** — what actually landed, with what to try. Two or three items, grouped.
 **Doing** — what is in flight, and anything stalled with the reason.
 **Next** — the current top of the queue, as a proposal to react to.
-**Yours** — the human queue, ranked, with the top one or two put forward as
+**Yours** — the assignee-filtered user items, ranked, with the top one or two put forward as
 decisions to make *now*, in this session.
 
 Say plainly what did not go well. A review that only reports progress stops
 being useful within a month.
 
-#### Why "Yours" is a heading and not a footnote
+#### Why "Yours" is a heading and not a second queue
 
 The first three headings are all about agent work, which is the half that
 already moves on its own. A review made only of those reports on the part of
 the system that is not stuck.
 
-**The review is the one moment the user is reliably present.** That is what it
+These items live in the same source records and derived view as agent work;
+`Yours` is only a filter for attention. **The review is the one moment the user
+is reliably present.** That is what it
 is for. If their queue is not put in front of them here, the only remaining
 mechanism is that they remember to open a file — and remembering to open a file
 is not a mechanism, it is a hope.
@@ -135,7 +140,7 @@ The user's part. Useful prompts, not a checklist to march through:
 - File new goals (§Filing goals below).
 - Update project states, tiers, or `agent_may`.
 - Update `CALIBRATION.md` counts, and move a level only on a pattern.
-- **Close or advance at least one item in the human queue**, and record the
+- **Close or advance at least one user-assigned item**, and record the
   outcome. "Discussed" is not an outcome; decided, done, reshaped, deferred with
   a date, or dropped are. An item that survives a review untouched three times
   running is evidence the review is not doing this job.
@@ -247,6 +252,13 @@ Represent it in the same merged queue substrate with `assignee: <user>`. Add
 interactive review. Items without that requirement may be routed through the
 recurring brief. The requirement field has the same capability-routing meaning
 for users and agents—do not invent a second routing concept.
+
+The user normally authors outcome items during a review. An agent may add a
+user-assigned item only when it is transcribing work the user stated or making a
+mechanically necessary unblock from an already-approved goal visible. That is
+not permission to invent speculative work or choose strategy on the user's
+behalf. Keep standing commitments and explanatory material as prose; only an
+executable action becomes an item.
 
 ### Shape, not size
 
@@ -389,11 +401,12 @@ waits for a repeated pattern.
 3. **Letting the ledger stagnate.** An unchanging `CALIBRATION.md` means the
    system costs the same every week forever.
 4. **Reporting only progress.** Say what went badly, or the review loses value.
-5. **Treating the human queue as out of scope.** The three original headings
+5. **Treating user-assigned items as out of scope.** The three original headings
    covered agent work only, which is the half that already moves. If the review
    never puts the user's own decisions in front of them, the queue's sole
    remaining mechanism is their memory — and a queue defended by memory is a
-   queue that grows. Rank it and land one.
+   queue that grows. Filter the merged view, rank the user-assigned items, and
+   land one.
 6. **Explaining a stalled item as "mis-shaped" when it is simply neglected.**
    Reshaping is sometimes right, but reaching for it first is a way of sounding
    thoughtful while letting a backlog rot. Ask the user which it is; they know,

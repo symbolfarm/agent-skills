@@ -9,7 +9,7 @@ description: >-
 license: MIT
 metadata:
   author: Symbol Farm
-  version: "1"
+  version: "2"
   category: productivity
   tags: portfolio, goals, tasks, execution, build-lane
 ---
@@ -39,8 +39,10 @@ only what Git cannot.
 ### Portfolio mode
 
 Use portfolio mode when a portfolio repository is reachable. It normally holds
-`GOALS.md`, `PROJECTS.json`, `CALIBRATION.md`, `OWNER.md`, `LOCKING.md`, and
-`log/`. Point the skill at its actual location; do not assume a fixed path.
+`GOALS.md`, `PROJECTS.json`, `CALIBRATION.md`, `LOCKING.md`, and `log/`.
+`OWNER.md`, when present, is standing prose rather than a second executable
+checklist. Point the skill at the portfolio's actual location; do not assume a
+fixed path.
 
 Read, before changing anything:
 
@@ -294,11 +296,15 @@ A goal no agent can advance must not remain claimed at the queue head:
 
 1. remove its claim;
 2. move it to `Blocked` with what is needed, who owns it, and the date;
-3. file that unblock in `OWNER.md`, naming the goal;
+3. add the established unblock to the same merged item substrate with
+   `assignee: <user>`, naming the goal it blocks and `Requires: computer` when
+   appropriate;
 4. commit and take the next eligible goal in the same run.
 
 A later goal gated by the current result needs the same three visible records:
-completion note, blocked line on that later goal, and owner item. Restoring a
+completion note, blocked line on that later goal, and assignee-marked unblock
+item. Adding that item is transcription of a requirement created by approved
+work, not permission to invent a new user outcome. Restoring a
 blocked goal to the queue is a review-time priority decision.
 
 A missing machine capability is not a user block. Leave that goal in place and
