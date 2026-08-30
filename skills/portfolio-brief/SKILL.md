@@ -9,7 +9,7 @@ description: >-
   Reports and proposes; it does not execute, file, or approve.
 metadata:
   author: symbolfarm
-  version: "4"
+  version: "5"
   status: draft
   supersedes: portfolio-review-gate
 ---
@@ -283,8 +283,11 @@ them out of. Silence means proceed.
 
 Ask a question **only** when something genuinely blocks — a decision in an `ask`
 class, an irreversible action, an empty queue, or a contradiction between the
-queue and the registry. Then ask exactly one, and it replaces the next-goal line
-rather than joining it.
+queue and the registry — or when routing the single selected user-assigned item
+that does not require a computer. A blocker question replaces the next-goal line.
+A user-item question may appear alongside the next-goal statement because the
+user and agent queues advance independently. In either case ask exactly one
+ordinary conversational question; never turn the brief into a menu.
 
 Mark the end of the brief plainly, so it is obvious where the report stops and
 any surrounding conversation starts.
@@ -370,7 +373,8 @@ Rules:
   nothing about it when runs are landing normally.
 - Mention at most three goals; group the rest into counts.
 - Close with the next goal. Ask nothing unless something genuinely blocks.
-- At most one question, and only when blocked. Park the others.
+- At most one question, only for a genuine blocker or the one phone-routable
+  user-assigned item selected by the brief. Park the others.
 - Never enumerate routine commits or task mechanics.
 - Distinguish clearly between verified fact, inference, and proposal.
 - Never say a goal is done, queued, or approved unless evidence establishes it.
@@ -409,5 +413,6 @@ Rules:
 - [ ] Completed work names its weakest point.
 - [ ] Where something is runnable or readable, the way in is included.
 - [ ] The brief closes by stating the next goal, not by asking for one.
-- [ ] A question appears only if something genuinely blocks.
+- [ ] A question appears only for a genuine blocker or the one routed
+      user-assigned item.
 - [ ] The end of the brief is plainly marked.
