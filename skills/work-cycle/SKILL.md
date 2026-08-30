@@ -9,9 +9,9 @@ description: >-
 license: MIT
 metadata:
   author: Symbol Farm
-  version: "2"
+  version: "3"
   category: productivity
-  tags: portfolio, goals, tasks, execution, build-lane
+  tags: portfolio, goals, tasks, execution, work-cycle
 ---
 
 # Work cycle
@@ -103,6 +103,16 @@ Difficulty, length, and preference are never capability skips.
 Items with `assignee: <person>` are not agent work. `Requires: computer` means
 raise the item in the interactive review; without it, the recurring brief may
 route it to the user. Do not execute either kind on the user's behalf.
+
+A goal may name existing repository tasks with `Implements`. Treat those IDs as
+explicit implementation links, not copied task state: inspect each named task in
+the owning repository before editing. A pending linked task is the implementation
+work order; after claiming the goal, transition that existing task to
+`in_progress`, then lock and execute it. Resume an `in_progress` linked task using
+the interrupted-task rules. If it is completed, verify its evidence against the
+goal rather than recreating it. Never file a duplicate task around an
+`Implements` link. Close the linked task lifecycle before closing the portfolio
+goal.
 
 ### Selecting a task
 

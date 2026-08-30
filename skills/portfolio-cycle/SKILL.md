@@ -238,7 +238,9 @@ Requirements:
 
 Use unnumbered bullets. The stable `G-NNN` identifier is the goal's identity;
 physical position is priority. Removing or moving a goal must not require
-renumbering the rest of the queue.
+renumbering the rest of the queue. When a goal delegates its implementation to
+an already-filed repository task, add `Implements: <task-id>` so the merged view
+and `work-cycle` follow that task's live lifecycle instead of creating a duplicate.
 
 Deliberately absent: acceptance-criteria blocks, `Touches` lists, effort
 estimates, debriefs. If implementation needs that machinery, file project tasks
@@ -290,8 +292,8 @@ repository is the wrong place to record which of a project's vulnerabilities
 were judged not worth fixing.
 
 **When you cannot tell whether a goal is one run, the first goal is the
-reconnaissance.** It is the same move as a research-lane decision brief, in
-build-lane clothing.
+reconnaissance.** It turns missing implementation knowledge into one bounded,
+checkable outcome instead of disguising uncertainty as an estimate.
 
 ### Not everything worth doing is a goal
 
