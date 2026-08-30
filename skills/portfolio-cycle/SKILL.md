@@ -439,6 +439,6 @@ waits for a repeated pattern.
 - [ ] No goal was filed the user did not agree to.
 - [ ] Calibration counts updated; levels moved only on patterns.
 - [ ] The attention question (§A5) was asked.
-- [ ] At least one human-queue item was closed, advanced, or explicitly dropped.
+- [ ] At least one user-assigned item was closed, advanced, or explicitly dropped.
 - [ ] Agreed next work was allocated to both agents and the user as actual items.
 - [ ] Review written to `log/` and committed separately from project work.
