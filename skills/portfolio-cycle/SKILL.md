@@ -249,11 +249,12 @@ and execute them through `work-cycle`.
 ### User-assigned items
 
 Do not keep the user's executable work as checklist bullets hidden in prose.
-Represent it in the same merged queue substrate with `assignee: <user>`. Add
-`Requires: computer` when it needs a desk; those items are raised in the
-interactive review. Items without that requirement may be routed through the
-recurring brief. The requirement field has the same capability-routing meaning
-for users and agents—do not invent a second routing concept.
+Represent it in the same merged queue substrate with `assignee: <user>` and a
+`Created` date so the brief can report age. Add `Requires: computer` when it
+needs a desk; those items are raised in the interactive review. Items without
+that requirement may be routed through the recurring brief. The requirement
+field has the same capability-routing meaning for users and agents—do not invent
+a second routing concept.
 
 The user normally authors outcome items during a review. An agent may add a
 user-assigned item only when it is transcribing work the user stated or making a
