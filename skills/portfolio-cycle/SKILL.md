@@ -11,7 +11,7 @@ description: >-
 license: MIT
 metadata:
   author: Symbol Farm
-  version: "8"
+  version: "9"
   category: productivity
   tags: portfolio, review, goals, planning, multi-project
 ---
@@ -242,6 +242,12 @@ renumbering the rest of the queue. When a goal delegates its implementation to
 an already-filed repository task, add `Implements: <task-id>` so the merged view
 and `work-cycle` follow that task's live lifecycle instead of creating a duplicate.
 
+Add `Blocks:` naming the goals or repository tasks that cannot proceed until
+this goal lands — e.g. a later goal gated by this result. It is a **derived-view
+field, not a second queue**: queue position still carries priority, and `Blocks:`
+only lets the brief and review say *why* an item sits where it does. `work-cycle`
+must not re-rank or select on it, and `portfolio-brief` reports it as gating.
+
 Deliberately absent: acceptance-criteria blocks, `Touches` lists, effort
 estimates, debriefs. If implementation needs that machinery, file project tasks
 and execute them through `work-cycle`.
@@ -254,7 +260,10 @@ Represent it in the same merged queue substrate with `assignee: <user>` and a
 needs a desk; those items are raised in the interactive review. Items without
 that requirement may be routed through the recurring brief. The requirement
 field has the same capability-routing meaning for users and agents—do not invent
-a second routing concept.
+a second routing concept. A user item may carry `Blocks:` naming what it gates;
+this is why a review or brief can surface *one* user item ahead of others (see
+`portfolio-brief`'s "User-assigned items"). It remains a derived-view field, not
+a second queue.
 
 The user normally authors outcome items during a review. An agent may add a
 user-assigned item only when it is transcribing work the user stated or making a

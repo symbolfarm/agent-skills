@@ -11,7 +11,7 @@ description: >-
   proposes; it does not execute, file, or approve.
 metadata:
   author: symbolfarm
-  version: "6"
+  version: "7"
   status: draft
   supersedes: portfolio-review-gate
 ---
@@ -343,7 +343,8 @@ The rules that keep this a prod rather than a guilt-list:
 - **Rank, do not rotate.** Choose in this order: anything blocking a goal, then
   anything **decaying** — where waiting makes the item worse or the opportunity
   smaller — then the cheapest to close. Prefer one that can be answered in a
-  single reply.
+  single reply. An item that `Blocks:` other work outranks one that gates
+  nothing, because closing it unblocks the queue behind it.
 - **The same item may be surfaced on consecutive briefs, and should be if it is
   still the top-ranked one.** This rule previously said to rotate, on the theory
   that repetition becomes noise. Rotation is a fairness heuristic, and fairness

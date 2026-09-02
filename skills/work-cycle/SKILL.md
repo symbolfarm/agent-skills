@@ -9,7 +9,7 @@ description: >-
 license: MIT
 metadata:
   author: Symbol Farm
-  version: "4"
+  version: "5"
   category: productivity
   tags: portfolio, goals, tasks, execution, work-cycle
 ---
@@ -114,6 +114,14 @@ the interrupted-task rules. If it is completed, verify its evidence against the
 goal rather than recreating it. Never file a duplicate task around an
 `Implements` link. Close the linked task lifecycle before closing the portfolio
 goal.
+
+A goal may declare `Blocks:`, naming the goals or repository tasks that cannot
+proceed until it lands. It is a **derived-view field, not a second queue**:
+position in `GOALS.md` remains priority, and `Blocks:` only lets the brief and
+review say *why* an item sits where it does. Do not re-rank on it, and do not
+select a goal because it gates others. It is reporting metadata, not selection
+input. (Set in `portfolio-cycle` when the goal is filed; surfaced by the merged
+view and `portfolio-brief`.)
 
 ### Repository availability
 
