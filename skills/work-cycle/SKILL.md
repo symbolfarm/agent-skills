@@ -134,12 +134,15 @@ what an untracked file was for. Replacing an *expired* lock is the single
 exception, and §3 covers it.
 
 **File the anomaly, then keep working.** Record each unavailable repository once
-per run as an item in the same queue substrate, naming the repository, what was
-found — the porcelain paths, or the lock's holder and expiry — and what would
-clear it. Mark it `assignee: <user>` when the residue is theirs to rule on;
-uncommitted work an agent must not guess at usually is. In repository-only mode
-the unavailable repository may be the only one, leaving nowhere to file: report
-it in the close-out and end the run as a no-op.
+per run as an item in the same queue substrate, carrying an `*Anomaly:* <repo> —
+<what was found>` line: the porcelain paths, or the lock's holder and expiry.
+Say what would clear it, and mark it `assignee: <user>` when the residue is
+theirs to rule on — uncommitted work an agent must not guess at usually is. The
+`*Anomaly:*` line is what lets a report distinguish an obstruction the lane
+routed around from work someone chose to queue; without it a skipped repository
+reads as a healthy backlog. In repository-only mode the unavailable repository
+may be the only one, leaving nowhere to file: report it in the close-out and end
+the run as a no-op.
 
 ### Selecting a task
 

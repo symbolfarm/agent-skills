@@ -4,12 +4,14 @@ description: >-
   Produce the recurring portfolio brief: report goal progress, decisions taken
   under delegated authority, artifacts worth trying, and remaining goal counts;
   propose new goals before the queue runs dry; and surface the small number of
-  things that genuinely need the user. Use for daily or scheduled chat check-ins
-  on the portfolio, and whenever the user asks "where is everything up to".
-  Reports and proposes; it does not execute, file, or approve.
+  things that genuinely need the user. Delivers in two forms: a short recurring
+  reminder, and the full brief on demand. Use for daily or scheduled chat
+  check-ins on the portfolio, whenever the user asks "where is everything up
+  to", and whenever they summon the long form from a reminder. Reports and
+  proposes; it does not execute, file, or approve.
 metadata:
   author: symbolfarm
-  version: "5"
+  version: "6"
   status: draft
   supersedes: portfolio-review-gate
 ---
@@ -31,6 +33,33 @@ It answers four questions, in this order:
 The brief is proactive about **direction** and passive about **permission**. Its
 default job is asking for goals, not asking for reviews. Running out of goals is
 the expected halt condition, not a failure.
+
+## Two forms
+
+The same evidence pass produces two deliveries, and **which one is produced is
+set by how the skill was reached**, not by how much happened.
+
+| Form | When | Length |
+|---|---|---|
+| **Reminder** | the recurring scheduled delivery | 50–90 words, fixed skeleton |
+| **Full brief** | summoned from a reminder, invoked directly, or asked for in conversation | 100–260 words, the format below |
+
+The split exists because reading and replying cost differently. A user may read
+every recurring delivery and still reply to almost none, and a long report that
+is never replied to produces a record of decisions nobody reacted to — which
+looks identical to agreement and teaches the calibration ledger nothing. The
+reminder is cheap enough to read on a phone and says plainly whether a reply is
+even wanted; the full brief is where the reasoning goes, on the occasions the
+user asks for it.
+
+**Both forms come from the same evidence pass.** Do the reading described in
+**Evidence** either way — including the gap check, which leads the reminder as
+well. The reminder is a shorter rendering, never a shallower one; a reminder
+assembled without the evidence pass is a guess with a timestamp on it.
+
+**Proposals, scoring, and recommendations belong to the full brief only.** When
+the queue is short, the reminder says so in its needs-you line and summons the
+long form; it does not carry the proposal itself.
 
 This skill replaces `portfolio-review-gate`. The old skill was a gate: its
 question was whether another batch should be allowed to run. Under the goal-queue
@@ -340,7 +369,82 @@ for the next `portfolio-cycle` session rather than silently mutating the queue.
 Report age as a fact and let the user say whether it reflects neglect, shape, or
 changed priority.
 
-## Format
+## The reminder
+
+The recurring form. Five short lines and a close:
+
+```text
+**Portfolio — Tue 5 Mar** · 1 done, 4 queued
+
+Done: G-012 manifest identity · G-013 export path
+In progress: G-014 · Blocked: G-002 (pusher off)
+Anomalies: 1 — tree-editor dirty since Mon, untracked scratch file
+
+Needs you: 1 — enable the systemd unit on the host, ~2 min; unblocks G-002.
+
+Next: G-014. Reply `brief` for the full report, or `review` to open a session.
+— end —
+```
+
+Rules:
+
+- **Lead with the gap** when the lane has been silent since the last delivery,
+  exactly as the full brief does. A reminder that reports a queue during an
+  outage conceals the outage more cheaply, not less.
+- Name at most three goals per line; everything else is a count.
+- Omit any line with nothing in it. An absent `Blocked:` line means nothing is
+  blocked. Do not print empty lines to keep the shape.
+- **Never carry a proposal, a recommendation, or a scored option.** If the queue
+  is short, that is a needs-you line pointing at the full brief.
+- Close by naming the next goal and how to summon both longer forms. The user
+  must never have to remember an exact phrase — accept any plain request.
+
+### The needs-you line
+
+The reminder's whole job is that **"nothing needs you" and "one thing does" are
+distinguishable without opening anything else.** So the line is always present,
+always in the same place, and is one of exactly two shapes:
+
+```text
+Needs you: nothing.
+Needs you: 1 — <smallest next action>, <honest size>; <what it unblocks>.
+```
+
+- **Never more than one.** Rank exactly as **User-assigned items** below
+  specifies — blocking first, then decaying, then cheapest — and put one forward.
+  A reminder that lists a backlog is a guilt-list nobody opens.
+- **Say `nothing` when it is true, and mean it.** The value of the line is
+  destroyed by hedging: "nothing urgent, but when you get a chance…" is not
+  `nothing`, and after two of those the line stops being read.
+- It is **not** `nothing` when any of these is waiting: a decision in an `ask`
+  class, an irreversible action, a contradiction between queue and registry, an
+  empty or nearly empty queue, or an anomaly item whose residue is the user's.
+- The action, not the title. "Enable the systemd unit, ~2 min" is a decision the
+  user can make in one reply; "the pusher rollout" is a project they cannot.
+
+## Anomaly items
+
+An anomaly item is a queue entry a `work-cycle` run filed to record an
+obstruction it refused to clear — normally a repository it could not work
+because the worktree was dirty or another agent held its lock. `work-cycle`
+marks it with an `*Anomaly:*` line naming the repository and what was found.
+
+**Report anomalies on their own line, never inside the goal count.** An anomaly
+is not work someone chose; it is the lane reporting that it routed around
+something. Counting it as a goal makes an obstruction look like planned work,
+and — worse — makes a lane that is silently skipping items look like a lane with
+a healthy backlog.
+
+- Give the count, the repository, and how long it has stood.
+- **An anomaly standing for more than one run is the story, not the backlog.**
+  Repetition here means the lane is losing the same items every run.
+- If the residue is the user's to rule on, it is a candidate for the needs-you
+  line and usually outranks anything else, because it is blocking by
+  construction.
+- The brief does not clear it, and does not guess what an untracked file was
+  for. Report the fact; the user supplies the cause.
+
+## Format — the full brief
 
 Short and scannable. No tables. Aim for 100–220 words; exceed 260 only for a
 safety issue.
@@ -398,9 +502,21 @@ Rules:
    puts the user back in the loop the system exists to keep them out of.
 9. **Fixed UTC for a local-time promise.** Use the configured IANA timezone so
    daylight saving is handled.
+10. **Hedging the needs-you line.** "Nothing urgent, but…" is not `nothing`; it
+    trains the user to stop reading the one line the reminder exists for.
+11. **Sending a long report on the recurring schedule.** The reminder is the
+    recurring form. The full brief is summoned.
+12. **Counting an anomaly item as a goal.** It makes a lane that is skipping
+    items look like a lane with work queued.
 
 ## Before sending
 
+- [ ] The form matches how the skill was reached: reminder when recurring, full
+      brief when summoned or asked for.
+- [ ] The reminder carries a needs-you line, in one of its two shapes, with at
+      most one item.
+- [ ] Anomaly items are reported on their own line and excluded from the goal
+      count.
 - [ ] The gap since the last successful run was checked, and led the brief if
       there was one.
 - [ ] Nothing was edited outside the portfolio `log/` entry.
