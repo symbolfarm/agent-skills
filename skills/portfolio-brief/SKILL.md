@@ -11,7 +11,7 @@ description: >-
   proposes; it does not execute, file, or approve.
 metadata:
   author: symbolfarm
-  version: "7"
+  version: "8"
   status: draft
   supersedes: portfolio-review-gate
 ---
@@ -340,6 +340,14 @@ The rules that keep this a prod rather than a guilt-list:
 
 - **Exactly one item per brief. Never two.** This is the whole safeguard. The
   moment the brief lists the backlog, it becomes an unread guilt-list.
+- **A gated item is not eligible — filter before ranking.** The merged view
+  marks an item whose gate is still open as `gated by <id> (open)`, derived from
+  the `Blocks:` list of an item that has not landed. Never put such an item
+  forward: the user provably cannot start it, and one unstartable ask costs the
+  line the credibility that is its entire value. Report it in the count and in
+  the blocking summary; put the *gate* forward instead when the gate is itself
+  the user's, and otherwise take the next eligible item. If every user item is
+  gated, the honest needs-you line is `nothing`.
 - **Rank, do not rotate.** Choose in this order: anything blocking a goal, then
   anything **decaying** — where waiting makes the item worse or the opportunity
   smaller — then the cheapest to close. Prefer one that can be answered in a
@@ -412,8 +420,10 @@ Needs you: 1 — <smallest next action>, <honest size>; <what it unblocks>.
 ```
 
 - **Never more than one.** Rank exactly as **User-assigned items** below
-  specifies — blocking first, then decaying, then cheapest — and put one forward.
-  A reminder that lists a backlog is a guilt-list nobody opens.
+  specifies — drop anything the merged view marks `gated by <id> (open)`, then
+  blocking first, then decaying, then cheapest — and put one forward. A reminder
+  that lists a backlog is a guilt-list nobody opens, and one that offers an item
+  the user cannot start stops being believed at all.
 - **Say `nothing` when it is true, and mean it.** The value of the line is
   destroyed by hedging: "nothing urgent, but when you get a chance…" is not
   `nothing`, and after two of those the line stops being read.
@@ -509,6 +519,9 @@ Rules:
     recurring form. The full brief is summoned.
 12. **Counting an anomaly item as a goal.** It makes a lane that is skipping
     items look like a lane with work queued.
+13. **Putting a gated item forward.** An item the merged view marks `gated by
+    <id> (open)` cannot be started, so offering it is the fastest way to make
+    the needs-you line unbelievable.
 
 ## Before sending
 
@@ -516,6 +529,8 @@ Rules:
       brief when summoned or asked for.
 - [ ] The reminder carries a needs-you line, in one of its two shapes, with at
       most one item.
+- [ ] The item put forward is not marked `gated by <id> (open)` in the merged
+      view.
 - [ ] Anomaly items are reported on their own line and excluded from the goal
       count.
 - [ ] The gap since the last successful run was checked, and led the brief if
