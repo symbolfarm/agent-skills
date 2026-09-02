@@ -29,10 +29,16 @@ This is an outcome/implementation distinction, not a size distinction. A small
 handoff may need a task; a substantial outcome can remain one goal. The split is
 in **creation**, not execution, so both types use this cycle.
 
-Execute at most one selected item per run unless demoting a user-blocked goal;
-that exception lets the run take the next eligible goal rather than starving the
-queue. Commit at natural boundaries. Git is the record; task debriefs preserve
-only what Git cannot.
+Execute at most one selected item per run by default. A caller may declare a
+larger **run budget measured in fully closed items**; when it does, repeat this
+cycle from selection only after the current item is committed and its lifecycle
+is closed. Never carry one item's open work or context into the next. A caller
+may also declare a lower budget for a fallback model, or a wind-down condition;
+check that condition before selecting each subsequent item and stop cleanly when
+it applies. Demoting a user-blocked goal remains an exception even under the
+default one-item budget, so the run may take the next eligible goal rather than
+starving the queue. Commit at natural boundaries. Git is the record; task
+debriefs preserve only what Git cannot.
 
 ## 1. Establish the operating mode
 
