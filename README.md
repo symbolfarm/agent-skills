@@ -41,6 +41,19 @@ that reason. `scripts/check-public-boundary.py` enforces a baseline denylist at
 pre-commit time and can read additional local terms from the Git metadata
 directory without committing those private terms.
 
+`scripts/repo_availability.py` is the other half of that split: `work-cycle`
+needs to know whether a repository can be edited right now — clean worktree, no
+live `.tasks/.lock` from another agent — and that check is a mechanism, so it
+lives here. Run it over the repositories a queue names to see which items a run
+must skip:
+
+```bash
+python3 scripts/repo_availability.py ../repo-a ../repo-b --holder claude
+```
+
+It exits non-zero when any named repository is unavailable. Tests:
+`python3 -m unittest discover -s tests -t .`
+
 ## Skills
 
 | Skill | What it does |

@@ -9,7 +9,7 @@ description: >-
 license: MIT
 metadata:
   author: Symbol Farm
-  version: "3"
+  version: "4"
   category: productivity
   tags: portfolio, goals, tasks, execution, work-cycle
 ---
@@ -76,7 +76,8 @@ file and land a separate task there first. Record it as `Depends-on (external):
 <repo> <task-id>`; `blocked_by` contains IDs from the same repository only.
 
 Do not touch an unrelated dirty or locked repository. A worktree is clean only
-when `git status --porcelain` is empty.
+when `git status --porcelain` is empty. Unavailability is per repository and
+skips only that repository's items — see **Repository availability** below.
 
 ## 2. Select one item
 
@@ -97,8 +98,8 @@ Anything in a `strict`-tier project stops for review—no provisional defaults.
 A goal's explicit `Requires` overrides the project's default requirements,
 including with an empty value. Verify each declared capability before claiming.
 If one is absent, skip the goal without moving or blocking it, and report the
-missing capability. Capability skips are the only exception to queue order.
-Difficulty, length, and preference are never capability skips.
+missing capability. Capability and repository-availability skips are the only
+exceptions to queue order. Difficulty, length, and preference are never skips.
 
 Items with `assignee: <person>` are not agent work. `Requires: computer` means
 raise the item in the interactive review; without it, the recurring brief may
@@ -113,6 +114,32 @@ the interrupted-task rules. If it is completed, verify its evidence against the
 goal rather than recreating it. Never file a duplicate task around an
 `Implements` link. Close the linked task lifecycle before closing the portfolio
 goal.
+
+### Repository availability
+
+A repository is available when its worktree is clean and no other agent holds a
+live `.tasks/.lock`. Check the item's repository before claiming it;
+`scripts/repo_availability.py` in this repository reports one repository's state,
+and its `first_available` applies the rule to a queue in order.
+
+**An unavailable repository costs its own items, never the run.** Skip every item
+belonging to it — without claiming, moving, or blocking those items — continue
+down the queue, and take the first item whose repository is available. A run that
+stops because one repository was dirty has converted one stalled item into a
+stalled day.
+
+**Do not clear the obstruction to make an item runnable.** Uncommitted work is
+its author's: never `stash`, `clean`, `reset`, or commit it, and never guess at
+what an untracked file was for. Replacing an *expired* lock is the single
+exception, and §3 covers it.
+
+**File the anomaly, then keep working.** Record each unavailable repository once
+per run as an item in the same queue substrate, naming the repository, what was
+found — the porcelain paths, or the lock's holder and expiry — and what would
+clear it. Mark it `assignee: <user>` when the residue is theirs to rule on;
+uncommitted work an agent must not guess at usually is. In repository-only mode
+the unavailable repository may be the only one, leaving nowhere to file: report
+it in the close-out and end the run as a no-op.
 
 ### Selecting a task
 
@@ -167,8 +194,9 @@ After the claim or task-state transition, acquire `.tasks/.lock` atomically per
 `LOCKING.md`, normally with `O_CREAT | O_EXCL`. The lock records holder, item,
 acquired time, and expiry. Default TTL is two hours, adjusted to the work.
 
-- Live lock held by another agent: do not wait or edit. For a goal, release the
-  claim and record a no-op.
+- Live lock held by another agent: do not wait or edit. Release the claim, file
+  the anomaly, and take the next item whose repository is available — the lock
+  blocks that repository, not the run.
 - Expired lock: record that it is stale, replace it atomically, and continue.
 - Release the lock after the final project commit and on every exit path.
 
@@ -377,14 +405,17 @@ cross-session Git record. They complement one another.
 3. Duplicating every goal as a task or executing an unreviewed outcome as if it
    were implementation detail.
 4. Re-ranking a portfolio queue or substituting unrelated work.
-5. Touching a dirty, locked, unrelated, or strict repository.
-6. Blocking on a reversible decision—or defaulting an irreversible one.
-7. Copying a private calibration ledger into a sandboxed/public repository.
-8. Logging `auto` decisions or inventing calibration classes.
-9. Leaving a user-blocked goal claimed at the head.
-10. Describing an artifact without handing over the way to try it.
-11. Letting a task debrief duplicate Git instead of recording what Git cannot.
-12. Distilling plumbing into the research notebook, or failing to distill a real
+5. Touching a dirty, locked, unrelated, or strict repository — or clearing
+   someone's residue so an item becomes runnable.
+6. Ending the run because one repository was unavailable, instead of skipping
+   its items, filing the anomaly, and taking the next eligible item.
+7. Blocking on a reversible decision—or defaulting an irreversible one.
+8. Copying a private calibration ledger into a sandboxed/public repository.
+9. Logging `auto` decisions or inventing calibration classes.
+10. Leaving a user-blocked goal claimed at the head.
+11. Describing an artifact without handing over the way to try it.
+12. Letting a task debrief duplicate Git instead of recording what Git cannot.
+13. Distilling plumbing into the research notebook, or failing to distill a real
     finding.
 
 ## Checklist
@@ -392,7 +423,10 @@ cross-session Git record. They complement one another.
 - [ ] Selected the first eligible item from the correct source.
 - [ ] Portfolio project is active, permitted, and capability-compatible.
 - [ ] Claim/state transition committed before project edits.
-- [ ] Repository was clean and atomically locked; lock released on every exit.
+- [ ] Repository was available (clean, unlocked) and atomically locked; lock
+      released on every exit.
+- [ ] Any unavailable repository cost only its own items and was filed as an
+      anomaly item.
 - [ ] No unrelated repository or irreversible action was touched.
 - [ ] Optional implementation opinions and the item contract were followed.
 - [ ] Relevant tests and the actual artifact were exercised.
