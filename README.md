@@ -37,9 +37,22 @@ portfolio is the half that is not.
 
 **Public/private rule: mechanisms go in this public repository; motivating
 examples stay in the private portfolio.** The examples here are invented for
-that reason. `scripts/check-public-boundary.py` enforces a baseline denylist at
-pre-commit time and can read additional local terms from the Git metadata
-directory without committing those private terms.
+that reason. `scripts/check-public-boundary.py` enforces generic markers and can
+read checkout-private terms from `.git/info/public-boundary-denylist` or from the
+file named by `PUBLIC_BOUNDARY_DENYLIST`. Those files remain local; diagnostics
+report only a term number and never echo the private value.
+
+Install the repository-owned hook for this checkout:
+
+```bash
+git config core.hooksPath .githooks
+```
+
+The hook scans blobs exactly as staged in Git, so a clean worktree copy cannot
+hide a private value left in a partial staging area. The tracked
+`.pre-commit-config.yaml` provides the same staged check for contributors who
+already use `pre-commit`; it is not required by the local hook above. Neither
+route uploads the private denylist or scans the private portfolio.
 
 `scripts/repo_availability.py` is the other half of that split: `work-cycle`
 needs to know whether a repository can be edited right now — clean worktree, no

@@ -3,6 +3,7 @@ repos:
     hooks:
       - id: public-boundary-denylist
         name: keep private examples out of public skills
-        entry: python3 scripts/check-public-boundary.py
+        entry: python3 scripts/check-public-boundary.py --staged
         language: system
-        types: [text]
+        pass_filenames: false
+        always_run: true
