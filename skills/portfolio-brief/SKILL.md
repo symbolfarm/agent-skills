@@ -11,7 +11,7 @@ description: >-
   proposes; it does not execute, file, or approve.
 metadata:
   author: symbolfarm
-  version: "8"
+  version: "9"
   status: draft
   supersedes: portfolio-review-gate
 ---
@@ -305,6 +305,17 @@ The brief **closes by saying what happens next**, as a statement:
 
 > *Next: G-002, the puzzle-site closeout, starting on the next run.*
 
+An identifier alone is not orientation. Always include a short plain-language
+gist after the ID — normally three to eight words from the goal title, enough
+to understand the intended outcome without opening `GOALS.md`. `Next: G-027`
+is invalid; `Next: G-027 — compare frozen-base parameter additions` is useful.
+
+The named goal must be the goal the deployed executor would actually select,
+not merely the first agent-assigned row in the raw queue. Apply its documented
+capabilities and lane-role selection policy, preserving queue order within that
+policy. If this differs from the first raw queue entry in a surprising way,
+name the reason briefly rather than concealing a routing mismatch.
+
 Not *"shall I take G-002?"*. The execution model already proceeds on reversible
 work without waiting for permission; a brief that asks permission to continue
 contradicts it, and it puts the user back in the loop the system exists to keep
@@ -391,7 +402,8 @@ Anomalies: 1 — tree-editor dirty since Mon, untracked scratch file
 
 Needs you: 1 — enable the systemd unit on the host, ~2 min; unblocks G-002.
 
-Next: G-014. Reply `brief` for the full report, or `review` to open a session.
+Next: G-014 — finish the export path. Reply `brief` for the full report, or
+`review` to open a session.
 — end —
 ```
 
@@ -405,8 +417,9 @@ Rules:
   blocked. Do not print empty lines to keep the shape.
 - **Never carry a proposal, a recommendation, or a scored option.** If the queue
   is short, that is a needs-you line pointing at the full brief.
-- Close by naming the next goal and how to summon both longer forms. The user
-  must never have to remember an exact phrase — accept any plain request.
+- Close with the actual executor-selected next goal, its short plain-language
+  gist, and how to summon both longer forms. The user must never have to remember
+  an exact phrase — accept any plain request.
 
 ### The needs-you line
 
@@ -545,6 +558,8 @@ Rules:
 - [ ] Completed work names its weakest point.
 - [ ] Where something is runnable or readable, the way in is included.
 - [ ] The brief closes by stating the next goal, not by asking for one.
+- [ ] The next-goal line includes a plain-language gist and matches the deployed
+      executor's capability and lane-role selection policy.
 - [ ] A question appears only for a genuine blocker or the one routed
       user-assigned item.
 - [ ] The end of the brief is plainly marked.
