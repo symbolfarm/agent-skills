@@ -107,6 +107,23 @@ State readiness on four independent axes before launching work:
 "The setup supports execution" may describe policy and repository readiness while
 no task is filed and no job is running. Keep the distinction explicit.
 
+### Immediate bounded execution
+
+Do not route an explicit "run this now" request through delayed scheduling only
+for procedural symmetry. An interactive immediate cycle is eligible when the
+user has approved the exact outcome or finite batch, the repository is clean and
+unlocked, objective checks exist, the queue items are filed or can be
+mechanically transcribed from that approval, and no protected or irreversible
+decision is crossed.
+
+State the four readiness axes, claim the finite items, execute them sequentially
+through `work-cycle`, and close every lifecycle before starting the next. When
+the declared budget is exhausted, stop at the human review boundary. Leave
+project state unchanged unless the already-approved contract explicitly says to
+pause or park it on exhaustion; capacity is never permission to invent another
+item. Preserve the same task transitions, commits, debriefs, validation, locks,
+and portfolio reconciliation as a scheduled cycle.
+
 Start with the simplest topology that meets the need. Before calling a migration
 complete:
 

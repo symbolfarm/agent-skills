@@ -9,7 +9,7 @@ description: >-
 license: MIT
 metadata:
   author: Symbol Farm
-  version: "7"
+  version: "8"
   category: productivity
   tags: portfolio, goals, tasks, execution, work-cycle
 ---
@@ -32,10 +32,17 @@ in **creation**, not execution, so both types use this cycle.
 Execute at most one selected item per run by default. A caller may declare a
 larger **run budget measured in fully closed items**; when it does, repeat this
 cycle from selection only after the current item is committed and its lifecycle
-is closed. Never carry one item's open work or context into the next. A caller
-may also declare a lower budget for a fallback model, or a wind-down condition;
-check that condition before selecting each subsequent item and stop cleanly when
-it applies. Demoting a user-blocked goal remains an exception even under the
+is closed. Never carry one item's open lifecycle state or unverified assumptions
+into the next: reread the durable queue, reset the ephemeral checklist, and use a
+fresh sub-context when the runtime supports one. A caller may also declare a
+lower budget for a fallback model, or a wind-down condition. Such a rule is
+valid only when the caller names stable primary/fallback identifiers and an
+observable runtime source. Inspect the current execution's model/provider
+metadata before the first item and before every later selection; configured
+defaults do not prove the model actually running. Corroborate with the durable
+scheduler execution record when available. If identity cannot be established,
+use the conservative fallback budget and say so. Demoting a user-blocked goal
+remains an exception even under the
 default one-item budget, so the run may take the next eligible goal rather than
 starving the queue. Commit at natural boundaries. Git is the record; task
 debriefs preserve only what Git cannot.
@@ -435,12 +442,16 @@ its debrief plus the session report rather than inventing a portfolio log.
 
 ## Context and delegation
 
-Aim for one item per context lifetime. If compaction looks necessary, split the
-task; debriefs and commits preserve fidelity better than a compressed
-conversation. For read-heavy exploration, a read-only subagent may return a
-short synthesis. Sequential delegation is the default because the worktree and
-JSONL log serialize writes; parallelize only with isolated worktrees and
-disjoint `Touches`.
+Aim for one selected item at a time. Under a caller-declared multi-item budget,
+create a cold-start boundary between items: close all durable state, discard the
+item-specific plan, reread selection sources, and prefer a fresh sub-context
+when the runtime supports one. This is a lifecycle/context hygiene boundary, not
+a claim that every scheduler invocation literally creates a new conversation.
+If compaction looks necessary inside an item, split the task; debriefs and
+commits preserve fidelity better than a compressed conversation. For read-heavy
+exploration, a read-only subagent may return a short synthesis. Sequential
+delegation is the default because the worktree and JSONL log serialize writes;
+parallelize only with isolated worktrees and disjoint `Touches`.
 
 A delegated prompt must name one item, a scope cap, a tool-call budget hint, a
 stop rule for ambiguity or touch expansion, and a report contract covering

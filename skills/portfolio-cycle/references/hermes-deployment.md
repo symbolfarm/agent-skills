@@ -189,37 +189,11 @@ For the brief, verify both delivery and continuation by replying to the test
 delivery. A manual test should be clearly labelled as a test so it cannot be
 mistaken for a scheduled brief.
 
-### Prove workflow migrations with pipecleaners
-
-Configuration that looks plausible is not a completed migration. For each
-distinct operating mode, use a disposable repository or sentinel item when
-production work would otherwise be consumed. Verify from durable evidence:
-
-- exact sentinel bytes or artifact behaviour;
-- verifier/test exit status;
-- task or goal transitions and separate commits;
-- debrief or portfolio log;
-- clean worktrees and lock release;
-- persisted job configuration and stored run output.
-
-Remove disposable jobs and repositories only after inspecting those outputs.
-Read the production job back, but do not fire it merely to prove a migration if
-that would consume real queued work.
-
-### Observe the first real runs
-
-After two or three real invocations, reconcile the causal chain rather than
-trusting a successful scheduler status or polished brief: scheduler record,
-claim, lock lifecycle, project commit and objective checks, portfolio close-out,
-publication evidence where applicable, and the brief's resulting claims. Check
-ordering failures as well as missing artifacts. In particular, do not remove a
-project's publish eligibility while required commits are still ahead of the
-remote. Treat remote parity, deployment health, and browser-visible behaviour as
-separate claims.
-
-Calibrate frequency from completed outcomes, including partial and no-op runs,
-not from configured schedule capacity. Define how a released partial lock is
-reacquired so the next worker resumes the existing claim before later work.
+Generic pipecleaner, first-real-run, and throughput-calibration doctrine lives in
+[`executor-topology-decisions.md`](executor-topology-decisions.md). For Hermes,
+pair that evidence with the persisted job definition, stored run output, and a
+post-run `next_run_at` read-back. Do not fire a production executor merely to
+prove a migration when that would consume real queued work.
 
 ## Host-side pusher
 

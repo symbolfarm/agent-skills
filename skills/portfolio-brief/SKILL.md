@@ -11,7 +11,7 @@ description: >-
   proposes; it does not execute, file, or approve.
 metadata:
   author: symbolfarm
-  version: "12"
+  version: "13"
   status: draft
   supersedes: portfolio-review-gate
 ---
@@ -443,8 +443,9 @@ Rules:
 - Close with the actual executor-selected next goal, its short plain-language
   gist, owner, state/reason, and how to summon both longer forms. If the selected
   goal is outside the queue window, say briefly why: capability skip, gate, user
-  assignment, or explicit lane allocation. The user must never have to remember
-  an exact phrase — accept any plain request.
+  assignment, existing claim, repository unavailable, or explicit lane
+  allocation. The user must never have to remember an exact phrase — accept any
+  plain request.
 
 ### Yours rows
 

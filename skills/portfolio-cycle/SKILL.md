@@ -11,7 +11,7 @@ description: >-
 license: MIT
 metadata:
   author: Symbol Farm
-  version: "11"
+  version: "12"
   category: productivity
   tags: portfolio, review, goals, planning, multi-project
 ---
