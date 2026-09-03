@@ -3,11 +3,11 @@
   "date": "YYYY-MM-DD",
   "timezone": "Area/City",
   "status": "draft",
-  "created_at": "YYYY-MM-DDTHH:MM:SS+09:30",
+  "created_at": "YYYY-MM-DDTHH:MM:SS+00:00",
   "supersedes": null,
   "registry_revision": "git:COMMIT_SHA",
   "schedule": {
-    "start_at": "YYYY-MM-DDTHH:MM:SS+09:30",
+    "start_at": "YYYY-MM-DDTHH:MM:SS+00:00",
     "interval_hours": 2,
     "capacity": 12
   },

@@ -5,8 +5,8 @@ policy remains in `portfolio-cycle`, `portfolio-brief`, and `work-cycle`; this
 file contains only runtime wiring: schedules, delivery, toolsets, workdirs,
 timezone handling, testing, and recovery.
 
-Portfolio repository: shown throughout as `/workspace/portfolio`. Substitute
-your own path; nothing here depends on that particular location.
+Portfolio repository: shown throughout as `<portfolio-path>`. Substitute the
+deployment's absolute path; nothing here depends on a particular location.
 
 Times, timezone and delivery channel are likewise the reference deployment's,
 not requirements. Pick a morning slot for the executor and a slot for the brief
@@ -16,14 +16,13 @@ that suits when the owner actually reads it.
 
 Use two recurring jobs and one priority source:
 
-1. **Serial executor** — one `work-cycle` invocation at 07:30 local time. It
-   uses a caller-declared budget measured only in fully closed goals and leaves
-   routine output local. The reference portfolio's Hermes lane prefers product
-   goals, falling back to eligible research or substrate work rather than
-   idling; deployments without lane roles may simply follow queue order.
-2. **Continuable brief** — one `portfolio-brief` invocation at 12:20 local
-   time, delivered to a chat channel shortly before a natural break in the
-   owner's day. It condenses the morning result, decisions, runway, and anything
+1. **Serial executor** — one recurring `work-cycle` invocation. It uses an
+   explicit caller-declared budget measured only in fully closed goals and
+   leaves routine output local. A deployment may apply an explicit lane
+   allocation before queue-order selection; without one, follow queue order.
+2. **Continuable brief** — one recurring `portfolio-brief` invocation,
+   delivered to a chat channel shortly before a natural break in the owner's
+   day. It condenses the latest executor result, decisions, runway, and anything
    needing attention.
 
 Do not create one cron job per goal. That duplicates queue state in the
@@ -58,9 +57,9 @@ https://hermes-agent.nousresearch.com/docs/user-guide/features/cron
 Configuration:
 
 ```text
-name: portfolio-work-cycle-morning
-schedule: 30 7 * * *
-workdir: /workspace/portfolio
+name: <executor-job>
+schedule: <executor-cron>
+workdir: <portfolio-path>
 skills: [work-cycle]
 deliver: local
 enabled_toolsets: [file, terminal, skills, web, browser]
@@ -70,14 +69,14 @@ attach_to_session: false
 Prompt:
 
 ```text
-Run work-cycle against /workspace/portfolio under a caller-declared budget of
-fully closed goals. Apply the deployed lane role before falling back to general
-queue work, preserve queue order within each selection pass, and never create
-replacement work. Count an item only after project work, lifecycle state, log,
-portfolio commit, and clean-worktree verification are complete. Stop rather
-than selecting another item when close-out is incomplete. Commit project and
-portfolio changes, but do not push; the host-side pusher owns automatic pushes.
-Routine results remain local for the 12:20 portfolio brief.
+Run work-cycle against <portfolio-path> under a caller-declared budget of <N>
+fully closed goals. Apply any explicit deployed lane allocation, preserve queue
+order within its eligible set, and never create replacement work. Count an item
+only after project work, lifecycle state, log, portfolio commit, and
+clean-worktree verification are complete. Stop rather than selecting another
+item when close-out is incomplete. Commit project and portfolio changes, but do
+not push; the deployment's publication mechanism owns automatic pushes. Routine
+results remain local for the later portfolio brief.
 ```
 
 The worker is deterministic at the portfolio level: lane-role selection, then
@@ -97,9 +96,9 @@ provides an explicitly authorised urgent-alert path.
 Configuration:
 
 ```text
-name: portfolio-brief-daily
-schedule: 20 12 * * *
-workdir: /workspace/portfolio
+name: <brief-job>
+schedule: <brief-cron>
+workdir: <portfolio-path>
 skills: [portfolio-brief]
 deliver: <chat-channel>
 enabled_toolsets: [file, terminal, skills, cronjob]
@@ -109,13 +108,12 @@ attach_to_session: true
 Prompt:
 
 ```text
-Run portfolio-brief against /workspace/portfolio. Reconcile repository evidence
-and the most recent portfolio-work-cycle-morning status into the recurring queue
-window: recent completions, the first five open goals with owner and routing
-state, the actual executor-selected next goal, anomalies, and up to two
-non-duplicated user items outside the window. Deliver it even when little moved.
-Do not execute a goal, re-order the queue, approve a proposal, or change
-scheduled jobs.
+Run portfolio-brief against <portfolio-path>. Reconcile repository evidence and
+the most recent <executor-job> status into the recurring queue window: recent
+completions, the first five open goals with owner and routing state, the actual
+executor-selected next goal, anomalies, and up to two non-duplicated user items
+outside the window. Deliver it even when little moved. Do not execute a goal,
+re-order the queue, approve a proposal, or change scheduled jobs.
 ```
 
 `attach_to_session` makes the delivered brief continuable: a reply can
@@ -123,14 +121,11 @@ retain the report context instead of starting from an isolated delivery. Any
 subsequent strategy or queue change proceeds interactively under
 `portfolio-cycle`; a reply does not grant the brief extra authority.
 
-**Hermes v0.19.0 verification note:** that release's cron tool schema and
-scheduler support `attach_to_session`, but its registered tool handler omits the
-argument when forwarding calls. A tool update can therefore report success
-without persisting the field. Always read the stored job back and confirm
-`attach_to_session: true`. Until the handler is fixed, set it through Hermes's
-locked `cron.jobs.update_job` API rather than editing `jobs.json` directly. Do
-not enable global `cron.mirror_delivery` merely to work around one brief job;
-that changes continuation behaviour for unrelated deliveries.
+Always read the stored job back and confirm `attach_to_session: true`; a tool
+update response is not proof that the scheduler persisted every field. Use a
+supported locked API or CLI rather than editing scheduler storage directly. Do
+not enable a global continuation setting merely to work around one brief job;
+that changes behaviour for unrelated deliveries.
 
 The `cronjob` toolset is read-only by policy in this job. It exists so the brief
 can inspect whether the morning executor ran or failed. The prompt and
@@ -152,8 +147,8 @@ in the attached skill rather than being copied into a long scheduler prompt.
 For each job:
 
 1. List the job and inspect its full configuration.
-2. Confirm the attached skill exists and the workdir is exactly
-   `/workspace/portfolio`.
+2. Confirm the attached skill exists and the workdir is exactly the configured
+   `<portfolio-path>`.
 3. Confirm `next_run_at` represents each intended time in the configured zone.
 4. Trigger one manual run.
 5. Confirm execution status and delivery status.
@@ -175,7 +170,7 @@ Agents create ordinary commits where `PROJECTS.json` permits `commit`; they do
 not push from `work-cycle`. The host-side pusher is the only automatic push path.
 Its contract remains:
 
-- read `agent_may` from `/workspace/portfolio/PROJECTS.json`;
+- read `agent_may` from `<portfolio-path>/PROJECTS.json`;
 - fast-forward pushes only;
 - never `--force` and never delete refs;
 - keep the dedicated key on the host, outside agent containers;
@@ -199,8 +194,7 @@ becoming its own deployment mechanism.
 
 ## Superseded model
 
-`legacy-slot-scheduling/` holds the previous frozen plan of up to twelve
-one-shot slots. The continuous queue replaced it: work now proceeds one goal per
-executor invocation until the queue empties or a boundary blocks it. The archive
-remains only because historical portfolio records refer to it. Do not build new
-jobs from those templates.
+`legacy-slot-scheduling/` holds a previous frozen-slot model. The continuous
+queue replaced it: work now proceeds up to the caller-declared closed-item
+budget until the queue empties or a boundary blocks it. The archive remains only
+for historical reference. Do not build new jobs from those templates.

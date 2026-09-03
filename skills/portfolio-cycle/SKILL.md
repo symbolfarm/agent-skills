@@ -11,7 +11,7 @@ description: >-
 license: MIT
 metadata:
   author: Symbol Farm
-  version: "9"
+  version: "10"
   category: productivity
   tags: portfolio, review, goals, planning, multi-project
 ---
@@ -25,8 +25,8 @@ particular agent runtime.
 > **Portfolio location.** These skills assume one repository holding `GOALS.md`,
 > `PROJECTS.json`, `CALIBRATION.md` and `log/`. It may also keep an `OWNER.md`
 > for standing prose and context, but executable user work belongs in the merged
-> item queue rather than a second checklist. Point the skills at
-> wherever yours lives; the reference deployment uses `/workspace/portfolio`.
+> item queue rather than a second checklist. Point the skills at the configured
+> `<portfolio-path>`; no particular filesystem location is required.
 
 `portfolio-brief` reports between sessions. `work-cycle` executes. This skill is
 where the user and the agent decide what should happen.

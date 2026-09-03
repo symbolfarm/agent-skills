@@ -11,7 +11,7 @@ description: >-
   proposes; it does not execute, file, or approve.
 metadata:
   author: symbolfarm
-  version: "10"
+  version: "11"
   status: draft
   supersedes: portfolio-review-gate
 ---
@@ -114,8 +114,8 @@ intent is the user's.
 ## Evidence
 
 Portfolio repository: the repo holding `GOALS.md`, `PROJECTS.json`,
-`CALIBRATION.md` and `log/`. The reference deployment keeps it at
-`/workspace/portfolio`; point the skill at wherever yours lives.
+`CALIBRATION.md` and `log/`. Point the skill at the deployment's configured
+`<portfolio-path>`; no particular filesystem location is required.
 
 Read, in this order:
 
@@ -407,7 +407,7 @@ Done: G-012 — stable manifest identity
 Queue:
 1. G-014 — finish export path · agent · ready
 2. G-002 — puzzle-site closeout · agent · blocked: pusher off
-3. G-018 — enable host pusher · Toby · requires computer; gates G-002
+3. G-018 — enable host pusher · owner · requires computer; gates G-002
 4. G-021 — compare import formats · agent · gated by G-014
 5. G-024 — visual review · agent · skipped: needs Chrome
 
@@ -428,8 +428,9 @@ Rules:
   position six or seven only when doing so reaches the selected goal; otherwise
   stop at five and show the selection separately.
 - Format every queue row as `<position>. <ID> — <plain-language gist> ·
-  <owner> · <state/reason>`. Use `Toby` rather than generic `human`.
-- Use a compact state vocabulary: `ready`, `claimed`, `Toby · requires
+  <owner> · <state/reason>`. Use the configured owner's display name rather
+  than generic `human`.
+- Use a compact state vocabulary: `ready`, `claimed`, `<owner> · requires
   computer`, `skipped: needs <capability>`, `gated by <ID>`, and `blocked:
   <reason>`. Do not invent a status when the evidence does not establish one.
 - Completed work stays in `Done`, not in `Queue`. The queue means executable or
