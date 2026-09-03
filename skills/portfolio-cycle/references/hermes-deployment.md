@@ -110,10 +110,12 @@ Prompt:
 
 ```text
 Run portfolio-brief against /workspace/portfolio. Reconcile repository evidence
-and the most recent portfolio-work-cycle-morning status into one concise brief.
-Deliver the normal brief even when little moved. Condense anything needing the owner
-rather than emitting separate routine executor notifications. Do not execute a
-goal, re-order the queue, approve a proposal, or change scheduled jobs.
+and the most recent portfolio-work-cycle-morning status into the recurring queue
+window: recent completions, the first five open goals with owner and routing
+state, the actual executor-selected next goal, anomalies, and up to two
+non-duplicated user items outside the window. Deliver it even when little moved.
+Do not execute a goal, re-order the queue, approve a proposal, or change
+scheduled jobs.
 ```
 
 `attach_to_session` makes the delivered brief continuable: a reply can

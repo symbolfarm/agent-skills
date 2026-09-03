@@ -11,7 +11,7 @@ description: >-
   proposes; it does not execute, file, or approve.
 metadata:
   author: symbolfarm
-  version: "9"
+  version: "10"
   status: draft
   supersedes: portfolio-review-gate
 ---
@@ -41,7 +41,7 @@ set by how the skill was reached**, not by how much happened.
 
 | Form | When | Length |
 |---|---|---|
-| **Reminder** | the recurring scheduled delivery | 50–90 words, fixed skeleton |
+| **Reminder** | the recurring scheduled delivery | 110–180 words or roughly 10–14 short phone-readable lines |
 | **Full brief** | summoned from a reminder, invoked directly, or asked for in conversation | 100–260 words, the format below |
 
 The split exists because reading and replying cost differently. A user may read
@@ -58,7 +58,7 @@ well. The reminder is a shorter rendering, never a shallower one; a reminder
 assembled without the evidence pass is a guess with a timestamp on it.
 
 **Proposals, scoring, and recommendations belong to the full brief only.** When
-the queue is short, the reminder says so in its needs-you line and summons the
+the queue is short, the reminder says so after the queue window and summons the
 long form; it does not carry the proposal itself.
 
 This skill replaces `portfolio-review-gate`. The old skill was a gate: its
@@ -323,7 +323,7 @@ them out of. Silence means proceed.
 
 Ask a question **only** when something genuinely blocks — a decision in an `ask`
 class, an irreversible action, an empty queue, or a contradiction between the
-queue and the registry — or when routing the single selected user-assigned item
+queue and the registry — or when routing the highest-ranked user-assigned item
 that does not require a computer. A blocker question replaces the next-goal line.
 A user-item question may appear alongside the next-goal statement because the
 user and agent queues advance independently. In either case ask exactly one
@@ -335,22 +335,25 @@ any surrounding conversation starts.
 ## User-assigned items
 
 Filter the merged item view for `assignee: <user>`. Report the count, anything
-blocking, and the age of the oldest item — **and then put exactly one item
-forward.** Do not maintain a second checklist in prose.
+blocking, and the age of the oldest item. Put the top item forward in the full
+brief. In the recurring reminder, show up to two top-ranked user items that are
+not already visible in its queue window. Do not maintain a second checklist in
+prose.
 
 > *Yours: 4 open, 1 blocking. Oldest 12 days.*
 > *Today's one: the pusher is still off, which blocks G-002. The remaining step
 > is enabling the systemd unit on the host — about two minutes. Want it back on?*
 
 A count alone does not move this queue. It reports a number the user already
-feels bad about and asks nothing, so nothing happens. Summarising and asking for
-**one** decision is what turns the brief from a status line into something that
-can actually close an item.
+feels bad about and asks nothing, so nothing happens. The full brief still asks
+for at most one decision; the reminder's optional second row supplies context,
+not a second question.
 
 The rules that keep this a prod rather than a guilt-list:
 
-- **Exactly one item per brief. Never two.** This is the whole safeguard. The
-  moment the brief lists the backlog, it becomes an unread guilt-list.
+- **One actionable ask; at most two reminder rows.** The full brief puts one item
+  forward. The reminder may show a second top-ranked item when it is outside the
+  queue window, but asks at most one question. Never expand this into a backlog.
 - **A gated item is not eligible — filter before ranking.** The merged view
   marks an item whose gate is still open as `gated by <id> (open)`, derived from
   the `Blocks:` list of an item that has not landed. Never put such an item
@@ -358,7 +361,7 @@ The rules that keep this a prod rather than a guilt-list:
   line the credibility that is its entire value. Report it in the count and in
   the blocking summary; put the *gate* forward instead when the gate is itself
   the user's, and otherwise take the next eligible item. If every user item is
-  gated, the honest needs-you line is `nothing`.
+  gated, report that fact without pretending one is actionable.
 - **Rank, do not rotate.** Choose in this order: anything blocking a goal, then
   anything **decaying** — where waiting makes the item worse or the opportunity
   smaller — then the cheapest to close. Prefer one that can be answered in a
@@ -391,19 +394,28 @@ changed priority.
 
 ## The reminder
 
-The recurring form. Five short lines and a close:
+The recurring form is a compact **queue window**, not merely a conclusion. It
+shows enough raw order and routing state for the user to see why the selected
+goal is next. Prefer 110–180 words or roughly 10–14 short phone-readable lines;
+structure and scanability matter more than a rigid word count.
 
 ```text
-**Portfolio — Tue 5 Mar** · 1 done, 4 queued
+**Portfolio — Tue 5 Mar** · 1 done, 8 queued
 
-Done: G-012 manifest identity · G-013 export path
-In progress: G-014 · Blocked: G-002 (pusher off)
-Anomalies: 1 — tree-editor dirty since Mon, untracked scratch file
+Done: G-012 — stable manifest identity
 
-Needs you: 1 — enable the systemd unit on the host, ~2 min; unblocks G-002.
+Queue:
+1. G-014 — finish export path · agent · ready
+2. G-002 — puzzle-site closeout · agent · blocked: pusher off
+3. G-018 — enable host pusher · Toby · requires computer; gates G-002
+4. G-021 — compare import formats · agent · gated by G-014
+5. G-024 — visual review · agent · skipped: needs Chrome
 
-Next: G-014 — finish the export path. Reply `brief` for the full report, or
-`review` to open a session.
+Anomalies: 1 — tree-editor dirty since Mon; untracked scratch file
+Selected next: G-014 — finish the export path · agent · ready
+Yours: G-026 — approve release wording · phone-ready, ~2 min
+
+Reply freely, or ask for the full brief or review.
 — end —
 ```
 
@@ -412,39 +424,44 @@ Rules:
 - **Lead with the gap** when the lane has been silent since the last delivery,
   exactly as the full brief does. A reminder that reports a queue during an
   outage conceals the outage more cheaply, not less.
-- Name at most three goals per line; everything else is a count.
-- Omit any line with nothing in it. An absent `Blocked:` line means nothing is
-  blocked. Do not print empty lines to keep the shape.
+- Show the first five open goals in actual `GOALS.md` order. Continue through
+  position six or seven only when doing so reaches the selected goal; otherwise
+  stop at five and show the selection separately.
+- Format every queue row as `<position>. <ID> — <plain-language gist> ·
+  <owner> · <state/reason>`. Use `Toby` rather than generic `human`.
+- Use a compact state vocabulary: `ready`, `claimed`, `Toby · requires
+  computer`, `skipped: needs <capability>`, `gated by <ID>`, and `blocked:
+  <reason>`. Do not invent a status when the evidence does not establish one.
+- Completed work stays in `Done`, not in `Queue`. The queue means executable or
+  waiting open work; mixing completed items into it destroys that meaning.
+- Omit any section with nothing in it. Do not print empty lines merely to keep a
+  visual skeleton.
 - **Never carry a proposal, a recommendation, or a scored option.** If the queue
-  is short, that is a needs-you line pointing at the full brief.
+  is short, say so after the queue window and point at the full brief.
 - Close with the actual executor-selected next goal, its short plain-language
-  gist, and how to summon both longer forms. The user must never have to remember
-  an exact phrase — accept any plain request.
+  gist, owner, state/reason, and how to summon both longer forms. If the selected
+  goal is outside the queue window, say briefly why: capability skip, gate, user
+  assignment, or lane-role routing. The user must never have to remember an
+  exact phrase — accept any plain request.
 
-### The needs-you line
+### Yours rows
 
-The reminder's whole job is that **"nothing needs you" and "one thing does" are
-distinguishable without opening anything else.** So the line is always present,
-always in the same place, and is one of exactly two shapes:
+After the selected-next line, show up to two highest-ranked user items that did
+not already appear in the queue window. Suppress duplicates; if a top user item
+is already visible, the queue row has done the job.
 
-```text
-Needs you: nothing.
-Needs you: 1 — <smallest next action>, <honest size>; <what it unblocks>.
-```
-
-- **Never more than one.** Rank exactly as **User-assigned items** below
-  specifies — drop anything the merged view marks `gated by <id> (open)`, then
-  blocking first, then decaying, then cheapest — and put one forward. A reminder
-  that lists a backlog is a guilt-list nobody opens, and one that offers an item
-  the user cannot start stops being believed at all.
-- **Say `nothing` when it is true, and mean it.** The value of the line is
-  destroyed by hedging: "nothing urgent, but when you get a chance…" is not
-  `nothing`, and after two of those the line stops being read.
-- It is **not** `nothing` when any of these is waiting: a decision in an `ask`
-  class, an irreversible action, a contradiction between queue and registry, an
-  empty or nearly empty queue, or an anomaly item whose residue is the user's.
-- The action, not the title. "Enable the systemd unit, ~2 min" is a decision the
-  user can make in one reply; "the pusher rollout" is a project they cannot.
+- Rank as **User-assigned items** specifies: filter gated items first, then
+  blocking, decaying, and cheapest. An item that gates more work outranks one
+  that gates less.
+- Include `Requires: computer` honestly. The reminder is an orientation surface,
+  not only a phone-action surface; an item can be worth seeing while currently
+  impossible to perform.
+- Give the short outcome gist and smallest next action. Include an honest size
+  only when evidence supports one.
+- Ask at most one question across the entire reminder. A second Yours row is
+  context, never a second demand.
+- If no actionable user item exists outside the queue window, omit `Yours`
+  rather than padding the reminder with `nothing`.
 
 ## Anomaly items
 
@@ -462,8 +479,8 @@ a healthy backlog.
 - Give the count, the repository, and how long it has stood.
 - **An anomaly standing for more than one run is the story, not the backlog.**
   Repetition here means the lane is losing the same items every run.
-- If the residue is the user's to rule on, it is a candidate for the needs-you
-  line and usually outranks anything else, because it is blocking by
+- If the residue is the user's to rule on, it is a candidate for the first
+  `Yours` row and usually outranks anything else, because it is blocking by
   construction.
 - The brief does not clear it, and does not guess what an untracked file was
   for. Report the fact; the user supplies the cause.
@@ -526,22 +543,27 @@ Rules:
    puts the user back in the loop the system exists to keep them out of.
 9. **Fixed UTC for a local-time promise.** Use the configured IANA timezone so
    daylight saving is handled.
-10. **Hedging the needs-you line.** "Nothing urgent, but…" is not `nothing`; it
-    trains the user to stop reading the one line the reminder exists for.
+10. **Showing a queue without reasons.** IDs and titles alone still conceal why
+    work is skipped, gated, or selected out of raw order.
 11. **Sending a long report on the recurring schedule.** The reminder is the
     recurring form. The full brief is summoned.
 12. **Counting an anomaly item as a goal.** It makes a lane that is skipping
     items look like a lane with work queued.
 13. **Putting a gated item forward.** An item the merged view marks `gated by
-    <id> (open)` cannot be started, so offering it is the fastest way to make
-    the needs-you line unbelievable.
+    <id> (open)` cannot be started, so offering it as a `Yours` action is the
+    fastest way to make the reminder unbelievable.
 
 ## Before sending
 
 - [ ] The form matches how the skill was reached: reminder when recurring, full
       brief when summoned or asked for.
-- [ ] The reminder carries a needs-you line, in one of its two shapes, with at
-      most one item.
+- [ ] The reminder contains the first five open queue rows, or continues only to
+      a nearby selected goal at position six or seven.
+- [ ] Every queue row has position, ID, gist, owner, and evidence-backed
+      state/reason.
+- [ ] Completed goals are outside the queue window.
+- [ ] Up to two non-duplicated `Yours` rows appear only when their items are not
+      already visible; at most one question is asked.
 - [ ] The item put forward is not marked `gated by <id> (open)` in the merged
       view.
 - [ ] Anomaly items are reported on their own line and excluded from the goal
