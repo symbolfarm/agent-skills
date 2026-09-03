@@ -11,7 +11,7 @@ description: >-
 license: MIT
 metadata:
   author: Symbol Farm
-  version: "10"
+  version: "11"
   category: productivity
   tags: portfolio, review, goals, planning, multi-project
 ---
@@ -172,6 +172,22 @@ Instead: talk it through, record the shape in a design note, and file goals only
 once the parts that would change the work are settled. A project can sit
 `active` with an empty `agent_may` and no goals for as long as this takes. That
 is a legitimate state, not a stalled one.
+
+When the uncertainty is whether an old or busy repository still advances its
+purpose, load
+[`references/strategic-review-and-project-archaeology.md`](references/strategic-review-and-project-archaeology.md).
+Audit strategic progress before modernising dependencies or reviving a parked
+project.
+
+### Recovering a missing decision context
+
+If a short reply approves "the recommendation" but the recommendation itself is
+missing after a session reset, do not reconstruct exact goals from repository
+clues. Inspect the original conversation source or session history when
+available; otherwise ask only for the missing recommendation block. Record broad
+approval as direction, not as invented goal wording. Once the original proposal
+is recovered, file approved outcomes in dependency order and let later evidence
+change one only when it materially alters the outcome.
 
 ---
 
@@ -375,6 +391,12 @@ Scheduling and delivery are runtime-specific and live in
 [`references/hermes-deployment.md`](references/hermes-deployment.md). Nothing in
 this skill requires them. A session with no scheduler at all is fully
 functional — the queue is worked interactively or by whoever picks it up.
+
+When choosing between one serial worker, per-project workers, or bounded parallel
+slots, load
+[`references/executor-topology-decisions.md`](references/executor-topology-decisions.md).
+Topology and lane allocation are strategy decisions made here; `work-cycle`
+executes the resulting explicit contract.
 
 Concurrency rules are in the portfolio repository's `LOCKING.md`: claim the goal,
 then take the repo lock, then edit. The clean-worktree check is a safety check,

@@ -9,7 +9,7 @@ description: >-
 license: MIT
 metadata:
   author: Symbol Farm
-  version: "6"
+  version: "7"
   category: productivity
   tags: portfolio, goals, tasks, execution, work-cycle
 ---
@@ -58,9 +58,13 @@ Read, before changing anything:
 4. `LOCKING.md`;
 5. the selected project's `TASKS.md`, `AGENTS.md`, or `CLAUDE.md`, when present.
 
-The portfolio queue is the sole source of goal priority. Position is priority.
-Do not re-rank, substitute unrelated work, or enter a project not named by the
-selected goal.
+The portfolio queue is the sole source of **strategic priority**. Position is
+priority. A caller may supply an explicit lane allocation or ordered eligibility
+pass—for example, product goals first with research as fallback. That is routing,
+not a second strategic rank: state it explicitly and preserve queue order within
+each eligible set. With no caller allocation, scan the canonical queue directly.
+Do not invent a lane policy, substitute unrelated work, or enter a project not
+named by the selected goal.
 
 ### Repository-only mode
 
@@ -89,7 +93,7 @@ skips only that repository's items — see **Repository availability** below.
 
 ### Selecting a goal
 
-Take the highest-priority eligible goal:
+Take the highest-priority eligible goal under the explicit selection contract:
 
 1. A claim by this agent with resumable progress comes first; reacquire the lock
    and resume rather than skipping to new work.
@@ -104,8 +108,10 @@ Anything in a `strict`-tier project stops for review—no provisional defaults.
 A goal's explicit `Requires` overrides the project's default requirements,
 including with an empty value. Verify each declared capability before claiming.
 If one is absent, skip the goal without moving or blocking it, and report the
-missing capability. Capability and repository-availability skips are the only
-exceptions to queue order. Difficulty, length, and preference are never skips.
+missing capability. Explicit caller allocation, capability, assignee/gate state,
+claims, and repository availability are the only reasons selection may differ
+from the raw queue head. Difficulty, length, and undeclared preference are never
+skips.
 
 Items with `assignee: <person>` are not agent work. `Requires: computer` means
 raise the item in the interactive review; without it, the recurring brief may
@@ -164,6 +170,13 @@ From `.tasks/LOG.jsonl`, take the first eligible entry whose status is `pending`
 whose `blocked_by` entries are resolved, and whose assignee permits this agent.
 Read the referenced task file before marking it in progress. If the caller names
 a task, verify those same gates rather than silently taking a different one.
+
+`LOG.jsonl` is a current queue encoded as one JSON object per line, not an
+append-only event stream. Keep exactly one record per task ID: append it when the
+task is filed, then update that record in place for `in_progress`, `completed`,
+or `superseded`. Git history, work commits, and debriefs are the immutable audit
+trail. Task order in the file is selection order; do not add a competing
+high/medium/low priority field.
 
 If task files and the log may have drifted, verify both directions:
 
@@ -256,6 +269,12 @@ scope.
 Follow the repository's conventions and the selected item's contract. Optional
 `Implementation opinions` on a goal are instructions, not mere context. In
 their absence, file and implement tasks freely within the outcome.
+
+Implementation opinions constrain this one outcome—for example, a required
+interface or an approach the user does not want. They do not set how a class of
+decision is handled. `CALIBRATION.md` governs decision classes everywhere, so do
+not encode per-goal `ask`, `report`, or `auto` involvement levels in an
+implementation-opinions line.
 
 Run the relevant tests and exercise the artifact. A successful write or command
 is not completion: inspect the changed target, test the user-visible path, and

@@ -11,7 +11,7 @@ description: >-
   proposes; it does not execute, file, or approve.
 metadata:
   author: symbolfarm
-  version: "11"
+  version: "12"
   status: draft
   supersedes: portfolio-review-gate
 ---
@@ -311,10 +311,11 @@ to understand the intended outcome without opening `GOALS.md`. `Next: G-027`
 is invalid; `Next: G-027 — compare frozen-base parameter additions` is useful.
 
 The named goal must be the goal the deployed executor would actually select,
-not merely the first agent-assigned row in the raw queue. Apply its documented
-capabilities and lane-role selection policy, preserving queue order within that
-policy. If this differs from the first raw queue entry in a surprising way,
-name the reason briefly rather than concealing a routing mismatch.
+not merely the first agent-assigned row in the raw queue. Apply its explicit
+lane allocation, capabilities, gates, assignees, claims, and repository
+availability, preserving queue order within each eligible set. Lane allocation
+is routing, not a second strategic priority. If selection differs from the first
+raw queue entry, name the decisive reason rather than concealing the mismatch.
 
 Not *"shall I take G-002?"*. The execution model already proceeds on reversible
 work without waiting for permission; a brief that asks permission to continue
@@ -442,8 +443,8 @@ Rules:
 - Close with the actual executor-selected next goal, its short plain-language
   gist, owner, state/reason, and how to summon both longer forms. If the selected
   goal is outside the queue window, say briefly why: capability skip, gate, user
-  assignment, or lane-role routing. The user must never have to remember an
-  exact phrase — accept any plain request.
+  assignment, or explicit lane allocation. The user must never have to remember
+  an exact phrase — accept any plain request.
 
 ### Yours rows
 
@@ -582,7 +583,7 @@ Rules:
 - [ ] Where something is runnable or readable, the way in is included.
 - [ ] The brief closes by stating the next goal, not by asking for one.
 - [ ] The next-goal line includes a plain-language gist and matches the deployed
-      executor's capability and lane-role selection policy.
+      executor's explicit lane allocation and capability policy.
 - [ ] A question appears only for a genuine blocker or the one routed
       user-assigned item.
 - [ ] The end of the brief is plainly marked.

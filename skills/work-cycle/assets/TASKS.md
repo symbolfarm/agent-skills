@@ -8,7 +8,7 @@
 
 ## Current focus
 
-<!-- Update this section manually to reflect the current sprint or priority. -->
+<!-- Update this section manually to reflect the current outcome or context. -->
 
 See `.tasks/LOG.jsonl` for the full queue. Incomplete tasks have a
 corresponding file in `.tasks/`.
@@ -17,7 +17,7 @@ corresponding file in `.tasks/`.
 
 ```
 .tasks/
-├── LOG.jsonl              # Append-only audit log of all tasks
+├── LOG.jsonl              # One current lifecycle record per task
 ├── debriefs/              # One debrief file per completed task
 │   └── task-001-....md
 ├── task-002-....md        # Pending/active task files (deleted on completion)

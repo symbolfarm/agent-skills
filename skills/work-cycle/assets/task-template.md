@@ -1,6 +1,5 @@
 # [task-id] Title
 
-**Priority:** high / medium / low
 **Blocked by:** task-xxx, task-yyy (or "nothing")
 **Depends-on (external):** sibling-repo PROJ-N (omit line if none — see SKILL.md "Multi-project workspaces")
 **Touches:** `path/or/glob`, `path/or/glob` (or `unknown`)

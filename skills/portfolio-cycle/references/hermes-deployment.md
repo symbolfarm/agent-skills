@@ -79,10 +79,11 @@ not push; the deployment's publication mechanism owns automatic pushes. Routine
 results remain local for the later portfolio brief.
 ```
 
-The worker is deterministic at the portfolio level: lane-role selection, then
-queue order, with the budget counted only at durable lifecycle boundaries. The
-selected project still controls implementation via its own `AGENTS.md`,
-`CLAUDE.md`, tests, and repository state.
+The worker is deterministic at the portfolio level: explicit lane allocation,
+then queue order within each eligible set, with the budget counted only at
+durable lifecycle boundaries. Without a declared allocation it follows the raw
+queue. The selected project still controls implementation via its own
+`AGENTS.md`, `CLAUDE.md`, tests, and repository state.
 
 A local delivery is deliberate. Routine completion, partial progress, and
 ordinary blockers wait for the brief rather than interrupting the owner at
@@ -127,6 +128,25 @@ supported locked API or CLI rather than editing scheduler storage directly. Do
 not enable a global continuation setting merely to work around one brief job;
 that changes behaviour for unrelated deliveries.
 
+### Diagnose continuation by layer
+
+A delivered brief and a continuable reply require three separate facts:
+
+1. **Delivery:** the platform received the message.
+2. **Attachment:** the stored job is continuable and the labelled cron turn was
+   written into the intended chat transcript.
+3. **Routing:** the chat routes to an active canonical session rather than stale
+   session metadata.
+
+Verify them in that order. Compare the attached session's canonical end state
+with the gateway's routing entry, and corroborate daemon warnings against live
+process or inbound-message evidence. Configuration-file state and the state
+loaded by a long-running gateway are also distinct. Apply lifecycle changes and
+gateway restarts only through a supported external mechanism; a worker inside
+the gateway must not restart its own parent. After repair, send a clearly
+labelled test brief and reply to it—successful delivery alone is not a
+continuation test.
+
 The `cronjob` toolset is read-only by policy in this job. It exists so the brief
 can inspect whether the morning executor ran or failed. The prompt and
 `portfolio-brief` authority explicitly prohibit scheduler mutation.
@@ -141,6 +161,11 @@ When using the tool, set the complete prompt, schedule, skill list, delivery,
 toolsets, workdir, and continuation flag explicitly. Cron runs in a fresh
 session, so the prompt must be self-contained, but workflow policy should remain
 in the attached skill rather than being copied into a long scheduler prompt.
+
+Do not infer that a capability is absent from the deployment merely because the
+scheduled worker lacks a CLI. An interactive session with the `cronjob` tool and
+a reachable gateway may be the administrative lane. Probe the current tool
+before filing a user blocker, then record the narrower capability boundary.
 
 ## Verification
 
@@ -163,6 +188,38 @@ manufacture activity.
 For the brief, verify both delivery and continuation by replying to the test
 delivery. A manual test should be clearly labelled as a test so it cannot be
 mistaken for a scheduled brief.
+
+### Prove workflow migrations with pipecleaners
+
+Configuration that looks plausible is not a completed migration. For each
+distinct operating mode, use a disposable repository or sentinel item when
+production work would otherwise be consumed. Verify from durable evidence:
+
+- exact sentinel bytes or artifact behaviour;
+- verifier/test exit status;
+- task or goal transitions and separate commits;
+- debrief or portfolio log;
+- clean worktrees and lock release;
+- persisted job configuration and stored run output.
+
+Remove disposable jobs and repositories only after inspecting those outputs.
+Read the production job back, but do not fire it merely to prove a migration if
+that would consume real queued work.
+
+### Observe the first real runs
+
+After two or three real invocations, reconcile the causal chain rather than
+trusting a successful scheduler status or polished brief: scheduler record,
+claim, lock lifecycle, project commit and objective checks, portfolio close-out,
+publication evidence where applicable, and the brief's resulting claims. Check
+ordering failures as well as missing artifacts. In particular, do not remove a
+project's publish eligibility while required commits are still ahead of the
+remote. Treat remote parity, deployment health, and browser-visible behaviour as
+separate claims.
+
+Calibrate frequency from completed outcomes, including partial and no-op runs,
+not from configured schedule capacity. Define how a released partial lock is
+reacquired so the next worker resumes the existing claim before later work.
 
 ## Host-side pusher
 

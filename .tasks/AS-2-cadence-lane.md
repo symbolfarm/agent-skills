@@ -1,6 +1,6 @@
 # AS-2: Give the skills a cadence lane
 
-**Status:** pending · **Priority:** medium · **Blocked by:** none
+**Status:** pending · **Blocked by:** none
 **Touches:** `skills/work-cycle/SKILL.md`, `skills/portfolio-cycle/SKILL.md`
 
 ## Why
