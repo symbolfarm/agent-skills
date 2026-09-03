@@ -17,7 +17,10 @@ that suits when the owner actually reads it.
 Use two recurring jobs and one priority source:
 
 1. **Serial executor** — one `work-cycle` invocation at 07:30 local time. It
-   takes at most one goal from `GOALS.md` and leaves routine output local.
+   uses a caller-declared budget measured only in fully closed goals and leaves
+   routine output local. The reference portfolio's Hermes lane prefers product
+   goals, falling back to eligible research or substrate work rather than
+   idling; deployments without lane roles may simply follow queue order.
 2. **Continuable brief** — one `portfolio-brief` invocation at 12:20 local
    time, delivered to a chat channel shortly before a natural break in the
    owner's day. It condenses the morning result, decisions, runway, and anything
@@ -67,18 +70,20 @@ attach_to_session: false
 Prompt:
 
 ```text
-Run one work-cycle against /workspace/portfolio. Execute at most one goal. The
-queue is the sole priority source: do not create replacement work, re-rank it,
-or enter a project not named by the selected goal. Commit project and portfolio
-changes, but do not push; the host-side pusher owns automatic pushes. Routine
-results remain local for the 12:20 portfolio brief. Record partial work,
-blockers, failures, and ask-class decisions in the portfolio log so the brief
-can condense them. Never interact with an unrelated dirty or locked repository.
+Run work-cycle against /workspace/portfolio under a caller-declared budget of
+fully closed goals. Apply the deployed lane role before falling back to general
+queue work, preserve queue order within each selection pass, and never create
+replacement work. Count an item only after project work, lifecycle state, log,
+portfolio commit, and clean-worktree verification are complete. Stop rather
+than selecting another item when close-out is incomplete. Commit project and
+portfolio changes, but do not push; the host-side pusher owns automatic pushes.
+Routine results remain local for the 12:20 portfolio brief.
 ```
 
-The worker is deterministic at the portfolio level: highest-priority eligible
-goal, one goal, one run. The selected project still controls implementation via
-its own `AGENTS.md`, `CLAUDE.md`, tests, and repository state.
+The worker is deterministic at the portfolio level: lane-role selection, then
+queue order, with the budget counted only at durable lifecycle boundaries. The
+selected project still controls implementation via its own `AGENTS.md`,
+`CLAUDE.md`, tests, and repository state.
 
 A local delivery is deliberate. Routine completion, partial progress, and
 ordinary blockers wait for the brief rather than interrupting the owner at

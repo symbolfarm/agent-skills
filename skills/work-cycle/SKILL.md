@@ -9,7 +9,7 @@ description: >-
 license: MIT
 metadata:
   author: Symbol Farm
-  version: "5"
+  version: "6"
   category: productivity
   tags: portfolio, goals, tasks, execution, work-cycle
 ---
@@ -313,6 +313,12 @@ defines the artifact; this skill closes execution back into it.
    record, project commit SHAs, and a `Try it` command/path/link.
 3. Append the portfolio log entry described below.
 4. Commit portfolio changes separately from project work.
+5. Re-read the goal from `GOALS.md` and confirm it is no longer executable queue
+   work; then verify the portfolio worktree is clean. A project commit plus an
+   uncommitted portfolio close-out is **not** a completed goal.
+6. When the caller supplied a multi-item budget, decrement that budget only
+   after steps 1–5 pass. If the lifecycle record or portfolio commit is missing,
+   stop the run without selecting another item.
 
 If completion archives the project, clears `agent_may`, or otherwise removes
 push authority, first verify the project branch is at remote parity. If commits
@@ -374,6 +380,17 @@ the lock, and commit. If the remainder needs the user, demote it instead.
 Stop rather than expanding silently when the item is much larger than one run,
 its contract is genuinely ambiguous, an ask/irreversible decision is required,
 or the queue and registry disagree.
+
+### Run exit gate
+
+Before returning from any portfolio-mode run — including budget exhaustion,
+fallback wind-down, blocking, partial work, and tool/context pressure — verify
+that every item touched in the run has one durable terminal state: completed,
+visibly blocked, explicitly resumable with `Progress`, or released as a no-op.
+For every completed goal, verify the project commit, portfolio log entry,
+`GOALS.md` lifecycle move, and separate portfolio commit all exist, and verify
+the affected worktrees are clean. If they do not, finish that close-out before
+writing the final response; never report the residue as a later brief's problem.
 
 ## 8. Portfolio log and handoff
 
@@ -453,3 +470,5 @@ cross-session Git record. They complement one another.
       debrief and JSONL update.
 - [ ] Project and portfolio changes are separate commits.
 - [ ] The item is complete, explicitly resumable, superseded, or visibly blocked.
+- [ ] Run exit gate passed: every touched item's lifecycle is durable and each
+      affected worktree was rechecked clean.
