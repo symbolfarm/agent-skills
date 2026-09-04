@@ -9,7 +9,7 @@ description: >-
 license: MIT
 metadata:
   author: Symbol Farm
-  version: "8"
+  version: "9"
   category: productivity
   tags: portfolio, goals, tasks, execution, work-cycle
 ---
@@ -418,6 +418,25 @@ For every completed goal, verify the project commit, portfolio log entry,
 the affected worktrees are clean. If they do not, finish that close-out before
 writing the final response; never report the residue as a later brief's problem.
 
+**Make this an assertion, not a remembered checklist item.** Resolve
+`scripts/lifecycle_guard.py` relative to this skill's directory and run it over
+every item touched in the run immediately before returning:
+
+```bash
+python3 <work-cycle-skill>/scripts/lifecycle_guard.py goal-exit \
+  <portfolio>/GOALS.md G-002 G-014
+python3 <work-cycle-skill>/scripts/lifecycle_guard.py task-exit \
+  <repository>/.tasks/LOG.jsonl EX-4
+```
+
+Use the goal command for portfolio goals and the task command for repository
+tasks; split calls by owning ledger. A non-zero exit is a **refusal to end the
+run**: it names each goal still carrying an unmatched claim without a
+`Progress` record, or each task still `in_progress`. Finish the lifecycle
+close-out and rerun the guard. A goal in `Completed` or `Blocked`, a claimed goal
+with explicit `Progress`, and a task in a terminal state pass. The guard never
+releases or rewrites a claim.
+
 ## 8. Portfolio log and handoff
 
 For a portfolio goal, append to `log/YYYY-MM-DD.md`:
@@ -501,4 +520,5 @@ cross-session Git record. They complement one another.
 - [ ] Project and portfolio changes are separate commits.
 - [ ] The item is complete, explicitly resumable, superseded, or visibly blocked.
 - [ ] Run exit gate passed: every touched item's lifecycle is durable and each
-      affected worktree was rechecked clean.
+      affected worktree was rechecked clean; `lifecycle_guard.py` passed for
+      every touched goal and task.

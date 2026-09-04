@@ -11,7 +11,7 @@ description: >-
   proposes; it does not execute, file, or approve.
 metadata:
   author: symbolfarm
-  version: "13"
+  version: "14"
   status: draft
   supersedes: portfolio-review-gate
 ---
@@ -158,7 +158,21 @@ So compute the gap from evidence, not from assumption:
   portfolio repository;
 - the most recent successful scheduled run of any kind;
 - whether the host pusher's latest `log/.pusher-*.md` records a refusal, and for
-  how many consecutive runs.
+  how many consecutive runs;
+- unmatched claims older than the deployed lane's wind-down interval. Resolve
+  `scripts/lifecycle_guard.py` from the installed `work-cycle` skill and run:
+
+  ```bash
+  python3 <work-cycle-skill>/scripts/lifecycle_guard.py stale-claims \
+    <portfolio>/GOALS.md --older-than-minutes <lane-wind-down-minutes>
+  ```
+
+  Use the actual deployed wind-down interval, not a guessed universal default.
+  A non-zero result is reportable evidence, not a brief failure: name the stale
+  goal and claimant in the gap line. The detector reports only unmatched claims
+  still in the executable queue; a matched completion/block and a fresh claim
+  are controls, not incidents. **Never auto-release a stale claim.** Rebuilding
+  or resuming abandoned work is a judgement for the next operator or the user.
 
 If runs are landing normally, say nothing — this must not become a line of
 boilerplate on every healthy day. If there is a gap, open with it:
@@ -572,7 +586,8 @@ Rules:
 - [ ] Anomaly items are reported on their own line and excluded from the goal
       count.
 - [ ] The gap since the last successful run was checked, and led the brief if
-      there was one.
+      there was one; the stale-claim detector was run with the deployed lane's
+      wind-down interval.
 - [ ] Nothing was edited outside the portfolio `log/` entry.
 - [ ] Every completion claim is backed by checked evidence.
 - [ ] Decisions are reported at the level `CALIBRATION.md` specifies.
