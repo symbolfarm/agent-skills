@@ -73,6 +73,13 @@ def parse_goals(path: Path) -> dict[str, Goal]:
 
 def goal_exit(path: Path, identifiers: list[str]) -> int:
     goals = parse_goals(path)
+    # Portfolios may keep open work in GOALS.md and move terminal records to a
+    # sibling COMPLETED.md. Treat that pair as one lifecycle ledger so a cleanly
+    # archived goal does not look missing at run exit.
+    closed_path = path.with_name("COMPLETED.md")
+    if closed_path.exists() and closed_path != path:
+        for identifier, goal in parse_goals(closed_path).items():
+            goals.setdefault(identifier, goal)
     failures: list[str] = []
     for identifier in identifiers:
         goal = goals.get(identifier)
