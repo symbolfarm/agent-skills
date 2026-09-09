@@ -130,7 +130,7 @@ reader can skip is worth more than a page that assumes they will not need it.
 
 ### Never request ratification
 
-An digest states what was found and what it might mean. It does not ask the
+A digest states what was found and what it might mean. It does not ask the
 reader to confirm a belief, approve a reading, or sign off on a direction. If a
 decision genuinely needs the reader, name the decision plainly at the end and
 leave it open — do not shape the whole page as a case for one answer.
@@ -168,7 +168,7 @@ Near the title, state:
 - any standing review caveat that applies.
 
 **Dated, not maintained.** A reference doc describes the current interface and is
-edited in place. An digest records what was understood on a day; when it goes
+edited in place. A digest records what was understood on a day; when it goes
 out of date, publish a new one and mark the old superseded. Editing a digest
 until it agrees with the present destroys the record of what was believed when.
 

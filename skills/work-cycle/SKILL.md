@@ -146,8 +146,15 @@ view and `portfolio-brief`.)
 
 A repository is available when its worktree is clean and no other agent holds a
 live `.tasks/.lock`. Check the item's repository before claiming it;
-`scripts/repo_availability.py` in this repository reports one repository's state,
-and its `first_available` applies the rule to a queue in order.
+`repo_availability.py` reports one repository's state, and its `first_available`
+applies the rule to a queue in order. It lives in the **skills repository root**,
+not in this skill's own `scripts/`, so resolve it two levels above this skill's
+directory:
+
+```bash
+python3 <work-cycle-skill>/../../scripts/repo_availability.py <repo> [<repo> ...] \
+    --holder <agent>
+```
 
 **An unavailable repository costs its own items, never the run.** Skip every item
 belonging to it — without claiming, moving, or blocking those items — continue
