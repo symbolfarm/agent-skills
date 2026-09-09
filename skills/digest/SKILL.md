@@ -1,24 +1,24 @@
 ---
-name: explainer
+name: digest
 description: >-
-  Produce the explainer a finished piece of work owes its reader: one dated page,
+  Produce the digest a finished goal owes its reader: one dated page,
   Markdown or HTML, that carries the outcome first and descends to the mechanism
   and the implementation detail only as far as the reader needs. Use at the
-  close-out of a task or goal that changed what someone can do or should believe,
-  when asked to explain a result, a design, or a system, and whenever a reader has
-  said they cannot judge the work from what they were given. Produces a transfer
-  artifact; it does not request approval, and it does not replace maintained
-  reference documentation.
+  close-out of a goal that changed what someone can do or should believe, for a
+  standalone task or one whose digest was requested, when asked to explain a
+  result, a design, or a system, and whenever a reader has said they cannot judge
+  the work from what they were given. Produces a transfer artifact; it does not
+  request approval, and it does not replace maintained reference documentation.
 license: MIT
 metadata:
   author: symbolfarm
   version: "1"
   status: draft
   category: communication
-  tags: explainer, transfer, close-out, documentation, visualisation
+  tags: digest, transfer, close-out, documentation, visualisation
 ---
 
-# Explainer
+# Digest
 
 Execution produces an artifact. This skill produces the **transfer** — the thing
 that moves an outcome from the agent that built it into the head of the person
@@ -33,16 +33,33 @@ page whose first screen carries the outcome, whose middle carries the mechanism,
 and whose end carries the implementation detail — so a reader who only needs the
 outcome stops early and a reader who needs to reproduce it keeps going.
 
+**The goal bears the digest.** A goal decomposing into several tasks produces one
+digest at the goal's close, not one per task. A task produces a digest only when
+it is standalone — not part of any goal — or when one was explicitly requested.
+Per-task digests across a busy repository train the reader to skim, and the next
+one that matters gets skimmed too.
+
+> **Substrate: unresolved, and this skill does not yet answer it.**
+> How a Markdown source becomes a viewable page with working inline SVG and
+> copied assets is a real decision with real candidates (a small standard-library
+> builder, a static-site generator, a document converter), and this skill stays
+> `status: draft` until it names one. Do not read the absence as permission to
+> hand-author one-off HTML at every close-out: that is the least reproducible
+> option and an unattended run cannot repeat it. Until the substrate is settled,
+> follow whatever the calling project already uses, and say in the page which
+> route was taken.
+
 ---
 
-## 1. Decide whether this item owes an explainer
+## 1. Decide whether this item owes a digest
 
-It does when the work **changed what someone can do, or what they should
-believe**: a result, a design decision, a new capability, a negative finding, a
-system whose shape a reader must hold.
+Apply this at a **goal's** close-out, or a standalone or explicitly-requested
+task's. It is owed when the work **changed what someone can do, or what they
+should believe**: a result, a design decision, a new capability, a negative
+finding, a system whose shape a reader must hold.
 
 It does not for chores, dependency bumps, formatting passes, or a refactor with
-no behavioural consequence. Manufacturing an explainer for those trains the
+no behavioural consequence. Manufacturing a digest for those trains the
 reader to skim, and the next one that matters gets skimmed too.
 
 When in doubt, ask: *could the reader make a different decision after reading
@@ -113,14 +130,14 @@ reader can skip is worth more than a page that assumes they will not need it.
 
 ### Never request ratification
 
-An explainer states what was found and what it might mean. It does not ask the
+An digest states what was found and what it might mean. It does not ask the
 reader to confirm a belief, approve a reading, or sign off on a direction. If a
 decision genuinely needs the reader, name the decision plainly at the end and
 leave it open — do not shape the whole page as a case for one answer.
 
 ## 5. Draw the mechanism
 
-A finished explainer normally carries at least one diagram, because the mechanism
+A finished digest normally carries at least one diagram, because the mechanism
 is the part prose conveys worst.
 
 Draw the thing the argument turns on: the path data takes, the boundary being
@@ -136,6 +153,11 @@ reader's trust in the ones that are load-bearing.
 
 ## 6. Declare the page
 
+**Where the calling project publishes a page-format convention, that convention
+owns this section and this skill defers to it.** Restating a format contract in
+two maintained documents guarantees they drift. The list below is the minimum for
+a project that has no such convention.
+
 Near the title, state:
 
 - **Layer** — one immutable run, a current synthesis, or the altitude view;
@@ -146,8 +168,8 @@ Near the title, state:
 - any standing review caveat that applies.
 
 **Dated, not maintained.** A reference doc describes the current interface and is
-edited in place. An explainer records what was understood on a day; when it goes
-out of date, publish a new one and mark the old superseded. Editing an explainer
+edited in place. An digest records what was understood on a day; when it goes
+out of date, publish a new one and mark the old superseded. Editing a digest
 until it agrees with the present destroys the record of what was believed when.
 
 ## 7. Deliver it where the reader can respond
@@ -172,11 +194,11 @@ A page that requires a desk to read gets read at a desk, eventually.
   about. Say which part matters most and let the rest be shorter.
 - **Manufactured modesty.** State the weakest point because it is true, not
   because a section demands one.
-- **Editing a published explainer into agreement with the present.** Supersede it.
+- **Editing a published digest into agreement with the present.** Supersede it.
 
 ## Checklist
 
-- [ ] The item actually owes an explainer.
+- [ ] The item actually owes a digest.
 - [ ] The priority axis is established, and the page discharges its transfer.
 - [ ] The reader's existing context is established and stated.
 - [ ] Outcome first; implementation detail last and skippable.
