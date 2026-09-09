@@ -73,6 +73,7 @@ It exits non-zero when any named repository is unavailable. Tests:
 | --- | --- |
 | [`work-cycle`](./skills/work-cycle) | Execute one durable item: claim and deliver a portfolio goal, or start, complete, and debrief a repository implementation task. |
 | [`research-notebook`](./skills/research-notebook) | Maintain the living research record: dated lab logs, experiment and source notes, current claims, and explicit correction/supersession. |
+| [`explainer`](./skills/explainer) | Produce the transfer a finished item owes its reader: one dated, layered page carrying the outcome first and the implementation detail last. |
 | [`portfolio-cycle`](./skills/portfolio-cycle) | Run the interactive review, teach research state in depth, set direction, re-order goals, allocate tasks to agents and people, and update project and calibration state. |
 | [`portfolio-brief`](./skills/portfolio-brief) | Produce the recurring concise report: progress, delegated decisions, artifacts to try, queue state, and bounded unfiled proposals. |
 
