@@ -39,15 +39,15 @@ it is standalone — not part of any goal — or when one was explicitly request
 Per-task digests across a busy repository train the reader to skim, and the next
 one that matters gets skimmed too.
 
-> **Substrate: unresolved, and this skill does not yet answer it.**
-> How a Markdown source becomes a viewable page with working inline SVG and
-> copied assets is a real decision with real candidates (a small standard-library
-> builder, a static-site generator, a document converter), and this skill stays
-> `status: draft` until it names one. Do not read the absence as permission to
-> hand-author one-off HTML at every close-out: that is the least reproducible
-> option and an unattended run cannot repeat it. Until the substrate is settled,
-> follow whatever the calling project already uses, and say in the page which
-> route was taken.
+> **Substrate: use the promoted standard-library explainer builder.**
+> When the calling project has no suitable renderer, use the config-driven
+> builder at `adus-intelligence/site/build.py`: declare its Markdown page map,
+> navigation, assets, stylesheet and output in a JSON config, build committed
+> HTML, then run the same command with `--check` to require byte-identical output
+> and valid local routes. The builder preserves only audited complete inline SVG
+> blocks and enforces the metadata contract the project config declares. A
+> project with an established hand-authored or generated static substrate keeps
+> it; the common `EXPLAINERS.md` convention does not force a site migration.
 
 ---
 
