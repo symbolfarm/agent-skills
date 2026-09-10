@@ -389,7 +389,10 @@ as one lifecycle change.
 A goal no agent can advance must not remain claimed at the queue head:
 
 1. remove its claim;
-2. move it to `Blocked` with what is needed, who owns it, and the date;
+2. add a `*Blocked:*` line naming what is needed, who owns it, and the date,
+   leaving the goal at its position in the queue. Do not move it to a holding
+   section: a goal parked outside the queue is a goal nobody re-ranks, and the
+   line is what the queue's own parser reads;
 3. add the established unblock to the same merged item substrate with
    `assignee: <user>`, naming the goal it blocks and `Requires: computer` when
    appropriate;
@@ -440,8 +443,9 @@ Use the goal command for portfolio goals and the task command for repository
 tasks; split calls by owning ledger. A non-zero exit is a **refusal to end the
 run**: it names each goal still carrying an unmatched claim without a
 `Progress` record, or each task still `in_progress`. Finish the lifecycle
-close-out and rerun the guard. A goal in `Completed` or `Blocked`, a claimed goal
-with explicit `Progress`, and a task in a terminal state pass. The guard never
+close-out and rerun the guard. A goal recorded as closed, a goal carrying a
+`*Blocked:*` line with its claim removed, a claimed goal with explicit
+`Progress`, and a task in a terminal state pass. The guard never
 releases or rewrites a claim.
 
 ## 8. Portfolio log and handoff

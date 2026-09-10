@@ -84,6 +84,18 @@ class LifecycleGuardTests(unittest.TestCase):
         )
         self.assertEqual(0, lifecycle_guard.goal_exit(path, ["G-001", "G-002", "G-003"]))
 
+    def test_goal_exit_accepts_an_in_queue_blocked_goal(self) -> None:
+        # The primary representation of a blocked goal: it keeps its queue
+        # position and carries a *Blocked:* line, with the claim removed.
+        path = self.write_goals(
+            """# Goals
+## Queue
+- **G-001** `demo` — waiting on the owner.
+  *Blocked:* 2026-03-01 — needs the four URLs; owner: the user.
+"""
+        )
+        self.assertEqual(0, lifecycle_guard.goal_exit(path, ["G-001"]))
+
     def test_task_exit_rejects_in_progress_but_accepts_completed(self) -> None:
         path = self.root / "LOG.jsonl"
         path.write_text(

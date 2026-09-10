@@ -18,6 +18,7 @@ Only `active` projects with a non-empty `agent_may` may hold goals.
 
 - Things that need scoping before they can become goals, and why.
 
-## Blocked
-
-Nothing currently blocked.
+<!-- A blocked goal stays in the queue at its position, carrying a
+     *Blocked:* line naming what is needed, who owns it, and the date.
+     There is no holding section: an item parked outside the queue is an
+     item nobody re-ranks. -->
