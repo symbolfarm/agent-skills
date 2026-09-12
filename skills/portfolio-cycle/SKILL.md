@@ -23,7 +23,8 @@ repository, works with no scheduler present, and needs nothing from any
 particular agent runtime.
 
 > **Portfolio location.** These skills assume one repository holding `GOALS.md`,
-> `PROJECTS.json`, `CALIBRATION.md` and `log/`. It may also keep an `OWNER.md`
+> `PROJECTS.json`, `CALIBRATION.md` (plus its `CALIBRATION-EVIDENCE.md` ledger)
+> and `log/`. It may also keep an `OWNER.md`
 > for standing prose and context, but executable user work belongs in the merged
 > item queue rather than a second checklist. Point the skills at the configured
 > `<portfolio-path>`; no particular filesystem location is required.
@@ -40,7 +41,8 @@ design's overlapping vocabularies.
 |---|---|---|
 | `PROJECTS.json` | What exists, where, in what state, what agents may do there | Rarely |
 | `GOALS.md` | What to do next, in order | Constantly |
-| `CALIBRATION.md` | Which decision classes are delegated | Slowly, on evidence |
+| `CALIBRATION.md` | Which decision classes are delegated — the floor, the global defaults, and how a charter varies them | Slowly, on evidence |
+| `CALIBRATION-EVIDENCE.md` | The counts and case law behind those levels; read here, not on the execution path | Every review |
 
 **Priority is not a property of a project.** It is position in `GOALS.md`. There
 is no project rank and no attention level.
@@ -139,7 +141,8 @@ The user's part. Useful prompts, not a checklist to march through:
 - Re-order `GOALS.md`. Remove goals that no longer earn their place; say so.
 - File new goals (§Filing goals below).
 - Update project states, tiers, or `agent_may`.
-- Update `CALIBRATION.md` counts, and move a level only on a pattern.
+- Update `CALIBRATION-EVIDENCE.md` counts, and move a level only on a pattern.
+  A move changes the level in `CALIBRATION.md` and records why in the ledger.
 - **Close or advance at least one user-assigned item**, and record the
   outcome. "Discussed" is not an outcome; decided, done, reshaped, deferred with
   a date, or dropped are. An item that survives a review untouched three times
@@ -230,7 +233,8 @@ tasks and dependency order through `work-cycle`, and update the Direction entry
 with the IDs it spawned.
 
 Do not add an involvement field to goals or tasks. Human involvement is decided
-per decision class in `CALIBRATION.md`, where evidence can accumulate.
+per decision class in `CALIBRATION.md`, whose ledger is where evidence can
+accumulate.
 
 ---
 
@@ -408,7 +412,7 @@ These skills and the portfolio's conventions are ours to edit, and the review
 session is where that happens. Where the evidence lives, and what may not
 change itself.
 
-**`CALIBRATION.md` is the register.** Process hypotheses do not get their own
+**The calibration ledger (`CALIBRATION-EVIDENCE.md`) is the register.** Process hypotheses do not get their own
 file. A separate register accumulates one instance per row, which is a sample
 size that never moves a level — the portfolio kept one from 2026-07 to 2026-08
 and retired it without a single row graduating. The ledger works because it is
@@ -432,7 +436,7 @@ waits for a repeated pattern.
 1. **Reviewing without changing anything.** If the queue order never changes, the
    review is theatre. Something should move most weeks.
 2. **Filing goals against an unsettled design.** Scope first (§Session B).
-3. **Letting the ledger stagnate.** An unchanging `CALIBRATION.md` means the
+3. **Letting the ledger stagnate.** An unchanging set of levels means the
    system costs the same every week forever.
 4. **Reporting only progress.** Say what went badly, or the review loses value.
 5. **Treating user-assigned items as out of scope.** The three original headings

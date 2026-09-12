@@ -30,7 +30,8 @@ Issues and pull requests are welcome but may go unanswered.
 
 `portfolio-cycle`, `portfolio-brief` and `work-cycle` assume a **separate,
 private portfolio repository** holding `GOALS.md`, `PROJECTS.json`,
-`CALIBRATION.md`, `OWNER.md` and `log/`. That repository is where anything
+`CALIBRATION.md` (with its `CALIBRATION-EVIDENCE.md` ledger), `OWNER.md` and
+`log/`. That repository is where anything
 specific to you belongs: real project names, schedules, delegated authority, and
 what only you can do. Keep this repository generic — it is public, and the
 portfolio is the half that is not.
@@ -84,6 +85,33 @@ holds findings; and `portfolio-brief` is the light recurring report. Executable
 human work is represented as assignee-marked items in the same derived view,
 not as a second checklist. Delegation remains keyed by decision class in the
 private portfolio's calibration ledger rather than being copied onto items.
+
+## Tools
+
+Small standard-library programs the skills and their sites rely on. They have
+**no runtime dependencies** and are meant to be run from a checkout, not
+installed.
+
+| Tool | What it does |
+| --- | --- |
+| [`tools/build_pages.py`](./tools/build_pages.py) | Build a committed static site — explainer and document pages — from a JSON config: Markdown to HTML, audited inline-SVG passthrough, declared asset copying, `.md`→`.html` route rewriting, and explainer-metadata validation. `--check` fails when the committed output is not byte-reproducible. |
+| [`scripts/repo_availability.py`](./scripts/repo_availability.py) | Report whether repositories are clean and unlocked, so one blocked repository costs one queue item rather than the run. |
+| [`scripts/check-public-boundary.py`](./scripts/check-public-boundary.py) | Guard what this public repository may contain. |
+
+`build_pages.py` carries no site of its own: every path in a site config
+resolves relative to that config, so the site lives in its repository and the
+builder lives here. Run it from the site's checkout —
+
+```bash
+python3 ../agent-skills/tools/build_pages.py --check
+python3 ../agent-skills/tools/build_pages.py --config site/site.json
+```
+
+— where `--config` defaults to `site.json` or `site/site.json` under the
+working directory. It was consolidated here on 2026-09-12 from
+`adus-intelligence`, which had the only reusable of five separate rendering
+approaches; its behaviour was moved unchanged, and its end-to-end test against
+that site's committed pages skips when that checkout is not beside this one.
 
 ## Install
 

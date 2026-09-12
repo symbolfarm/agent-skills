@@ -61,7 +61,9 @@ Read, before changing anything:
 
 1. `GOALS.md`;
 2. `PROJECTS.json`;
-3. `CALIBRATION.md`;
+3. `CALIBRATION.md` — the floor, the global defaults, and how a charter's own
+   levels take precedence. Its `CALIBRATION-EVIDENCE.md` ledger is **not** read
+   at work time; it is read when a charter is drafted or ratified;
 4. `LOCKING.md`;
 5. the selected project's `TASKS.md`, `AGENTS.md`, or `CLAUDE.md`, when present.
 
