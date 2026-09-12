@@ -41,7 +41,8 @@ one that matters gets skimmed too.
 
 > **Substrate: use the promoted standard-library explainer builder.**
 > When the calling project has no suitable renderer, use the config-driven
-> builder at `adus-intelligence/site/build.py`: declare its Markdown page map,
+> builder at `agent-skills/tools/build_pages.py`, run from the calling
+> project's checkout with that repository beside it: declare the Markdown page map,
 > navigation, assets, stylesheet and output in a JSON config, build committed
 > HTML, then run the same command with `--check` to require byte-identical output
 > and valid local routes. The builder preserves only audited complete inline SVG
