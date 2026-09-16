@@ -94,7 +94,7 @@ installed.
 
 | Tool | What it does |
 | --- | --- |
-| [`tools/build_pages.py`](./tools/build_pages.py) | Build a committed static site — explainer and document pages — from a JSON config: Markdown to HTML, audited inline-SVG passthrough, declared asset copying, `.md`→`.html` route rewriting, and explainer-metadata validation. `--check` fails when the committed output is not byte-reproducible. |
+| [`tools/build_pages.py`](./tools/build_pages.py) | Build a committed static site — explainer and document pages — from a JSON config: Markdown to HTML, audited inline-SVG passthrough, three named block components, optional build-time stylesheet inlining, declared asset copying, `.md`→`.html` route rewriting, and explainer-metadata validation. `--check` fails when the committed output is not byte-reproducible. |
 | [`scripts/repo_availability.py`](./scripts/repo_availability.py) | Report whether repositories are clean and unlocked, so one blocked repository costs one queue item rather than the run. |
 | [`scripts/check-public-boundary.py`](./scripts/check-public-boundary.py) | Guard what this public repository may contain. |
 
@@ -108,7 +108,17 @@ python3 ../agent-skills/tools/build_pages.py --config site/site.json
 ```
 
 — where `--config` defaults to `site.json` or `site/site.json` under the
-working directory. It was consolidated here on 2026-09-12 from
+working directory. Beyond ordinary Markdown it renders a **closed set of three
+block components** as fenced `` ```:reading ``, `` ```:option `` and
+`` ```:status `` directives — the best-reading/alternative pair, the option card
+with a verdict, and the status pill row — taking its class names from the
+hand-authored digest pages of 2026-09-16 so existing stylesheets keep working.
+The set is closed: an unknown or malformed directive fails the build naming the
+file and line rather than passing markup through, which is what keeps the audited
+inline-SVG block the only unescaped markup in output. Growing the set needs a
+page that cannot say something without a fourth component. A config may also set
+`inline_stylesheet` to one stylesheet, embedded in every output document so a
+single file renders standalone; omitting it keeps the linked `stylesheet`. It was consolidated here on 2026-09-12 from
 `adus-intelligence`, which had the only reusable of five separate rendering
 approaches; its behaviour was moved unchanged, and its end-to-end test against
 that site's committed pages skips when that checkout is not beside this one.

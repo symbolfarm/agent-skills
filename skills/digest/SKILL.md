@@ -46,7 +46,11 @@ one that matters gets skimmed too.
 > navigation, assets, stylesheet and output in a JSON config, build committed
 > HTML, then run the same command with `--check` to require byte-identical output
 > and valid local routes. The builder preserves only audited complete inline SVG
-> blocks and enforces the metadata contract the project config declares. A
+> blocks, renders a closed set of three block components — `` ```:reading ``
+> for a best-reading/alternative pair, `` ```:option `` for option cards with a
+> verdict, `` ```:status `` for a built/designed/open pill row — and fails the
+> build on any other directive rather than passing markup through. Set
+> `inline_stylesheet` when the page will be sent as one standalone file. A
 > project with an established hand-authored or generated static substrate keeps
 > it; the common `EXPLAINERS.md` convention does not force a site migration.
 

@@ -15,6 +15,32 @@ Run it from the site's repository, which supplies the config::
 With no ``--config``, the candidates below are tried in order against the
 working directory. The builder itself ships no site config; it lived beside one
 in ``adus-intelligence`` until 2026-09-12 (HMT-C1 R3).
+
+Markdown source may use a closed set of three block components, written as
+fenced directives. Their rendered classes come from the hand-authored digest and
+altitude pages of 2026-09-16, so existing stylesheets keep working::
+
+    ```:reading                     ```:option                  ```:status
+    @best                           @option                     @built
+    label: The decision             verdict: recommended         Charters exist and work.
+    title: A, B, C or D             title: B. Graduate           @designed
+                                                                 The entry-point skill.
+    You suspected a change.         Run it on a real model.      @open
+    @alternative                    @option                      Where priority lives.
+    label: Going deeper             verdict: strong second
+    title: The layer below          title: C. Redirect
+    The arc is in the digest.       A router picks the block.
+    ```                             ```                         ```
+
+An entry's ``field: value`` header must come first; everything after the first
+blank line is body prose, split into paragraphs. Any other directive name, or a
+malformed one, fails the build naming the source file and line -- nothing falls
+through to raw passthrough, which is what keeps the audited inline-SVG block the
+only unescaped markup in output.
+
+A site config may also set ``inline_stylesheet`` to one stylesheet path, which
+is embedded in every output document so a single file renders standalone. The
+``stylesheet`` link behaviour is unchanged when it is absent.
 """
 
 from __future__ import annotations
@@ -36,6 +62,24 @@ CONFIG_CANDIDATES = (Path("site.json"), Path("site") / "site.json")
 EXPLAINER_FIELDS = ("layer", "audience", "as_of", "status", "provenance")
 FORBIDDEN_SVG_ELEMENTS = {"script", "foreignObject", "style"}
 
+# The closed component vocabulary. A fence whose info string starts with ":" is
+# a block directive, so ordinary ```sh / ```text fences keep rendering as code.
+# The set is closed on purpose: an unrecognised or malformed directive is a
+# build failure, never raw passthrough, which is what keeps the narrow audited
+# SVG block the only markup that reaches output unescaped.
+DIRECTIVES = ("reading", "option", "status")
+PILL_VARIANTS = ("built", "designed", "open")
+DIRECTIVE_FIELDS: dict[str, tuple[str, ...]] = {
+    "reading": ("label", "title"),
+    "option": ("verdict", "title"),
+    "status": (),
+}
+REQUIRED_DIRECTIVE_FIELDS: dict[str, tuple[str, ...]] = {
+    "reading": ("title",),
+    "option": ("verdict", "title"),
+    "status": (),
+}
+
 
 @dataclass(frozen=True)
 class Page:
@@ -54,6 +98,7 @@ class Site:
     brand_suffix: str
     footer_html: str
     stylesheet: str
+    inline_stylesheet: Path | None
     write_nojekyll: bool
     pages: tuple[Page, ...]
     navigation: tuple[tuple[str, str], ...]
@@ -167,6 +212,15 @@ def load_site(config_path: Path) -> Site:
         if section_page not in outputs:
             fail(f"section_reference_page is undeclared: {section_page}")
 
+    inline_stylesheet: Path | None = None
+    if "inline_stylesheet" in raw and raw["inline_stylesheet"] is not None:
+        value = raw["inline_stylesheet"]
+        if not isinstance(value, str) or not value.strip():
+            fail("inline_stylesheet must be a path to one stylesheet, relative to the config")
+        inline_stylesheet = resolve_from(base, value)
+        if not inline_stylesheet.is_file():
+            fail(f"missing inline_stylesheet: {inline_stylesheet}")
+
     aliases = raw.get("aliases", {})
     if not isinstance(aliases, dict) or not all(isinstance(k, str) and isinstance(v, str) for k, v in aliases.items()):
         fail("aliases must be a string-to-string object")
@@ -180,6 +234,7 @@ def load_site(config_path: Path) -> Site:
         brand_suffix=str(raw.get("brand_suffix", "")),
         footer_html=str(raw.get("footer_html", "")),
         stylesheet=str(raw.get("stylesheet", "styles.css")),
+        inline_stylesheet=inline_stylesheet,
         write_nojekyll=bool(raw.get("write_nojekyll", True)),
         pages=tuple(pages),
         navigation=tuple(navigation),
@@ -363,6 +418,126 @@ def take_svg(lines: list[str], start: int, source: Path) -> tuple[str, int] | No
     fail(f"{source}:{start + 1}: incomplete inline SVG block")
 
 
+def directive_block(lines: list[str], start: int, source: Path) -> tuple[str, list[tuple[int, str]], int]:
+    """Split one `````:name`` fence into its name and numbered body lines."""
+    header = lines[start].strip()
+    known = ", ".join(f":{name}" for name in DIRECTIVES)
+    match = re.fullmatch(r"```:([A-Za-z][\w-]*)", header)
+    if not match:
+        fail(f"{source}:{start + 1}: malformed block directive {header!r}; expected a bare ```:<name> fence ({known})")
+    name = match.group(1)
+    if name not in DIRECTIVES:
+        fail(f"{source}:{start + 1}: unknown block directive ':{name}'; the vocabulary is closed ({known})")
+    body: list[tuple[int, str]] = []
+    index = start + 1
+    while index < len(lines):
+        if lines[index].strip() == "```":
+            return name, body, index + 1
+        body.append((index + 1, lines[index]))
+        index += 1
+    fail(f"{source}:{start + 1}: unterminated ':{name}' block directive")
+
+
+def directive_entries(name: str, body: list[tuple[int, str]], source: Path, fence_line: int) -> list[dict[str, Any]]:
+    """Cut a directive body at its ``@kind`` markers."""
+    entries: list[dict[str, Any]] = []
+    for line_number, raw in body:
+        marker = re.fullmatch(r"@([A-Za-z][\w-]*)", raw.strip())
+        if marker:
+            entries.append({"line": line_number, "kind": marker.group(1), "lines": []})
+        elif entries:
+            entries[-1]["lines"].append((line_number, raw))
+        elif raw.strip():
+            fail(f"{source}:{line_number}: ':{name}' content before the first @entry marker")
+    if not entries:
+        fail(f"{source}:{fence_line}: ':{name}' block declares no @entry")
+    return entries
+
+
+def entry_parts(name: str, entry: dict[str, Any], source: Path) -> tuple[dict[str, str], list[str]]:
+    """The leading ``field: value`` header and the blank-line-separated body."""
+    allowed = DIRECTIVE_FIELDS[name]
+    lines: list[tuple[int, str]] = entry["lines"]
+    where = f"':{name}' @{entry['kind']}"
+    fields: dict[str, str] = {}
+    index = 0
+    while allowed and index < len(lines) and lines[index][1].strip():
+        line_number, raw = lines[index]
+        match = re.fullmatch(r"([a-z][a-z_]*):\s*(.+)", raw.strip())
+        if not match:
+            break
+        field = match.group(1)
+        if field not in allowed:
+            fail(f"{source}:{line_number}: {where} has unknown field {field!r}; allowed: {', '.join(allowed)}")
+        if field in fields:
+            fail(f"{source}:{line_number}: {where} repeats field {field!r}")
+        fields[field] = match.group(2).strip()
+        index += 1
+    for field in REQUIRED_DIRECTIVE_FIELDS[name]:
+        if field not in fields:
+            fail(f"{source}:{entry['line']}: {where} needs a {field!r} field")
+    paragraphs: list[str] = []
+    buffer: list[str] = []
+    for _, raw in lines[index:]:
+        if raw.strip():
+            buffer.append(raw.strip())
+        elif buffer:
+            paragraphs.append(" ".join(buffer))
+            buffer = []
+    if buffer:
+        paragraphs.append(" ".join(buffer))
+    if not paragraphs:
+        fail(f"{source}:{entry['line']}: {where} has no body text")
+    return fields, paragraphs
+
+
+def render_directive(lines: list[str], start: int, site: Site, page: Page, report_sections: dict[str, str]) -> tuple[str, int]:
+    """Render one block component. Class names follow the hand-authored pages."""
+    source = page.source
+    name, body, next_index = directive_block(lines, start, source)
+    entries = directive_entries(name, body, source, start + 1)
+
+    def ink(text: str) -> str:
+        return inline(text, site, page, report_sections)
+
+    def prose(paragraphs: list[str]) -> str:
+        return "".join(f"<p>{ink(paragraph)}</p>" for paragraph in paragraphs)
+
+    if name == "reading":
+        kinds = [entry["kind"] for entry in entries]
+        if kinds != ["best", "alternative"]:
+            got = ", ".join(f"@{kind}" for kind in kinds) or "nothing"
+            fail(f"{source}:{start + 1}: ':reading' needs exactly @best then @alternative; got {got}")
+        cells: list[str] = []
+        for entry in entries:
+            fields, paragraphs = entry_parts(name, entry, source)
+            label = f'<span class="label">{ink(fields["label"])}</span>' if fields.get("label") else ""
+            cells.append(f'<div class="{entry["kind"]}">{label}<h3>{ink(fields["title"])}</h3>{prose(paragraphs)}</div>')
+        return f'<div class="reading">{"".join(cells)}</div>', next_index
+
+    if name == "option":
+        cards: list[str] = []
+        for entry in entries:
+            if entry["kind"] != "option":
+                fail(f"{source}:{entry['line']}: ':option' allows only @option entries; got @{entry['kind']}")
+            fields, paragraphs = entry_parts(name, entry, source)
+            cards.append(
+                f'<article class="opt"><span class="verdict">{ink(fields["verdict"])}</span>'
+                f'<h3>{ink(fields["title"])}</h3>{prose(paragraphs)}</article>'
+            )
+        return f'<div class="four">{"".join(cards)}</div>', next_index
+
+    rows: list[str] = []
+    for entry in entries:
+        if entry["kind"] not in PILL_VARIANTS:
+            allowed = ", ".join(f"@{variant}" for variant in PILL_VARIANTS)
+            fail(f"{source}:{entry['line']}: ':status' pill must be one of {allowed}; got @{entry['kind']}")
+        _, paragraphs = entry_parts(name, entry, source)
+        cell = ink(paragraphs[0]) if len(paragraphs) == 1 else prose(paragraphs)
+        rows.append(f'<span class="pill {entry["kind"]}">{entry["kind"]}</span><div>{cell}</div>')
+    return f'<div class="state">{"".join(rows)}</div>', next_index
+
+
 def render_markdown(site: Site, page: Page, report_sections: dict[str, str]) -> tuple[str, list[tuple[int, str, str]]]:
     lines = page.source.read_text(encoding="utf-8").splitlines()
     _, headings = heading_data(page.source)
@@ -388,6 +563,11 @@ def render_markdown(site: Site, page: Page, report_sections: dict[str, str]) -> 
     while index < len(lines):
         line = lines[index]
         if line.startswith("```"):
+            if not in_code and line.strip().startswith("```:"):
+                flush_paragraph(); close_list()
+                rendered, index = render_directive(lines, index, site, page, report_sections)
+                output.append(rendered)
+                continue
             flush_paragraph(); close_list()
             if in_code:
                 output.append("<pre><code>" + html.escape("\n".join(code_lines)) + "</code></pre>")
@@ -471,11 +651,35 @@ def explainer_declaration(meta: dict[str, Any] | None) -> str:
     return f'<aside class="explainer-meta" aria-label="Explainer declaration"><dl>{rows}</dl></aside>'
 
 
+def inline_stylesheet_css(path: Path) -> str:
+    """The stylesheet text to embed, audited for standalone self-containment.
+
+    Inlining exists so one output file renders with no external request, so the
+    embedded text may not reach back out for anything.
+    """
+    text = path.read_text(encoding="utf-8")
+    if "</style" in text.lower():
+        fail(f"{path}: inlined stylesheet may not contain a closing </style> tag")
+    if "@import" in text:
+        fail(f"{path}: inlined stylesheet may not @import; a standalone page makes no request")
+    for value in re.findall(r"url\(([^)]*)\)", text):
+        target = value.strip().strip("\"'")
+        if not target.startswith(("data:", "#")):
+            fail(f"{path}: inlined stylesheet may not reference {target!r}; only data: and #fragment URLs are self-contained")
+    return text.strip("\n")
+
+
+def head_styles(site: Site, page: Page) -> str:
+    if site.inline_stylesheet is not None:
+        return f"<style>\n{inline_stylesheet_css(site.inline_stylesheet)}\n  </style>"
+    stylesheet = relative_route(page.output, site.stylesheet)
+    return f'<link rel="stylesheet" href="{html.escape(stylesheet, quote=True)}">'
+
+
 def shell(site: Site, page: Page, body: str, headings: list[tuple[int, str, str]]) -> str:
     nav = "".join(f'<a href="{relative_route(page.output, href)}"{(" aria-current=\"page\"" if href == page.output else "")}>{label}</a>' for href, label in site.navigation)
     suffix = f" <span>{html.escape(site.brand_suffix)}</span>" if site.brand_suffix else ""
     home = relative_route(page.output, site.navigation[0][0]) if site.navigation else PurePosixPath(page.output).name
-    stylesheet = relative_route(page.output, site.stylesheet)
     return f'''<!doctype html>
 <html lang="en">
 <head>
@@ -483,7 +687,7 @@ def shell(site: Site, page: Page, body: str, headings: list[tuple[int, str, str]
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="description" content="{html.escape(site.description, quote=True)}">
   <title>{html.escape(page.title)}</title>
-  <link rel="stylesheet" href="{html.escape(stylesheet, quote=True)}">
+  {head_styles(site, page)}
 </head>
 <body>
   <a class="skip-link" href="#content">Skip to content</a>
@@ -581,11 +785,14 @@ def main() -> None:
         site = load_site(args.config if args.config is not None else default_config())
     except ValueError as exc:
         raise SystemExit(str(exc)) from exc
-    if args.check:
-        check(site)
-    else:
-        build(site, site.output)
-        print(f"Built {len(site.pages)} pages in {site.output}")
+    try:
+        if args.check:
+            check(site)
+        else:
+            build(site, site.output)
+            print(f"Built {len(site.pages)} pages in {site.output}")
+    except ValueError as exc:
+        raise SystemExit(str(exc)) from exc
 
 
 if __name__ == "__main__":
