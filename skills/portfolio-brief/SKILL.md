@@ -21,19 +21,28 @@ durable window command:
 
 ```
 python3 <script> --queue <portfolio>/QUEUE.json brief-window \
-  --previous-delivery <success|failed|unknown> --through <ISO timestamp>
+  --previous-delivery <success|failed|unknown> --through <ISO timestamp> \
+  --earliest <ISO timestamp>
 ```
 
 The helper advances the prior pending cursor only after confirmed success, stages
 the current cutoff, and returns entries across calendar files. Failed or unknown
 delivery therefore replays unsent material; successful delivery advances exactly
-once. Use `reports --since` only for diagnostics, not scheduled cursor management.
+once. Pass `--earliest` as the start of the window to use only while nothing has
+ever been confirmed delivered — without it, a deployment whose first delivery keeps
+failing replays its whole history each time. Use `reports --since` only for
+diagnostics, not scheduled cursor management.
 
 For every configured worker, check its independent `health` source. A close-out
 and a scheduler execution establish different facts: distinguish a healthy no-op,
 completed or resumable work, a failed run, a missed run, and a run whose reporting
 step failed. For Hermes cron, inspect the persisted job/execution state. For a file
-health source, read the configured host-produced record. Absence of a close-out is
+health source, read the configured host-produced record, its timestamp as well as
+its status: a `completed` record older than the expected run window, or a `running`
+record older than the worker's hard timeout, is evidence the worker did not
+complete a run — report it as missed or crashed, never as healthy. A host that
+cannot reach the workspace at all cannot write its record, so absence together with
+an expected run that left no trace is itself the finding. Absence of a close-out is
 not evidence of an outage; absence of an expected execution is not an empty queue.
 Never diagnose beyond the available evidence.
 

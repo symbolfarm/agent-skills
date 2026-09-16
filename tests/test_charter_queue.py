@@ -365,6 +365,36 @@ class CharterQueueTests(unittest.TestCase):
             '--continuation', 'Continue from the recorded baseline.')
         self.assertEqual(result['entry']['state'], 'advanced')
 
+    def test_transitions_must_name_a_configured_worker(self):
+        token = self.claim()
+        self.cmd('finish', '--token', token, '--state', 'ready', '--note', 'Continue.')
+        self.assertEqual(self.cmd('validate')['charters'], 1)
+        data = json.loads(self.queue.read_text())
+        data['charters'][0]['requirements'][0]['transitions'].append(
+            {'holder': 'unconfigured-seed', 'state': 'done',
+             'at': '2026-01-01T00:00:00+00:00'})
+        self.queue.write_text(json.dumps(data))
+        self.assertIn('not a known worker', self.cmd('validate', ok=False))
+
+    def test_brief_window_floor_bounds_a_never_confirmed_cursor(self):
+        sink = self.portfolio / '.briefing/daily'
+        sink.mkdir(parents=True)
+        now = datetime.now(timezone.utc)
+        for delta, run_id in ((timedelta(days=30), 'ancient'), (timedelta(hours=1), 'recent')):
+            payload = {
+                'version': 1, 'timestamp': (now - delta).isoformat(),
+                'worker': 'research-worker', 'run_id': run_id,
+                'state': 'no-op', 'item': None, 'summary': run_id,
+                'evidence': [], 'continuation': None,
+            }
+            (sink / f'{run_id}.md').write_text(
+                f"<!-- worker-closeout: {json.dumps(payload)} -->\n")
+        window = self.cmd(
+            'brief-window', '--previous-delivery', 'failed',
+            '--through', now.isoformat(),
+            '--earliest', (now - timedelta(days=1)).isoformat())
+        self.assertEqual([entry['run_id'] for entry in window['reports']], ['recent'])
+
     def test_reports_since_reads_late_entries_across_daily_files(self):
         sink = self.portfolio / '.briefing/daily'
         sink.mkdir(parents=True)

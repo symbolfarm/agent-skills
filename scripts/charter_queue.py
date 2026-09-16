@@ -126,6 +126,8 @@ def read_queue(path, workers):
     data = json.loads(path.read_text())
     if data.get("version") != 2 or not isinstance(data.get("charters"), list):
         raise ValueError("expected version 2 and charters list")
+    allowed_prefixes = tuple(
+        worker["holder_prefix"] + "-" for worker in workers.values())
     ids = set()
     for charter in data["charters"]:
         cid = charter["id"]
@@ -184,6 +186,10 @@ def read_queue(path, workers):
                         or not RUN_ID.fullmatch(transition.get("holder", ""))
                         or transition.get("state") not in {"ready", "blocked", "done"}):
                     raise ValueError(f"{cid}/{req['id']}: invalid transition record")
+                # A transition must be attributable to a configured worker, so a
+                # close-out cannot be justified by a hand-written holder string.
+                if not transition["holder"].startswith(tuple(allowed_prefixes)):
+                    raise ValueError(f"{cid}/{req['id']}: transition holder is not a known worker")
                 timestamp = datetime.fromisoformat(transition["at"])
                 if timestamp.utcoffset() is None:
                     raise ValueError(f"{cid}/{req['id']}: transition timestamp needs offset")
@@ -403,6 +409,10 @@ def report_entries(sinks, since=None, through=None):
 
 def brief_window(path, workers, args):
     through = aware_timestamp(args.through, '--through')
+    # A floor bounds the window only while no delivery has ever been confirmed.
+    # Once anything is delivered, the confirmed cursor is the only lower bound:
+    # clamping against the floor then would silently drop unsent material.
+    floor = aware_timestamp(args.earliest, '--earliest') if args.earliest else None
     cursor_path = path.parent / '.briefing/brief-cursor.json'
     cursor = {'version': 1, 'delivered_through': None, 'pending_through': None}
     if cursor_path.exists():
@@ -414,9 +424,12 @@ def brief_window(path, workers, args):
     pending = cursor['pending_through']
     if args.previous_delivery == 'success' and pending:
         delivered = pending
-    since = aware_timestamp(delivered, 'briefing cursor') if delivered else None
+    if delivered:
+        since = aware_timestamp(delivered, 'briefing cursor')
+    else:
+        since = floor
     if since is not None and through < since:
-        raise ValueError('--through precedes the delivered briefing cursor')
+        raise ValueError('--through precedes the briefing window start')
     sinks = [safe_relative(path.parent, worker['report_sink'], 'report_sink')
              for worker in workers.values()]
     entries = report_entries(sinks, since, through)
@@ -427,6 +440,7 @@ def brief_window(path, workers, args):
     }, indent=2) + '\n')
     return {
         'since': delivered,
+        'earliest_floor': floor.isoformat() if floor else None,
         'through': through.isoformat(),
         'previous_delivery': args.previous_delivery,
         'reports': entries,
@@ -675,6 +689,8 @@ def main():
     cmd.add_argument('--previous-delivery', choices=['success', 'failed', 'unknown'], required=True)
     cmd.add_argument('--through', required=True,
                      help='inclusive ISO-8601 timestamp staged for next-run delivery reconciliation')
+    cmd.add_argument('--earliest', help='lower bound used only when no delivery has ever been '
+                                        'confirmed, so an unconsummated cursor cannot replay history')
     try:
         print(json.dumps(run(p.parse_args()), indent=2))
     except (ValueError, KeyError, OSError, RuntimeError, TypeError) as error:

@@ -34,14 +34,18 @@ worker can execute is invalid configuration.
 
 After lifecycle close-out and `check-exit`, a scheduled worker calls `report` once.
 The queue retains immutable transition records keyed by holder, so a later worker
-cannot invalidate an earlier run's close-out. The helper requires the control
-repository transition to be committed, serializes the append, writes a human-readable
-daily Markdown document, embeds a machine-readable entry, and rejects duplicate run
-ids. `reports --since <ISO timestamp>` supports diagnostics.
+cannot invalidate an earlier run's close-out. A transition must also name a
+configured worker's holder prefix, so the record is attributable rather than a free
+string. The helper requires the control repository transition to be committed,
+serializes the append, writes a human-readable daily Markdown document, embeds a
+machine-readable entry, and rejects duplicate run ids. `reports --since <ISO
+timestamp>` supports diagnostics.
 
-Scheduled briefs use `brief-window --previous-delivery <status> --through <ISO>`.
-Its gitignored cursor advances only when the prior delivery is confirmed successful;
-failed or unknown delivery replays the unsent interval across calendar files.
+Scheduled briefs use `brief-window --previous-delivery <status> --through <ISO>`
+with an optional `--earliest` floor. Its gitignored cursor advances only when the
+prior delivery is confirmed successful; failed or unknown delivery replays the
+unsent interval across calendar files, and the floor bounds the window only while
+nothing has ever been confirmed delivered.
 
 Close-outs are transport, not canonical evidence. Keep them bounded: terminal
 state, item, result, direct evidence references and an exact continuation or
