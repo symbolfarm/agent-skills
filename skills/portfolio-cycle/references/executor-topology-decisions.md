@@ -1,3 +1,7 @@
+> Historical topology discussion. Fresh charter execution uses the shared
+> QUEUE.json helper and serial active claims. Older goal-selection and commit-as-lock
+> claims below are superseded; consult charter-cycle for current behavior.
+
 # Executor topology decisions
 
 Load this reference during `portfolio-cycle` when deciding how approved portfolio

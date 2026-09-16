@@ -68,23 +68,26 @@ python3 scripts/repo_availability.py ../repo-a ../repo-b --holder claude
 It exits non-zero when any named repository is unavailable. Tests:
 `python3 -m unittest discover -s tests -t .`
 
-## Skills
+## Current workflow
 
-| Skill | What it does |
+Themes preserve direction; authorized charters bound independent work;
+requirements state observable outcomes; tasks preserve context-sized handoffs.
+The private portfolio's `WORKFLOW.md` records its adopted rules and `QUEUE.json`
+orders its fresh charters. Historical queues are reference material only.
+
+| Skill | Responsibility |
 | --- | --- |
-| [`work-cycle`](./skills/work-cycle) | Execute one durable item: claim and deliver a portfolio goal, or start, complete, and debrief a repository implementation task. |
-| [`research-notebook`](./skills/research-notebook) | Maintain the living research record: dated lab logs, experiment and source notes, current claims, and explicit correction/supersession. |
-| [`digest`](./skills/digest) | Produce the transfer a finished goal owes its reader: one dated, layered page carrying the outcome first and the implementation detail last. |
-| [`portfolio-cycle`](./skills/portfolio-cycle) | Run the interactive review, teach research state in depth, set direction, re-order goals, allocate tasks to agents and people, and update project and calibration state. |
-| [`portfolio-brief`](./skills/portfolio-brief) | Produce the recurring concise report: progress, delegated decisions, artifacts to try, queue state, and bounded unfiled proposals. |
+| `portfolio-cycle` | Discuss direction and draft/authorize charters with the user. |
+| `charter-cycle` | Select and execute requirements, with atomic claims and evidence. |
+| `work-cycle` | Carry out direct requests and implementation work. |
+| `research-notebook` | Preserve research findings and current qualified understanding. |
+| `digest` | Transfer meaningful changes to their reader. |
+| `portfolio-brief` | Report consequences and blockers between reviews. |
 
-The operating model has one portfolio-owned outcome queue and repository-owned
-implementation tasks. `work-cycle` executes either kind; `portfolio-cycle`
-handles review, scoping, research learning and allocation; `research-notebook`
-holds findings; and `portfolio-brief` is the light recurring report. Executable
-human work is represented as assignee-marked items in the same derived view,
-not as a second checklist. Delegation remains keyed by decision class in the
-private portfolio's calibration ledger rather than being copied onto items.
+`scripts/charter_queue.py` selects from the fresh queue, acquires repository locks,
+generates task parent links and checks requirement closeout. Its schema is in
+`skills/portfolio-cycle/references/fresh-queue.md`. Direct interactive requests
+remain supported without creating a charter. No historical task migration is needed.
 
 ## Tools
 

@@ -13,18 +13,31 @@ description: >-
   portfolio-cycle drives learning and planning.
 metadata:
   author: symbolfarm
-  version: "2"
+  version: "3"
   authored_by: agent
   status: draft
 ---
+
+## Current workflow
+
+For fresh charter work, `charter-cycle` owns execution and links generated tasks
+to requirements. Historical task ledgers are reference only. Preserve the existing
+notebook rather than migrating its findings. Update the experiment and affected
+current understanding when a meaningful result lands; add logs/index edits only
+when they aid retrieval, not as mandatory duplicate reports.
+
+Agents may record evidence-backed conclusions, uncertainty and corrections
+without human ratification. Distinguish those assessments from the user's
+endorsement or strategic direction. A negative result is useful research evidence.
+Digests transfer meaningful changes to readers; they do not replace current notes.
 
 ## Overview
 
 A research project produces three distinct streams of writing, and
 mixing them is what makes project docs rot:
 
-1. **The queue** — work orders and their lifecycle. Owned by the
-   `work-cycle` skill (`TASKS.md`, `.tasks/`, `LOG.jsonl`).
+1. **The queue** — work orders and their lifecycle. Owned by
+   the fresh charter queue and its generated `.tasks/current/` briefs.
 2. **The event record** — what happened, immutably. Owned by
    `work-cycle` (debriefs, git history).
 3. **The current understanding** — what we presently believe is true,
@@ -181,61 +194,24 @@ The core discipline — the thing that makes the notebook trustworthy:
   `superseded`), add the top-of-body callout, and update `INDEX.md`
   so nothing live links to it as if it were current.
 
-Trust order when sources disagree: a note's `status` field, then the
-newest log entry, then older material. If you *find* a disagreement
+When sources disagree, check the primary evidence and correction provenance.
+A current-status label or recent timestamp alone does not establish truth. If you *find* a disagreement
 the discipline missed, fixing it is a notebook chore — do it in the
 same session and note it in today's log.
 
 ---
 
-## Working with work-cycle
+## Working with execution
 
-The two skills interlock at three points in the task lifecycle:
+At orientation, read the index and relevant notes. A task brief links the theory
+and evidence needed by a fresh agent. At a meaningful finding, preserve the setup,
+observations, interpretation, limitations and how to reproduce it; correct affected
+current notes and update the index when its map changes. Avoid duplicating the same
+narrative across task notes, daily logs and digests.
 
-**At task start (orientation).** After reading `TASKS.md` and the task
-file, read `notebook/INDEX.md` and any notes the task brief links.
-When *filing* a task, link the relevant notebook notes in the brief's
-"Context" section — that's how cold-starting agents inherit theory
-without a full history replay.
-
-**At task completion (the distill step — findings only).** After
-writing the debrief (work-cycle "Completing a task", step 1), ask one
-gating question: *did this task produce a finding — change what we
-believe, rule something out, or develop the theory?* Chores and pure
-plumbing (env setup, refactors, harness wiring) answer no: skip the
-distill entirely — the debrief is their whole record (at most add a
-line to an already-open day log). The debrief is always mandatory;
-the distill is only for findings. When the answer is yes, distill
-*before* the housekeeping commit:
-
-1. Append today's `log/` entry: what was tried, observed, decided.
-2. Create or update the affected `notes/` and `experiments/` notes.
-   If a result overturned a premise, flip the old note's status now,
-   while the evidence is in context.
-3. Update `INDEX.md` if the map changed.
-
-Then include the notebook changes in the task's housekeeping commit
-(or an adjacent `notebook:` commit — see below). The division of
-labour: the **debrief** records what happened on this task, frozen;
-the **notebook** records what the project now believes, cumulative.
-Don't duplicate the debrief into the notebook — link to it and state
-only the durable conclusion.
-
-**In TASKS.md (keeping the queue lean).** Once a project has a
-notebook, `TASKS.md`'s job shrinks back to: what this repo is, where
-the queue lives, a *pointer* to `notebook/INDEX.md`, and a few lines
-of current focus. Resist narrating research history in `TASKS.md`;
-that's the notebook's job.
-
-Notebook-only changes outside a task (a correction, a new hunch worth
-recording, a session log for exploratory work) are committed directly
-as `notebook: <what>` — they are the notebook's analogue of
-work-cycle's small chores, and never need a task filed.
-
-The workflows that write into this substrate live in two places:
-`portfolio-cycle` runs learning sessions and turns agreed direction into
-allocated goals and tasks; `work-cycle` closes findings from execution back into
-the notebook. This skill defines the artifact they share.
+Chores need no research entry. Notebook-only corrections or reading notes need no
+manufactured execution task. `portfolio-cycle` handles research discussion and
+charter drafting; `charter-cycle` executes the resulting requirements.
 
 ---
 

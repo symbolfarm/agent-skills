@@ -1,150 +1,104 @@
 ---
 name: charter-cycle
-description: >-
-  Execute one unmet requirement from a ratified charter: select it, record how it
-  will be discharged, work it under the charter's own decision levels and halt
-  conditions, and close it with the digest the charter names. Use when asked to
-  work a charter, take the next requirement, or continue in-flight charter work.
-  Supersedes work-cycle for chartered work; work-cycle still runs everything else.
+description: Execute authorized charter requirements from a fresh queue, preserve research context across tasks, and close with evidence and a useful handover. Use for scheduled charter work or when asked to work a charter.
 license: MIT
 metadata:
-  author: Symbol Farm
-  version: "1"
-  category: productivity
-  tags: charters, requirements, execution, digests, charter-cycle
+  version: "2"
 ---
 
 # Charter cycle
 
-Work starts from a **charter** — a ratified, bounded grant of authority — not from a
-queue position. One run discharges one requirement.
+The user chooses direction and authorizes charters. Agents may draft themes and
+requirements from the conversation, but a draft grants no authority. Explicit
+user steering updates the applicable instruction; record it without demanding a
+second approval ritual. Do not weaken a success condition to declare success.
 
-**A charter an agent drafted but the user has not ratified grants nothing.** Check
-for `status: active` and a `ratified:` line before reading anything else. A draft is
-readable; it is not workable, and an agent may never ratify its own.
+## Orient and select
 
-## 1. Select one unmet requirement
+Read the portfolio's `WORKFLOW.md`, `QUEUE.json`, the selected charter, and the
+relevant research overview. Historical queues are reference material only.
+Read repository instructions before editing. Where a project registry exists,
+verify active state and permission for the intended edits/commits; a charter does
+not silently reopen an archived or human-only repository. The portfolio queue orders charters;
+requirements follow their declared order and dependencies. Lane and capability
+filters determine eligibility, not strategic rank. Never fall back to old tasks.
 
-**Charters are ranked; requirements inside one are not.** The user ranks charters —
-each inherits its theme's position in the portfolio queue. Within a charter, take the
-**first unmet requirement in table order**, honouring any dependency the charter
-declares between requirements.
-
-Skip a requirement when it is already discharged, a halt condition covering it is
-live, another agent holds a live claim, or its repository is unavailable. Skipping is
-not re-ranking: never reorder a charter's table to reach work. If nothing is workable,
-name the charter and the reason and end the run — an empty charter is not a licence to
-fall through to unchartered work.
-
-**A requirement the user explicitly deferred is not selectable**, whatever the
-charter's headroom, and the deferral does not expire because a day passed. Only the
-user lifts it.
-
-**An unavailable repository costs its own items, never the run.** Skip every item
-belonging to it — without claiming, moving, or blocking those items — and continue.
-A run that stops because one repository was dirty has converted one stalled item into
-a stalled day. Availability, the anomaly record, and the rule against clearing
-someone's uncommitted work are in
-[`references/availability-and-locking.md`](references/availability-and-locking.md).
-
-## 2. Claim, and declare the discharge shape
-
-Record on the charter and commit **before any work**:
+Use `../../scripts/charter_queue.py` relative to this skill:
 
 ```
-R3 — claimed by <agent>, <ISO-8601>, discharged as: one context, direct
-R3 — claimed by <agent>, <ISO-8601>, discharged as: decomposed into 3 tasks
+python3 <script> --queue <portfolio>/QUEUE.json next --lane research --capability general
+python3 <script> --queue <portfolio>/QUEUE.json claim --lane research --capability general --holder <unique-run-id>
 ```
 
-**The shape is declared at claim time, not discovered at close.** It is a prediction,
-and a wrong one is a finding worth recording — a charter that mis-predicts
-decomposition is evidence about the unit itself, which is why the claim commits
-separately from the work.
+Repeat `--capability` for verified capabilities. Omit `--lane` only when the caller
+allows all lanes. A null selection is a successful no-op. Missing/malformed
+configuration is an error, not an empty queue. `next` is advisory; `claim` selects
+again under an atomic queue lock and acquires repository locks before recording
+ownership. Concurrent scheduled work is serialized for now. A Git commit alone
+is not a lock in a shared worktree.
 
-Then acquire the repository lock. **Order is always claim, then lock, then edit.**
+The queue contains lifecycle/routing data; the charter owns requirement wording.
+An entry is executable only with `status: active` and `authorized_by` recording
+actual user authorization. Only the user can activate a draft or lift a deferral.
+Commit a successful claim before implementation. Never claim with a reused run id.
 
-## 3. Work it under the charter's own rules
+## Interpret, then work
 
-**Inside a charter's bounds its decision table is the operative one.** Precedence,
-highest first: the floor, never varied by anything → the charter's table → the
-portfolio's global defaults for any class the charter does not name.
+Briefly state the research question/outcome as understood, what would constitute
+a useful answer, consequential assumptions, and the first step. Proceed under
+existing authority; ask only when the unresolved interpretation would materially
+change the work or cross a boundary. Record an unresolved question beside the
+requirement in its progress or blocked reason so it survives the session.
 
-| Level | Behaviour |
-|---|---|
-| `auto` | Decide and proceed; do not log it. |
-| `report` | Decide and proceed; record the choice and the reasoning. |
-| `ask` | Stop. Do not decide. Record what is needed. |
+Decompose as learning requires. A task is roughly one context and is useful when
+work needs a handoff/restart; no task is necessary for work completed directly.
+Do not manufacture a complete future task tree before investigating.
 
-An unknown class is `unclassified` at report level. **Do not mint a class** — that
-happens in a review, not on the execution path.
+For a durable task, the helper creates a brief carrying the parent requirement
+and records its path on the claimed requirement:
 
-**Halt conditions are not obstacles to route around.** When one fires, stop, record
-which one and what tripped it, and end the run. A halt is the charter working.
-
-**Scope is the charter's, not the requirement's.** If discharging a requirement needs
-something the charter placed out of scope, that is a halt condition rather than a
-scope expansion.
-
-When the declared shape is `decomposed`, file every task in the owning repository
-before implementing any of it, then run them under `work-cycle`. A requirement that
-fits one context is worked directly and never becomes a task.
-
-## 4. Close with the digest the charter names
-
-A requirement is discharged when its stated condition is true **and** its digest
-exists.
-
-**Read the `Digest` column.** Where it names a reader, the digest is owed to that
-reader and written at *their* altitude — not the altitude the work was done at. Where
-it is empty, no digest is owed and the close-out is the commit and the record.
-
-**Resolving the digest's home** when the charter or requirement does not name one:
-
-- a digest whose subject is **the charter** lands beside the charter;
-- a digest whose subject is a **project artifact** lands in that project.
-
-A calling project's page convention governs **format**, not location. Produce the
-digest with the `digest` skill.
-
-Then mark it discharged, commit, release the lock. When every requirement is
-discharged or struck, say so and leave ratifying what comes next to the user.
-
-### Run exit gate
-
-**An assertion, not a remembered checklist item.** Before returning, run the shared
-lifecycle guard over every item touched. It is not copied into this skill — there is
-one guard, and it lives with the superseded entry point:
-
-```bash
-python3 <charter-cycle-skill>/../work-cycle/scripts/lifecycle_guard.py goal-exit \
-  <portfolio>/GOALS.md G-002
-python3 <charter-cycle-skill>/../work-cycle/scripts/lifecycle_guard.py task-exit \
-  <repository>/.tasks/LOG.jsonl EX-4
+```
+python3 <script> --queue <queue> task --token <claim-token> --repo <repo-path> --id EXP-1 --title 'Compare the baseline'
 ```
 
-A non-zero exit **refuses to end the run**: finish the close-out and rerun it. The
-guard never releases or rewrites a claim.
+Fill its research context, intended check and continuation notes before handoff.
+Tasks live in `.tasks/current/`; old `.tasks/LOG.jsonl` is not a selection source.
+Revise or split tasks within the charter. Keep the requirement's outcome fixed
+unless the user changes it. Repository lists locate authorized work; incidental
+caller/test/doc edits inside them do not need another approval.
 
-## Boundaries
+For research, record setup before running, preserve observations and negative
+results, investigate credible alternatives within the budget, and update current
+understanding with evidence, uncertainty and provenance. An agent's qualified
+assessment need not wait for human ratification. Never present it as the user's
+endorsement or independently corroborate a claim by repeating another report.
 
-- Never ratify a charter, amend a requirement, or lift a deferral.
-- Never create a theme or re-rank charters. `themes/` holds the direction a charter
-  serves — read it for intent, never edit it here.
-- Never delete a struck requirement: it stays visible with its reason, because tasks
-  may cite it.
-- Findings land **provisional**. What the research record says we believe is not an
-  agent's to settle.
-- **Falling back to `work-cycle` is a finding, not a failure.** Record what you reached
-  for and why it was not here; see
-  [`references/selection-and-fallback.md`](references/selection-and-fallback.md).
+## Close or leave a continuation
 
-## Checklist
+Verify the requirement itself. Completing tasks or passing unrelated tests is
+insufficient. Record a direct evidence reference and explain what it establishes.
+Use `digest` when the result materially changes what its reader understands or
+can do, at a meaningful finding or charter closure; no automatic per-task digest.
+A digest may recommend a next step while distinguishing evidence from advice.
 
-- [ ] Charter is active and ratified; no draft was worked.
-- [ ] First unmet requirement in table order, dependencies honoured, nothing reordered.
-- [ ] Discharge shape declared at claim time, committed before the work.
-- [ ] Claim, then lock, then edit — lock released on every exit path.
-- [ ] Decisions taken against the charter's table, with the floor above it.
-- [ ] A fired halt condition ended the run and was recorded.
-- [ ] The digest the charter names exists, at its reader's altitude, in the right home.
-- [ ] Lifecycle guard run and clean; any `work-cycle` fallback recorded.
+Commit work before the queue transition. The helper releases only locks bearing
+this claim's token:
+
+```
+python3 <script> --queue <queue> finish --token <claim-token> --state done --evidence 'repo commit/path: what this establishes'
+python3 <script> --queue <queue> finish --token <claim-token> --state ready --note 'Result so far; exact next action and context'
+python3 <script> --queue <queue> finish --token <claim-token> --state blocked --note 'Decision needed, why, and independent work remaining'
+python3 <script> --queue <queue> check-exit --holder <unique-run-id>
+```
+
+Use `ready` for resumable work and `blocked` only when no further authorized
+progress on that requirement is possible. Commit the queue update and verify
+clean worktrees. A task brief's completion note records its result; the queue's
+evidence independently establishes requirement completion. Charter completion
+is derived from all requirements being done or explicitly dropped by the user.
+
+Budget scheduled runs by execution time or context-sized work, not by completed
+requirements of arbitrary size. Preserve continuation before context/time runs
+out. A stale claim requires inspection; `recover --token ... --reason ...`
+releases it only after confirming the previous worker is no longer running and
+preserving its work. Never clear another worker's dirty files to make work eligible.

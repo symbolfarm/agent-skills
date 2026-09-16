@@ -1,3 +1,5 @@
+<!-- Historical template. Fresh charter tasks are created by charter_queue.py task,
+     which supplies parent provenance. Do not file new work in the legacy ledger. -->
 # [task-id] Title
 
 **Blocked by:** task-xxx, task-yyy (or "nothing")
