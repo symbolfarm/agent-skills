@@ -43,6 +43,7 @@ design's overlapping vocabularies.
 | `GOALS.md` | What to do next, in order | Constantly |
 | `CALIBRATION.md` | Which decision classes are delegated — the floor, the global defaults, and how a charter varies them | Slowly, on evidence |
 | `CALIBRATION-EVIDENCE.md` | The counts and case law behind those levels; read here, not on the execution path | Every review |
+| `themes/` | One file per theme: the direction goals and charters serve, its outcome, cap and review date. **Authored by the user alone** — an agent may fill a theme's allocation, never create one or change its cap. | When direction changes |
 
 **Priority is not a property of a project.** It is position in `GOALS.md`. There
 is no project rank and no attention level.

@@ -123,6 +123,9 @@ Read, in this order:
 2. `PROJECTS.json` — registry: paths, state, tier, what agents may do;
 3. `CALIBRATION.md` — which decision classes are **auto**, **report**, or **ask**
    (its `CALIBRATION-EVIDENCE.md` ledger is not read for a brief);
+3a. `themes/` — one file per theme: the direction a goal or charter serves, its
+   outcome, cap and review date. Read it to say *why* an item sits where it does;
+   never author or edit a theme, which is the user's alone;
 4. the most recent entries under `log/`, including the gitignored
    `log/.pusher-*.md` files the host pusher leaves — fold what they record into
    your own committed entry, since the pusher deliberately cannot commit;

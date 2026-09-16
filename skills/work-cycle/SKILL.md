@@ -16,6 +16,15 @@ metadata:
 
 # Work cycle
 
+> **Superseded for chartered work by [`charter-cycle`](../charter-cycle/SKILL.md),
+> 2026-09-16. Nothing here is deleted and this skill still runs.**
+> `charter-cycle` is the entry point when work comes from a ratified charter. Use
+> this skill for everything else — repository tasks, portfolio goals with no charter
+> behind them, and the user's own queue items — which is still most of the queue.
+> What ends this skill's life is the transition charter's ruling, not this notice.
+> `charter-cycle` inherits this skill's lifecycle guard by **calling
+> `scripts/lifecycle_guard.py` here**, not by copying it: there is one guard.
+
 One execution skill, two item types:
 
 - A **goal** states an outcome. The portfolio owns it, and the user creates it in
@@ -135,6 +144,11 @@ the interrupted-task rules. If it is completed, verify its evidence against the
 goal rather than recreating it. Never file a duplicate task around an
 `Implements` link. Close the linked task lifecycle before closing the portfolio
 goal.
+
+A goal may carry `*Theme:*`, naming a file under the portfolio's `themes/`. That file
+holds the direction the goal serves, its outcome and its cap. Read it for intent when
+the goal's wording is thin; never author or edit a theme, which is the user's alone.
+Chartered work is `charter-cycle`'s, not this skill's.
 
 A goal may declare `Blocks:`, naming the goals or repository tasks that cannot
 proceed until it lands. It is a **derived-view field, not a second queue**:
