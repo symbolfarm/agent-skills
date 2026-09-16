@@ -3,12 +3,17 @@
 # [task-id] Title
 
 **Blocked by:** task-xxx, task-yyy (or "nothing")
-**Depends-on (external):** sibling-repo PROJ-N (omit line if none — see SKILL.md "Multi-project workspaces")
+**Depends-on (external):** sibling-repo PROJ-N (omit line if none)
 **Touches:** `path/or/glob`, `path/or/glob` (or `unknown`)
 
-<!-- Best-guess set of files/dirs this work will modify, used for
-     conflict detection and parallel scheduling. Use `unknown` if you
-     genuinely can't predict. See SKILL.md "Parallel-safe scheduling". -->
+<!-- A task belongs to exactly one repository. A sibling repository is a pinned
+     dependency, not a second edit target: if this work needs a change there,
+     file and land a separate task in that repository and name it on the
+     Depends-on (external) line. `Blocked by` holds ids from this repository only.
+
+     Touches is a best-guess set of files/dirs this work will modify, used for
+     conflict detection and parallel scheduling. Use `unknown` if you genuinely
+     can't predict. -->
 
 ## Context
 

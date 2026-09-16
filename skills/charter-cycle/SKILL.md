@@ -99,6 +99,10 @@ is derived from all requirements being done or explicitly dropped by the user.
 
 Budget scheduled runs by execution time or context-sized work, not by completed
 requirements of arbitrary size. Preserve continuation before context/time runs
-out. A stale claim requires inspection; `recover --token ... --reason ...`
-releases it only after confirming the previous worker is no longer running and
-preserving its work. Never clear another worker's dirty files to make work eligible.
+out. Release `ready` only with the work committed: uncommitted residue makes the
+requirement unselectable on the next run, including by you resuming it. An active
+claim holds the whole queue, so `next` reports an expired one as stalled with the
+command that clears it. A stale claim requires inspection; `recover --item <id>
+--reason ...` (or `--token`) releases it only after confirming the previous worker
+is no longer running and preserving its work. An expired claim is never seized
+automatically. Never clear another worker's dirty files to make work eligible.

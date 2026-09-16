@@ -3,7 +3,8 @@
 
 Only QUEUE.json is read; historical goal/task ledgers are never discovered.
 Mutations use flock plus atomic replacement. Repository O_EXCL locks interoperate
-with existing workers. No automatic stale-lock takeover is performed.
+with existing workers. No automatic stale-lock takeover is performed: an expired
+claim is reported with the command that clears it, never seized.
 """
 from __future__ import annotations
 
@@ -22,6 +23,23 @@ import uuid
 from repo_availability import worktree_residue
 
 STATES = {"ready", "active", "blocked", "deferred", "done", "dropped"}
+
+# Two charter forms are in use: the template writes `### R1 — ...`, while the
+# human-machine-teaming charters write a requirements table. Both declare the
+# same thing, so both are read rather than forcing one to be rewritten.
+REQUIREMENT_HEADING = re.compile(r"^#{2,4} (R[1-9][0-9]*)\b", re.M)
+REQUIREMENT_ROW = re.compile(r"^\|\s*\**\s*(R[1-9][0-9]*)\s*\**\s*\|", re.M)
+
+
+def declared_requirements(contract):
+    """The set of requirement ids the charter prose declares, in either form.
+
+    Ids recur legitimately — a discharged charter keys both its requirements
+    table and its evidence table by id — so this counts nothing. The check it
+    serves is only that the charter and the queue agree on which requirements
+    exist; a repeated row is a prose error, not a reason to freeze the queue.
+    """
+    return set(REQUIREMENT_HEADING.findall(contract) + REQUIREMENT_ROW.findall(contract))
 
 
 def read_queue(path):
@@ -46,9 +64,8 @@ def read_queue(path):
         rids = [r["id"] for r in requirements]
         if len(set(rids)) != len(rids) or not rids:
             raise ValueError(f"{cid}: duplicate or empty requirements")
-        declared = re.findall(r"^### (R[1-9][0-9]*)\b", contract, re.M)
-        if set(declared) != set(rids) or len(declared) != len(rids):
-            raise ValueError(f"{cid}: requirement ids differ from charter headings")
+        if declared_requirements(contract) != set(rids):
+            raise ValueError(f"{cid}: requirement ids differ from those the charter declares")
         for req in requirements:
             if req["state"] not in STATES or not req.get("repos"):
                 raise ValueError(f"{cid}/{req['id']}: invalid state or missing repositories")
@@ -88,6 +105,9 @@ def rows(data):
 
 
 def save(path, data):
+    # mkstemp is 0600. Replacing the queue with that would lock a second worker
+    # running as a different user out of the shared queue after the first claim.
+    mode = (path.stat().st_mode & 0o777) if path.exists() else 0o644
     fd, name = tempfile.mkstemp(prefix=".queue-", dir=path.parent)
     try:
         with os.fdopen(fd, "w") as f:
@@ -95,6 +115,7 @@ def save(path, data):
             f.write("\n")
             f.flush()
             os.fsync(f.fileno())
+        os.chmod(name, mode)
         os.replace(name, path)
     finally:
         if os.path.exists(name):
@@ -116,9 +137,26 @@ def repo_paths(path, req):
 def choose(path, data, lane, capabilities):
     skipped = []
     # Serial execution avoids simultaneous commits to shared portfolio state.
-    active = [f"{c['id']}/{r['id']}" for c, r in rows(data) if r['state'] == 'active']
+    # An active claim anywhere holds the whole queue, so a worker that died
+    # mid-requirement stalls both lanes. Report that as a stall naming the
+    # command that clears it: seizing a claim whose worker may still be running
+    # is the one failure this serialisation exists to prevent.
+    now = datetime.now(timezone.utc)
+    active = []
+    for charter, req in rows(data):
+        if req['state'] != 'active':
+            continue
+        claim = req.get('claim', {})
+        expires = claim.get('expires_at')
+        item = f"{charter['id']}/{req['id']}"
+        active.append({"item": item, "holder": claim.get('holder'),
+                       "expires_at": expires,
+                       "expired": bool(expires and datetime.fromisoformat(expires) < now),
+                       "clear_with": f"recover --item {item} --reason '<why the previous worker is gone>'"})
     if active:
-        return None, [{"reason": "active claim requires completion or recovery", "items": active}]
+        return None, [{"reason": "active claim requires completion or recovery",
+                       "stalled": any(entry["expired"] for entry in active),
+                       "items": active}]
     for charter, req in rows(data):
         key = f"{charter['id']}/{req['id']}"
         if charter['status'] != 'active' or req['state'] != 'ready':
@@ -157,6 +195,16 @@ def describe(path, pair):
     return {"item": f"{charter['id']}/{req['id']}",
             "charter": str((path.parent / charter['path']).resolve()),
             "requirement": req}
+
+
+def resolve_token(data, args):
+    item = getattr(args, 'item', None)
+    if not item:
+        return args.token
+    for charter, req in rows(data):
+        if f"{charter['id']}/{req['id']}" == item and req.get('claim'):
+            return req['claim']['token']
+    raise ValueError(f'no active claim on {item}')
 
 
 def owned(data, token):
@@ -223,7 +271,8 @@ def run(args):
                 release(acquired, token)
                 raise
             return {'selected': describe(path, selected), 'skipped': skipped}
-        charter, req = owned(data, args.token)
+        token = resolve_token(data, args)
+        charter, req = owned(data, token)
         repos = repo_paths(path, req)
         if args.command == 'task':
             repo = args.repo.resolve()
@@ -250,15 +299,25 @@ def run(args):
             raise ValueError('completion requires evidence of the requirement itself')
         if state != 'done' and (not note or not note.strip()):
             raise ValueError('continuation, block or recovery requires a note')
-        if state == 'done':
+        if state in {'done', 'ready'}:
+            # `choose` skips a dirty repository, so residue left behind here makes
+            # this requirement unselectable on the next run — including by the
+            # worker that meant to resume it.
             for repo in repos:
                 if worktree_residue(repo):
-                    raise ValueError(f'commit the work before completion: {repo}')
+                    raise ValueError(
+                        f'commit the work before recording {state}: {repo} '
+                        '(uncommitted residue makes this requirement unselectable)')
+        else:
+            residue = [str(repo) for repo in repos if worktree_residue(repo)]
+            if residue:
+                note = f"{note}\n\nUncommitted work left in: {', '.join(residue)}"
+
         # Validate every lock before releasing any. Release before saving so a
         # crash leaves an active queue claim that the recovery command can find.
         for repo in repos:
             lock = repo / '.tasks/.lock'
-            if lock.exists() and json.loads(lock.read_text()).get('token') != args.token:
+            if lock.exists() and json.loads(lock.read_text()).get('token') != token:
                 raise ValueError(f'lock ownership changed: {repo}')
         req['state'] = state
         req['updated_at'] = datetime.now(timezone.utc).isoformat()
@@ -267,7 +326,7 @@ def run(args):
         if evidence:
             req['evidence'] = evidence
         req.pop('claim')
-        release(repos, args.token)
+        release(repos, token)
         save(path, data)
         return {'item': f"{charter['id']}/{req['id']}", 'state': state}
 
@@ -291,7 +350,9 @@ def main():
     cmd.add_argument('--note')
     cmd.add_argument('--evidence', action='append', default=[])
     cmd = sub.add_parser('recover')
-    cmd.add_argument('--token', required=True)
+    group = cmd.add_mutually_exclusive_group(required=True)
+    group.add_argument('--token')
+    group.add_argument('--item', help="charter/requirement, e.g. HMT-C3/R1")
     cmd.add_argument('--reason', required=True)
     cmd = sub.add_parser('task')
     cmd.add_argument('--token', required=True)

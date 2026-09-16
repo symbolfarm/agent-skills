@@ -76,14 +76,17 @@ class CharterQueueTests(unittest.TestCase):
         self.cmd('check-exit', '--holder', 'run-a')
         self.assertEqual(self.cmd('next')['selected']['item'], 'C-001/R2')
 
-    def test_dirty_completion_refused_and_continuation_preserves_work(self):
+    def test_dirty_release_refused_and_never_touches_the_work(self):
         token = self.claim()
         work = self.repo / 'result.txt'
         work.write_text('incomplete result')
         self.cmd('finish', '--token', token, '--state', 'done', '--evidence', 'result', ok=False)
-        self.cmd('finish', '--token', token, '--state', 'ready', '--note', 'Finish comparison')
+        self.cmd('finish', '--token', token, '--state', 'ready', '--note', 'Finish comparison', ok=False)
         self.assertEqual(work.read_text(), 'incomplete result')
-        self.assertIsNone(self.cmd('next', '--capability', 'general')['selected'])
+        subprocess.run(['git', '-C', str(self.repo), 'add', '-A'], check=True, capture_output=True)
+        subprocess.run(['git', '-C', str(self.repo), 'commit', '-qm', 'partial'], check=True, capture_output=True)
+        self.cmd('finish', '--token', token, '--state', 'ready', '--note', 'Finish comparison')
+        self.assertEqual(self.cmd('next', '--capability', 'general')['selected']['item'], 'C-001/R1')
         self.cmd('check-exit', '--holder', 'run-a')
 
     def test_task_inherits_parent_and_cannot_escape_repository(self):
@@ -179,6 +182,64 @@ class CharterQueueTests(unittest.TestCase):
         self.cmd('recover', '--token', token, '--reason', 'Confirmed stopped; resume baseline')
         self.assertFalse((self.repo / '.tasks/.lock').exists())
         self.assertIn('resume baseline', self.cmd('next', '--capability', 'general')['selected']['requirement']['progress'])
+
+    def test_table_form_charter_declares_its_requirements(self):
+        # The human-machine-teaming charters write requirements as a table, not
+        # as headings. Both forms must load, or authorizing one of them makes the
+        # whole queue unreadable for every worker.
+        (self.portfolio / 'charter.md').write_text(
+            '# Question\n\n## Requirements\n\n'
+            '| # | Must be true |\n|---|---|\n'
+            '| **R1** | Compare the baseline. |\n'
+            '| **R2** | Explain the result. |\n')
+        self.assertEqual(self.cmd('validate')['charters'], 1)
+        self.assertEqual(self.cmd('next', '--capability', 'general')['selected']['item'], 'C-001/R1')
+
+    def test_charter_and_queue_requirement_ids_must_agree(self):
+        (self.portfolio / 'charter.md').write_text('# Question\n\n### R1 — Compare\n')
+        self.assertIn('differ from those the charter declares', self.cmd('validate', ok=False))
+        # A discharged charter keys both a requirements table and an evidence
+        # table by id, and may add a per-requirement heading. Ids recur; that is
+        # the shape of a finished charter, not a disagreement with the queue.
+        (self.portfolio / 'charter.md').write_text(
+            '# Question\n\n| **R1** | Compare |\n| **R2** | Explain |\n\n'
+            '## Discharge\n\n| **R1** | commit abc |\n| **R2** | commit def |\n\n'
+            '### R1 — met\n\n### R2 — met\n')
+        self.assertEqual(self.cmd('validate')['charters'], 1)
+
+    def test_expired_claim_is_reported_as_a_stall_not_seized(self):
+        self.claim()
+        data = json.loads(self.queue.read_text())
+        claim = data['charters'][0]['requirements'][0]['claim']
+        claim['expires_at'] = '2000-01-01T00:00:00+00:00'
+        self.queue.write_text(json.dumps(data))
+        blocked = self.cmd('next', '--capability', 'general')
+        self.assertIsNone(blocked['selected'])
+        entry = blocked['skipped'][0]
+        self.assertTrue(entry['stalled'])
+        self.assertTrue(entry['items'][0]['expired'])
+        self.assertIn('recover --item C-001/R1', entry['items'][0]['clear_with'])
+        self.assertTrue((self.repo / '.tasks/.lock').exists(), 'an expired claim must not be seized')
+
+    def test_recover_by_item_without_the_token(self):
+        self.claim()
+        self.cmd('recover', '--item', 'C-001/R1', '--reason', 'Worker host rebooted; work preserved')
+        self.assertFalse((self.repo / '.tasks/.lock').exists())
+        self.assertEqual(self.cmd('next', '--capability', 'general')['selected']['item'], 'C-001/R1')
+        self.assertIn('no active claim', self.cmd('recover', '--item', 'C-001/R2',
+                                                  '--reason', 'nothing there', ok=False))
+
+    def test_blocked_records_the_residue_it_leaves(self):
+        token = self.claim()
+        (self.repo / 'scratch.txt').write_text('half-finished\n')
+        self.cmd('finish', '--token', token, '--state', 'blocked', '--note', 'Needs a ruling on scope')
+        progress = json.loads(self.queue.read_text())['charters'][0]['requirements'][0]['progress']
+        self.assertIn('Uncommitted work left in', progress)
+
+    def test_claim_preserves_the_queue_file_mode(self):
+        self.queue.chmod(0o644)
+        self.claim()
+        self.assertEqual(self.queue.stat().st_mode & 0o777, 0o644)
 
 
 if __name__ == '__main__':
