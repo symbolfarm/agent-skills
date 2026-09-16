@@ -2,9 +2,11 @@
 
 Keep scheduler configuration separate from workflow policy. Use one fresh charter
 queue and the `charter-cycle` skill for execution; `portfolio-brief` reports between
-reviews. A scheduler prompt names the portfolio WORKFLOW.md and QUEUE.json, its
-lane/capabilities, unique run identity, runtime budget and delivery boundary.
-Never copy the queue into cron prompts or fall back to historical work.
+reviews. A scheduler prompt names the portfolio and worker profile in plain language,
+plus any deployment boundary not already represented there. `WORKERS.json` supplies
+capabilities, wind-down budget, health source and report sink; authorized charters
+name eligible workers. Never copy queue policy into cron prompts or fall back to
+historical work.
 
 Preserve existing schedule, timezone, model and delivery settings unless the user
 changes them. Inspect actual stored jobs rather than inferring from documentation.

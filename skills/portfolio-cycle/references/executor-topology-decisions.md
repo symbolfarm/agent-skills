@@ -10,16 +10,15 @@ it is not authorization to create or change jobs.
 
 ## Shared contract
 
-Interactive planning owns strategy: project state, queue order, lane allocation,
-and which outcomes are approved. Executors own mechanics: validate their
-assignment, select deterministically, enter one repository, read its local
-instructions, run `work-cycle`, verify, commit, and close the lifecycle.
+Interactive planning owns strategy: project state, queue order, charter authority,
+and eligible-worker assignment. Executors own mechanics: validate their assignment,
+select deterministically, enter one repository, read its local instructions, and
+close or preserve an exact continuation.
 
-The portfolio queue remains the sole strategic priority. A deployment may define
-an explicit lane allocation or eligible set—for example by capability or work
-class—but must name it as routing rather than claiming the raw queue was
-reordered. Within an eligible set, preserve queue order. The brief should show
-both the raw queue window and the actual routed selection.
+The portfolio queue remains the sole strategic priority. Worker profiles record
+factual capabilities and operating limits, not preferences. The user names each
+charter's eligible workers at authorization; within that eligible set preserve
+queue order. Themes provide context above execution and never route work.
 
 ## Per-project workers
 
@@ -64,8 +63,8 @@ insufficient.
 
 ## Fixed slot workers
 
-Keep a bounded number of recurring workers and assign each an explicit lane or
-eligible set.
+Keep a bounded number of recurring workers, give each a factual worker profile,
+and assign charters explicitly to one or more eligible workers.
 
 Strengths:
 
@@ -88,16 +87,15 @@ repository locks, or isolated worktrees and a merge protocol.
 Keep these concepts separate:
 
 - queue position: strategic priority;
-- lane allocation: which subset a worker serves first or exclusively;
-- capability: whether the worker can execute an item at all;
-- run budget: how many fully closed items one invocation may consume;
+- charter eligibility: which named workers the user authorized;
+- capability: whether an eligible worker can execute a requirement at all;
+- wind-down budget: when a worker must preserve continuation and close out;
 - repository availability: whether the selected worktree can safely be edited.
 
-Every deployed selection algorithm must state its order of operations. A useful
-baseline is: resume this worker's claim; apply explicit lane allocation; scan
-that eligible set in queue order; apply assignee, gate, capability, claim, and
-repository-availability checks; then use any declared fallback set in queue
-order. If there is no explicit allocation, scan the canonical queue directly.
+A deployed worker resumes its own claim first, then scans authorized charters in
+queue order, applying explicit worker eligibility, capability, dependency, claim
+and repository-availability checks. There is no theme-derived or historical
+fallback set.
 
 ## Migration and first-run proof
 

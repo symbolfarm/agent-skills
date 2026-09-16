@@ -1,0 +1,73 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/charter-cycle/workers.schema.json",
+  "title": "Scheduled charter worker profiles",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "timezone", "workers"],
+  "properties": {
+    "version": {"const": 1},
+    "timezone": {"type": "string", "minLength": 1},
+    "workers": {
+      "type": "array",
+      "minItems": 1,
+      "items": {"$ref": "#/$defs/worker"}
+    }
+  },
+  "$defs": {
+    "safeId": {"type": "string", "pattern": "^[A-Za-z0-9_-]+$"},
+    "relativePath": {
+      "type": "string",
+      "minLength": 1,
+      "not": {"pattern": "^(?:/|[A-Za-z]:[\\\\/])"}
+    },
+    "worker": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id", "holder_prefix", "capabilities", "wind_down", "report_sink", "health"
+      ],
+      "properties": {
+        "id": {"$ref": "#/$defs/safeId"},
+        "holder_prefix": {"$ref": "#/$defs/safeId"},
+        "capabilities": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {"$ref": "#/$defs/safeId"}
+        },
+        "wind_down": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["minutes", "reserve_minutes"],
+          "properties": {
+            "minutes": {"type": "integer", "minimum": 2},
+            "reserve_minutes": {"type": "integer", "minimum": 1}
+          }
+        },
+        "report_sink": {"$ref": "#/$defs/relativePath"},
+        "health": {
+          "oneOf": [
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["kind", "job_id"],
+              "properties": {
+                "kind": {"const": "hermes-cron"},
+                "job_id": {"type": "string", "minLength": 1}
+              }
+            },
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["kind", "path"],
+              "properties": {
+                "kind": {"const": "file"},
+                "path": {"$ref": "#/$defs/relativePath"}
+              }
+            }
+          ]
+        }
+      }
+    }
+  }
+}

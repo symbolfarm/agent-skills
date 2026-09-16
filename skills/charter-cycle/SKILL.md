@@ -3,15 +3,18 @@ name: charter-cycle
 description: Execute authorized charter requirements from a fresh queue, preserve research context across tasks, and close with evidence and a useful handover. Use for scheduled charter work or when asked to work a charter.
 license: MIT
 metadata:
-  version: "2"
+  version: "3"
 ---
 
 # Charter cycle
 
-The user chooses direction and authorizes charters. Agents may draft themes and
-requirements from the conversation, but a draft grants no authority. Explicit
-user steering updates the applicable instruction; record it without demanding a
-second approval ritual. Do not weaken a success condition to declare success.
+The user chooses direction, authorizes charters and assigns eligible workers.
+Agents may draft themes and requirements in an authorized planning conversation,
+but themes are non-executable and a draft grants no authority. Do not derive or
+activate a charter merely because a theme has headroom or the queue is empty.
+Explicit user steering updates the applicable instruction; record it without
+demanding a second approval ritual. Do not weaken a success condition to declare
+success.
 
 ## Orient and select
 
@@ -19,23 +22,30 @@ Read the portfolio's `WORKFLOW.md`, `QUEUE.json`, the selected charter, and the
 relevant research overview. Historical queues are reference material only.
 Read repository instructions before editing. Where a project registry exists,
 verify active state and permission for the intended edits/commits; a charter does
-not silently reopen an archived or human-only repository. The portfolio queue orders charters;
-requirements follow their declared order and dependencies. Lane and capability
-filters determine eligibility, not strategic rank. Never fall back to old tasks.
+not silently reopen an archived or human-only repository. The portfolio queue
+orders charters; requirements follow their declared order and dependencies.
+Explicit worker eligibility and profile capabilities determine
+whether work can run, not its strategic rank. Never fall back to old tasks.
 
-Use `../../scripts/charter_queue.py` relative to this skill:
+Use `../../scripts/charter_queue.py` relative to this skill. Scheduled workers
+are defined by the portfolio's `WORKERS.json`; their profile supplies a stable
+identity prefix, verified capabilities, wind-down budget, health source and
+structured-report sink. Charters name their `eligible_workers` when the user
+authorizes them. Themes provide direction but are never executable work and do
+not route a charter automatically.
 
 ```
-python3 <script> --queue <portfolio>/QUEUE.json next --lane research --capability general
-python3 <script> --queue <portfolio>/QUEUE.json claim --lane research --capability general --holder <unique-run-id>
+python3 <script> --queue <portfolio>/QUEUE.json next --worker <worker-id>
+python3 <script> --queue <portfolio>/QUEUE.json claim --worker <worker-id> --holder <unique-run-id>
 ```
 
-Repeat `--capability` for verified capabilities. Omit `--lane` only when the caller
-allows all lanes. A null selection is a successful no-op. Missing/malformed
-configuration is an error, not an empty queue. `next` is advisory; `claim` selects
-again under an atomic queue lock and acquires repository locks before recording
-ownership. Concurrent scheduled work is serialized for now. A Git commit alone
-is not a lock in a shared worktree.
+The holder must begin with the profile's `holder_prefix` followed by `-`. The
+helper derives capabilities from the profile; callers must not claim capabilities
+ad hoc. A null selection is a successful no-op. Missing/malformed configuration,
+an unknown worker or an active requirement no eligible worker can run is an error,
+not an empty queue. `next` is advisory; `claim` selects again under an atomic queue
+lock and acquires repository locks before recording ownership. Concurrent scheduled
+work is serialized for now. A Git commit alone is not a lock in a shared worktree.
 
 The queue contains lifecycle/routing data; the charter owns requirement wording.
 An entry is executable only with `status: active` and `authorized_by` recording
@@ -90,6 +100,23 @@ python3 <script> --queue <queue> finish --token <claim-token> --state ready --no
 python3 <script> --queue <queue> finish --token <claim-token> --state blocked --note 'Decision needed, why, and independent work remaining'
 python3 <script> --queue <queue> check-exit --holder <unique-run-id>
 ```
+
+After `check-exit` passes, every scheduled run writes one bounded close-out through
+the helper, including a healthy no-op. The report is transport rather than primary
+evidence: point to commits, checks, digests or notebook entries instead of copying
+them. Use `completed` only with evidence, `advanced` only with an exact continuation,
+and a unique holder so retries cannot duplicate an entry:
+
+```
+python3 <script> --queue <queue> report --worker <worker-id> \
+  --holder <unique-run-id> --state completed --item <charter/requirement> \
+  --summary 'What changed and why it matters' --evidence 'commit/path: check'
+```
+
+For a no-op omit `--item` and use `--state no-op`. A reporting failure does not
+rewrite a verified queue transition, but it must be named in the final response.
+The configured wind-down reserve exists to leave enough time for commit, `finish`,
+`check-exit` and this report; do not begin new work inside it.
 
 Use `ready` for resumable work and `blocked` only when no further authorized
 progress on that requirement is possible. Commit the queue update and verify
