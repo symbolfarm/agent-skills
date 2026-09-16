@@ -87,6 +87,15 @@ endorsement or independently corroborate a claim by repeating another report.
 
 Verify the requirement itself. Completing tasks or passing unrelated tests is
 insufficient. Record a direct evidence reference and explain what it establishes.
+Superseded documentation is deleted, or moved under an `archive/` path — never
+left in place with a note on top. The path is what a later reader or a grep
+result shows; a banner is invisible until the file is already open, and an agent
+without memory of the decision will follow what it finds. No live document links
+to an archived one, because links are how stale text keeps circulating. Do this
+at close-out, for the documents the work touched, rather than as a separate
+sweep. Dated records, digests and notebook notes are evidence rather than
+instructions: those stay where they are and take a visible correction instead.
+
 Use `digest` when the result materially changes what its reader understands or
 can do, at a meaningful finding or charter closure; no automatic per-task digest.
 A digest may recommend a next step while distinguishing evidence from advice.

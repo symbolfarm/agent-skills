@@ -34,6 +34,15 @@ current research record. Use `research-notebook` for its correction discipline.
 An evidence-backed agent assessment does not require human ratification; the
 user retains strategic direction and external commitments.
 
+Superseded documentation is deleted, or moved under an `archive/` path — never
+left in place with a note on top. The path is what a later reader or a grep
+result shows; a banner is invisible until the file is already open, and an agent
+without memory of the decision will follow what it finds. No live document links
+to an archived one, because links are how stale text keeps circulating. Do this
+at close-out, for the documents the work touched, rather than as a separate
+sweep. Dated records, digests and notebook notes are evidence rather than
+instructions: those stay where they are and take a visible correction instead.
+
 Use `digest` when the result changes what the reader needs to understand or use.
 Routine changes need a concise handover, not a separate report. Scheduled workers
 do not push; any existing host publication boundary still applies.
