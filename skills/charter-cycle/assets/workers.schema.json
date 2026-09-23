@@ -30,6 +30,11 @@
       "properties": {
         "id": {"$ref": "#/$defs/safeId"},
         "holder_prefix": {"$ref": "#/$defs/safeId"},
+        "legacy_holder_prefixes": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {"$ref": "#/$defs/safeId"}
+        },
         "capabilities": {
           "type": "array",
           "uniqueItems": true,

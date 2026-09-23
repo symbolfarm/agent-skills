@@ -93,6 +93,58 @@ class CharterQueueTests(unittest.TestCase):
         (self.portfolio / 'GOALS.md').write_text('## Queue\n- **G-001** `research` — old work\n')
         self.assertIsNone(self.cmd('next', '--worker', 'research-worker')['selected'])
 
+    def test_legacy_holder_prefix_validates_history_but_not_new_claims(self):
+        workers = json.loads(self.workers.read_text())
+        workers['workers'][0]['legacy_holder_prefixes'] = ['old-research-worker']
+        self.workers.write_text(json.dumps(workers))
+        req = self.data['charters'][0]['requirements'][0]
+        req.update(
+            state='done',
+            evidence='historical artifact',
+            transitions=[{
+                'holder': 'old-research-worker-run-a',
+                'state': 'done',
+                'at': '2026-09-01T09:00:00+09:30',
+            }],
+        )
+        self.write()
+        result = json.loads(json.dumps(self.cmd('validate')))
+        self.assertTrue(result['valid'])
+        self.cmd(
+            'claim', '--worker', 'research-worker',
+            '--holder', 'old-research-worker-run-b', ok=False)
+
+    def test_current_and_legacy_holder_prefixes_must_be_globally_unique(self):
+        original = json.loads(self.workers.read_text())
+        for legacy_owner, current_owner in [(0, 1), (1, 0)]:
+            with self.subTest(legacy_owner=legacy_owner):
+                workers = json.loads(json.dumps(original))
+                collision = workers['workers'][current_owner]['holder_prefix']
+                workers['workers'][legacy_owner]['legacy_holder_prefixes'] = [collision]
+                self.workers.write_text(json.dumps(workers))
+                self.cmd('validate', ok=False)
+
+    def test_worker_health_sources_must_be_independent(self):
+        original = json.loads(self.workers.read_text())
+        duplicates = [
+            {'kind': 'hermes-cron', 'job_id': 'shared-job'},
+            {'kind': 'file', 'path': '.briefing/health/shared.json'},
+        ]
+        for health in duplicates:
+            with self.subTest(kind=health['kind']):
+                workers = json.loads(json.dumps(original))
+                for worker in workers['workers']:
+                    worker['health'] = json.loads(json.dumps(health))
+                self.workers.write_text(json.dumps(workers))
+                self.cmd('validate', ok=False)
+        workers = json.loads(json.dumps(original))
+        workers['workers'][0]['health'] = {
+            'kind': 'file', 'path': '.briefing/health/shared.json'}
+        workers['workers'][1]['health'] = {
+            'kind': 'file', 'path': '.briefing/health/../health/shared.json'}
+        self.workers.write_text(json.dumps(workers))
+        self.cmd('validate', ok=False)
+
     def test_draft_deferral_worker_capability_and_dependency_gates(self):
         self.assertIsNone(self.cmd('next', '--worker', 'product-worker')['selected'])
         self.data['charters'][0]['requirements'][0]['requires'] = ['network']

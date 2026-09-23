@@ -71,11 +71,13 @@ def read_workers(path):
         raise ValueError("WORKERS.json: invalid IANA timezone") from error
     workers = {}
     prefixes = set()
+    health_sources = set()
     for worker in data["workers"]:
         if not isinstance(worker, dict):
             raise ValueError("WORKERS.json: every worker must be an object")
-        if set(worker) != {"id", "holder_prefix", "capabilities", "wind_down",
-                           "report_sink", "health"}:
+        required_fields = {"id", "holder_prefix", "capabilities", "wind_down",
+                           "report_sink", "health"}
+        if not required_fields.issubset(worker) or set(worker) - (required_fields | {"legacy_holder_prefixes"}):
             raise ValueError("WORKERS.json: unknown or missing worker field")
         worker_id = worker.get("id")
         if not isinstance(worker_id, str) or not SAFE_ID.fullmatch(worker_id) or worker_id in workers:
@@ -84,7 +86,16 @@ def read_workers(path):
         if (not isinstance(prefix, str) or not SAFE_ID.fullmatch(prefix)
                 or prefix in prefixes):
             raise ValueError(f"WORKERS.json: {worker_id} has duplicate or invalid holder_prefix")
+        legacy_prefixes = worker.get("legacy_holder_prefixes", [])
+        if (not isinstance(legacy_prefixes, list)
+                or len(legacy_prefixes) != len(set(legacy_prefixes))
+                or not all(isinstance(item, str) and SAFE_ID.fullmatch(item)
+                           for item in legacy_prefixes)
+                or prefix in legacy_prefixes
+                or prefixes.intersection(legacy_prefixes)):
+            raise ValueError(f"WORKERS.json: {worker_id} has invalid legacy_holder_prefixes")
         prefixes.add(prefix)
+        prefixes.update(legacy_prefixes)
         capabilities = worker.get("capabilities")
         if (not isinstance(capabilities, list) or len(capabilities) != len(set(capabilities))
                 or not all(isinstance(c, str) and SAFE_ID.fullmatch(c) for c in capabilities)):
@@ -107,15 +118,21 @@ def read_workers(path):
         if health.get("kind") == "hermes-cron":
             if (set(health) != {"kind", "job_id"}
                     or not isinstance(health.get("job_id"), str)
-                    or not health["job_id"].strip()):
+                    or not health["job_id"].strip()
+                    or health["job_id"] != health["job_id"].strip()):
                 raise ValueError(f"WORKERS.json: {worker_id} health needs job_id")
+            health_source = ("hermes-cron", health["job_id"])
         elif health.get("kind") == "file":
             if set(health) != {"kind", "path"}:
                 raise ValueError(f"WORKERS.json: {worker_id} health needs only path")
-            safe_relative(path.parent, health.get("path", ""),
-                          f"WORKERS.json: {worker_id} health path")
+            health_path = safe_relative(path.parent, health.get("path", ""),
+                                        f"WORKERS.json: {worker_id} health path")
+            health_source = ("file", str(health_path))
         else:
             raise ValueError(f"WORKERS.json: {worker_id} has invalid health kind")
+        if health_source in health_sources:
+            raise ValueError(f"WORKERS.json: {worker_id} reuses another worker's health source")
+        health_sources.add(health_source)
         workers[worker_id] = worker
     if not workers:
         raise ValueError("WORKERS.json: at least one worker is required")
@@ -127,7 +144,9 @@ def read_queue(path, workers):
     if data.get("version") != 2 or not isinstance(data.get("charters"), list):
         raise ValueError("expected version 2 and charters list")
     allowed_prefixes = tuple(
-        worker["holder_prefix"] + "-" for worker in workers.values())
+        prefix + "-"
+        for worker in workers.values()
+        for prefix in [worker["holder_prefix"], *worker.get("legacy_holder_prefixes", [])])
     ids = set()
     for charter in data["charters"]:
         cid = charter["id"]

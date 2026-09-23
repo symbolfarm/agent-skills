@@ -3,7 +3,7 @@ name: charter-cycle
 description: Execute authorized charter requirements from a fresh queue, preserve research context across tasks, and close with evidence and a useful handover. Use for scheduled charter work or when asked to work a charter.
 license: MIT
 metadata:
-  version: "3"
+  version: "4"
 ---
 
 # Charter cycle
@@ -39,9 +39,14 @@ python3 <script> --queue <portfolio>/QUEUE.json next --worker <worker-id>
 python3 <script> --queue <portfolio>/QUEUE.json claim --worker <worker-id> --holder <unique-run-id>
 ```
 
-The holder must begin with the profile's `holder_prefix` followed by `-`. The
-helper derives capabilities from the profile; callers must not claim capabilities
-ad hoc. A null selection is a successful no-op. Missing/malformed configuration,
+The holder must begin with the profile's current `holder_prefix` followed by `-`.
+An optional `legacy_holder_prefixes` list preserves validation of immutable
+historical transitions after a worker rename, but those prefixes cannot be used
+for new claims or reports. Every worker must also have an independent health
+source; duplicate cron job ids or canonically identical health-file paths are a
+configuration error. The helper derives capabilities from the profile;
+callers must not claim capabilities ad hoc. A null selection is a successful
+no-op. Missing/malformed configuration,
 an unknown worker or an active requirement no eligible worker can run is an error,
 not an empty queue. `next` is advisory; `claim` selects again under an atomic queue
 lock and acquires repository locks before recording ownership. Concurrent scheduled
