@@ -29,7 +29,7 @@ Issues and pull requests are welcome but may go unanswered.
 ### A note on the portfolio skills
 
 `portfolio-cycle`, `portfolio-brief` and `work-cycle` assume a **separate,
-private portfolio repository** holding `GOALS.md`, `PROJECTS.json`,
+private portfolio repository** holding `WORKFLOW.md`, `QUEUE.json`, `WORKERS.json`, `PROJECTS.json`,
 `CALIBRATION.md` (with its `CALIBRATION-EVIDENCE.md` ledger), `OWNER.md` and
 `log/`. That repository is where anything
 specific to you belongs: real project names, schedules, delegated authority, and

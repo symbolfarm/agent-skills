@@ -76,6 +76,17 @@ class CharterQueueTests(unittest.TestCase):
         return self.cmd('claim', '--worker', 'research-worker', '--holder', holder)[
             'selected']['requirement']['claim']['token']
 
+    def test_exhausted_active_charter_is_reported_not_closed(self):
+        # Closing is a joint review decision; the helper only makes it visible.
+        for req in self.data['charters'][0]['requirements']:
+            req.update(state='dropped')
+        self.write()
+        self.assertEqual(self.cmd('validate')['awaiting_close'], ['C-001'])
+        result = self.cmd('next', '--worker', 'research-worker')
+        self.assertIsNone(result['selected'])
+        self.assertEqual(result['awaiting_close'], ['C-001'])
+        self.assertEqual(json.loads(self.queue.read_text())['charters'][0]['status'], 'active')
+
     def test_empty_queue_never_discovers_legacy_work(self):
         self.data['charters'] = []
         self.write()

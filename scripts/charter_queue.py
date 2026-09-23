@@ -211,6 +211,13 @@ def read_queue(path, workers):
     return data
 
 
+def awaiting_close(data):
+    """Active charters with no open requirement. Workers skip them; closing is
+    a joint decision at portfolio review, so the helper reports rather than acts."""
+    return [c['id'] for c in data['charters'] if c['status'] == 'active'
+            and all(r['state'] in {'done', 'dropped'} for r in c['requirements'])]
+
+
 def rows(data):
     for charter in data["charters"]:
         for req in charter["requirements"]:
@@ -526,7 +533,8 @@ def run(args):
     if args.command in {'next', 'validate', 'check-exit', 'reports'}:
         data = read_queue(path, workers)
         if args.command == 'validate':
-            return {'valid': True, 'charters': len(data['charters']), 'workers': len(workers)}
+            return {'valid': True, 'charters': len(data['charters']), 'workers': len(workers),
+                    'awaiting_close': awaiting_close(data)}
         if args.command == 'check-exit':
             check_exit(path, data, args.holder)
             return {'clean': True}
@@ -539,7 +547,8 @@ def run(args):
         if worker is None:
             raise ValueError(f'unknown worker: {args.worker}')
         selected, skipped = choose(path, data, worker)
-        return {'selected': describe(path, selected), 'skipped': skipped}
+        return {'selected': describe(path, selected), 'skipped': skipped,
+                'awaiting_close': awaiting_close(data)}
     with transaction(path, workers) as data:
         if args.command == 'brief-window':
             return brief_window(path, workers, args)
@@ -580,7 +589,8 @@ def run(args):
             except Exception:
                 release(acquired, token)
                 raise
-            return {'selected': describe(path, selected), 'skipped': skipped}
+            return {'selected': describe(path, selected), 'skipped': skipped,
+                'awaiting_close': awaiting_close(data)}
         token = resolve_token(data, args)
         charter, req = owned(data, token)
         repos = repo_paths(path, req)

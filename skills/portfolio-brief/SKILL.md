@@ -48,7 +48,8 @@ Never diagnose beyond the available evidence.
 
 Render a concise, phone-readable report. Lead with a missed or failed run; otherwise
 lead with the most meaningful change in understanding or capability. Group healthy
-no-ops. For each substantive entry report its worker, charter/requirement, result,
+no-ops, but name any charter the helper reports as `awaiting_close`: it needs a
+closing decision at the next review. For each substantive entry report its worker, charter/requirement, result,
 direct evidence pointer and continuation or decision needed. Link a new digest
 with enough context to explain why it matters. Do not redo a repository-wide
 evidence tour merely to paraphrase a verified close-out; investigate a contradiction

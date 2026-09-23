@@ -47,7 +47,9 @@ out the backlog. A useful review need not change the queue or graduate a policy.
 
 Record agreed steering in the relevant charter/queue. Changing requirement order
 can be a cheap recorded instruction. Preserve evidence when a requirement is
-revised or dropped. Agents may propose next charters after findings or in review;
+revised or dropped. Charters the queue helper reports as `awaiting_close` have no
+open requirement; closing, extending or holding one is decided together at review.
+Agents may propose next charters after findings or in review;
 empty capacity alone is not a reason to generate work.
 
 Use `QUEUE.json` for ordered charter references and requirement lifecycle; use
