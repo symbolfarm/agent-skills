@@ -7,7 +7,9 @@ the portfolio. It records facts about available scheduled workers; it never assi
 strategic priority.
 A profile has a stable id and holder prefix, verified capabilities, an explicit
 wind-down budget, a structured report sink, and an independently inspectable
-health source. Paths are relative to the portfolio and may not escape it.
+health source. Paths are relative to the portfolio and may not escape it. An
+optional `max_job_hours` says the worker's host keeps a detached job running
+after the session for up to that long; without it the worker cannot start one.
 
 Example (invented):
 

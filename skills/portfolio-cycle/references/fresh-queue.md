@@ -46,7 +46,14 @@ The helper serializes queue/report mutations with `.charter-queue.lock`, atomica
 writes and commits the queue (`QUEUE.json` only), and acquires `.tasks/.lock` in
 each work repository. Ensure repository locks are gitignored before unattended use.
 Workers run concurrently with one claim each; a claim blocks only the repositories
-it locked. The four-hour lock expiry is diagnostic, never permission
+it locked.
+
+A charter's queue entry may carry `gpu_hours`, the GPU-hour budget the user sets
+at authorization. It is the only thing that lets a worker start a detached job
+(`job-start`), and the helper refuses a job that would exceed what remains.
+Record the same number in the charter's prose budget. A worker profile's
+`max_job_hours` is a scheduler fact — the longest job its host can keep running —
+not a research budget. The four-hour lock expiry is diagnostic, never permission
 for automatic takeover. Review abandoned work before `recover`; dirty files are
 preserved and still prevent a fresh claim.
 

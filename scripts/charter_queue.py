@@ -19,6 +19,8 @@ import json
 import os
 from pathlib import Path
 import re
+import shlex
+import signal
 import subprocess
 import sys
 import tempfile
@@ -33,6 +35,18 @@ SAFE_ID = re.compile(r"[A-Za-z0-9_-]+")
 RUN_ID = re.compile(r"[A-Za-z0-9_.:-]+")
 REPORT_STATES = {"no-op", "advanced", "completed", "blocked", "failed"}
 REPORT_RECORD = re.compile(r"<!-- worker-closeout: (\{.*\}) -->")
+
+# Detached jobs. Live status lives in gitignored `<portfolio>/.jobs/<id>.json`,
+# written by the runner process; the queue keeps the durable record. A runner
+# refreshes its heartbeat every poll, so a job whose container is gone reads as
+# lost once the heartbeat is stale rather than running forever.
+JOBS_DIR = ".jobs"
+JOB_POLL_SECONDS = float(os.environ.get("CHARTER_JOB_POLL", "5"))
+JOB_GRACE_SECONDS = float(os.environ.get("CHARTER_JOB_GRACE", "30"))
+JOB_STALE_SECONDS = float(os.environ.get("CHARTER_JOB_STALE", "180"))
+# A resumable claim is kept this long past its job's deadline, so the worker's
+# next scheduled run finds it unexpired.
+JOB_CLAIM_MARGIN = timedelta(hours=24)
 
 # Two charter forms are in use: the template writes `### R1 — ...`, while the
 # human-machine-teaming charters write a requirements table. Both declare the
@@ -81,7 +95,8 @@ def read_workers(path):
             raise ValueError("WORKERS.json: every worker must be an object")
         required_fields = {"id", "holder_prefix", "capabilities", "wind_down",
                            "report_sink", "health"}
-        if not required_fields.issubset(worker) or set(worker) - (required_fields | {"legacy_holder_prefixes"}):
+        if not required_fields.issubset(worker) or set(worker) - (
+                required_fields | {"legacy_holder_prefixes", "max_job_hours"}):
             raise ValueError("WORKERS.json: unknown or missing worker field")
         worker_id = worker.get("id")
         if not isinstance(worker_id, str) or not SAFE_ID.fullmatch(worker_id) or worker_id in workers:
@@ -114,6 +129,10 @@ def read_workers(path):
         if (type(minutes) is not int or type(reserve) is not int
                 or minutes <= 0 or reserve <= 0 or reserve >= minutes):
             raise ValueError(f"WORKERS.json: {worker_id} has invalid wind_down")
+        max_job_hours = worker.get("max_job_hours")
+        if max_job_hours is not None and (type(max_job_hours) not in (int, float)
+                                          or max_job_hours <= 0):
+            raise ValueError(f"WORKERS.json: {worker_id} has invalid max_job_hours")
         safe_relative(path.parent, worker.get("report_sink", ""),
                       f"WORKERS.json: {worker_id} report_sink")
         health = worker.get("health", {})
@@ -171,6 +190,9 @@ def read_queue(path, workers):
         unknown = sorted(set(eligible) - set(workers))
         if unknown:
             raise ValueError(f"{cid}: unknown eligible worker: {', '.join(unknown)}")
+        gpu_hours = charter.get("gpu_hours")
+        if gpu_hours is not None and (type(gpu_hours) not in (int, float) or gpu_hours < 0):
+            raise ValueError(f"{cid}: gpu_hours must be a non-negative number")
         requirements = charter["requirements"]
         rids = [r["id"] for r in requirements]
         if len(set(rids)) != len(rids) or not rids:
@@ -200,6 +222,11 @@ def read_queue(path, workers):
                 raise ValueError(f"{cid}/{req['id']}: active requires a claim")
             if req["state"] != "active" and req.get("claim"):
                 raise ValueError(f"{cid}/{req['id']}: unexpected claim")
+            jobs = req.get("jobs", [])
+            if not isinstance(jobs, list) or not all(
+                    isinstance(job, dict) and SAFE_ID.fullmatch(str(job.get("id", "")))
+                    and RUN_ID.fullmatch(str(job.get("holder", ""))) for job in jobs):
+                raise ValueError(f"{cid}/{req['id']}: invalid jobs record")
             transitions = req.get("transitions", [])
             if not isinstance(transitions, list):
                 raise ValueError(f"{cid}/{req['id']}: transitions must be a list")
@@ -207,7 +234,7 @@ def read_queue(path, workers):
                 if (not isinstance(transition, dict)
                         or set(transition) != {"holder", "state", "at"}
                         or not RUN_ID.fullmatch(transition.get("holder", ""))
-                        or transition.get("state") not in {"ready", "blocked", "done"}):
+                        or transition.get("state") not in {"ready", "blocked", "done", "handover"}):
                     raise ValueError(f"{cid}/{req['id']}: invalid transition record")
                 # A transition must be attributable to a configured worker, so a
                 # close-out cannot be justified by a hand-written holder string.
@@ -307,6 +334,190 @@ def commit_queue(path, message):
                        f'commits it: {result.stderr.strip()}')
 
 
+def job_file(path, job_id):
+    return path.parent / JOBS_DIR / f"{job_id}.json"
+
+
+def job_live(path, job):
+    """The job's current status from its live file: running, exited,
+    killed-budget, killed-signal or lost, with timing where known."""
+    live_path = job_file(path, job['id'])
+    if not live_path.exists():
+        return {'status': 'lost'}
+    live = json.loads(live_path.read_text())
+    if live.get('status') in (None, 'starting', 'running'):
+        beat = live.get('heartbeat') or live.get('started_at')
+        age = (datetime.now(timezone.utc) - datetime.fromisoformat(beat)).total_seconds()
+        if age > JOB_STALE_SECONDS:
+            return {**live, 'status': 'lost', 'ended_at': beat}
+        return {**live, 'status': 'running'}
+    return live
+
+
+def settle_jobs(path, req):
+    """Copy finished jobs' outcomes into the durable queue record.
+
+    Returns True while any job is still running. A lost job is charged up to its
+    last heartbeat, or its whole reservation when nothing is known.
+    """
+    running = False
+    for job in req.get('jobs', []):
+        if 'hours_used' in job:
+            continue
+        live = job_live(path, job)
+        if live['status'] == 'running':
+            running = True
+            continue
+        job['status'] = live['status']
+        if 'exit_code' in live:
+            job['exit_code'] = live['exit_code']
+        if live.get('ended_at'):
+            job['ended_at'] = live['ended_at']
+            elapsed = (datetime.fromisoformat(live['ended_at'])
+                       - datetime.fromisoformat(job['started_at'])).total_seconds() / 3600
+            job['hours_used'] = round(max(elapsed, 0.0), 4)
+        else:
+            job['hours_used'] = job['hours_reserved']
+    return running
+
+
+def gpu_hours_committed(path, charter):
+    """Hours used by finished jobs plus hours reserved by unfinished ones."""
+    total = 0.0
+    for req in charter['requirements']:
+        for job in req.get('jobs', []):
+            total += job.get('hours_used', job['hours_reserved'])
+    return total
+
+
+def job_start(path, workers, data, args):
+    token = resolve_token(data, args)
+    charter, req = owned(data, token)
+    holder = req['claim']['holder']
+    worker = next((w for w in workers.values() if holder.startswith(w['holder_prefix'] + '-')), None)
+    if worker is None or worker.get('max_job_hours') is None:
+        raise ValueError('this worker profile has no max_job_hours; it cannot run detached jobs')
+    hours = args.hours
+    if not hours > 0 or hours > worker['max_job_hours']:
+        raise ValueError(f"--hours must be above 0 and at most {worker['max_job_hours']} "
+                         f"(the worker's max_job_hours)")
+    if charter.get('gpu_hours') is None:
+        raise ValueError(f"{charter['id']} has no gpu_hours budget; the user sets one at authorization")
+    settle_jobs(path, req)
+    remaining = charter['gpu_hours'] - gpu_hours_committed(path, charter)
+    if hours > remaining + 1e-9:
+        raise ValueError(f"{charter['id']} has {remaining:.2f} of {charter['gpu_hours']} GPU-hours "
+                         f"left; --hours {hours} exceeds it")
+    repos = repo_paths(path, req)
+    cwd = (args.cwd or repos[0]).resolve()
+    if cwd not in repos:
+        raise ValueError('--cwd must be a claimed repository')
+    log = (cwd / args.log).resolve()
+    if cwd not in log.parents:
+        raise ValueError('--log must stay inside the working repository')
+    command = list(args.job_command)
+    if command[:1] == ['--']:
+        command = command[1:]
+    if not command:
+        raise ValueError('a job needs a command after --')
+    now = datetime.now(timezone.utc)
+    deadline = now + timedelta(hours=hours)
+    job_id = f"job-{now.strftime('%Y%m%dT%H%M%SZ')}-{uuid.uuid4().hex[:6]}"
+    live = {'id': job_id, 'token': token, 'holder': holder,
+            'run': os.environ.get('AGENT_RUN_ID'), 'status': 'starting',
+            'command': command, 'cwd': str(cwd), 'log': str(log),
+            'started_at': now.isoformat(), 'deadline': deadline.isoformat(),
+            'heartbeat': now.isoformat()}
+    atomic_text(job_file(path, job_id), json.dumps(live, indent=2) + '\n')
+    record = {'id': job_id, 'holder': holder, 'command': shlex.join(command),
+              'cwd': os.path.relpath(cwd, path.parent), 'log': os.path.relpath(log, path.parent),
+              'started_at': now.isoformat(), 'deadline': deadline.isoformat(),
+              'hours_reserved': hours}
+    req.setdefault('jobs', []).append(record)
+    claim_expiry = deadline + JOB_CLAIM_MARGIN
+    if datetime.fromisoformat(req['claim']['expires_at']) < claim_expiry:
+        req['claim']['expires_at'] = claim_expiry.isoformat()
+    save(path, data)
+    item = f"{charter['id']}/{req['id']}"
+    commit = commit_queue(path, f"{item}: job {job_id} ({hours} GPU-hours) by {holder}")
+    # The runner gets its own session so it outlives the agent's tool call and
+    # the agent process; the container keeps running until it finishes.
+    subprocess.Popen([sys.executable, str(Path(__file__).resolve()), '--queue', str(path),
+                      'job-run', job_id], start_new_session=True, stdin=subprocess.DEVNULL,
+                     stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, close_fds=True)
+    return {'job': record, 'item': item, 'commit': commit,
+            'gpu_hours_left': round(remaining - hours, 4)}
+
+
+def job_run(path, job_id):
+    """Runs one job to completion or its deadline. Not called by agents."""
+    live_path = job_file(path, job_id)
+    live = json.loads(live_path.read_text())
+    deadline = datetime.fromisoformat(live['deadline'])
+    log = Path(live['log'])
+    log.parent.mkdir(parents=True, exist_ok=True)
+    with log.open('ab') as out:
+        child = subprocess.Popen(live['command'], cwd=live['cwd'], stdin=subprocess.DEVNULL,
+                                 stdout=out, stderr=subprocess.STDOUT, start_new_session=True)
+    stopping = {'status': None}
+
+    def stop(status):
+        if stopping['status'] is None:
+            stopping['status'] = status
+            try:
+                os.killpg(child.pid, signal.SIGTERM)
+            except ProcessLookupError:
+                pass
+            stopping['at'] = time.monotonic()
+
+    signal.signal(signal.SIGTERM, lambda *_: stop('killed-signal'))
+    live.update(status='running', pid=child.pid)
+    atomic_text(live_path, json.dumps(live, indent=2) + '\n')
+    while child.poll() is None:
+        if datetime.now(timezone.utc) >= deadline:
+            stop('killed-budget')
+        if stopping['status'] and time.monotonic() - stopping['at'] > JOB_GRACE_SECONDS:
+            try:
+                os.killpg(child.pid, signal.SIGKILL)
+            except ProcessLookupError:
+                pass
+        live['heartbeat'] = datetime.now(timezone.utc).isoformat()
+        atomic_text(live_path, json.dumps(live, indent=2) + '\n')
+        time.sleep(JOB_POLL_SECONDS)
+    live.update(status=stopping['status'] or 'exited', exit_code=child.returncode,
+                ended_at=datetime.now(timezone.utc).isoformat())
+    atomic_text(live_path, json.dumps(live, indent=2) + '\n')
+    return {'job': job_id, 'status': live['status'], 'exit_code': child.returncode}
+
+
+def jobs_view(path, data, run_id=None):
+    views = []
+    for charter, req in rows(data):
+        for job in req.get('jobs', []):
+            live = job_live(path, job) if 'hours_used' not in job else job
+            if run_id and live.get('run') != run_id:
+                continue
+            views.append({'item': f"{charter['id']}/{req['id']}", 'id': job['id'],
+                          'holder': job['holder'], 'status': live.get('status'),
+                          'deadline': job['deadline'], 'log': job['log'],
+                          'exit_code': live.get('exit_code')})
+    return views
+
+
+def wait_for_jobs(path, workers, run_id):
+    """Blocks while any job started by this container run is still running."""
+    while True:
+        running = [v for v in jobs_view(path, read_queue(path, workers), run_id)
+                   if v['status'] == 'running']
+        if not running:
+            return {'run': run_id, 'running': 0}
+        time.sleep(max(JOB_POLL_SECONDS, 1))
+
+
+def has_job_by(req, holder):
+    return any(job['holder'] == holder for job in req.get('jobs', []))
+
+
 def repo_paths(path, req):
     return sorted({(path.parent / r).resolve() for r in req["repos"]})
 
@@ -337,6 +548,19 @@ def choose(path, data, worker):
     mine = [entry for entry in active if (entry["holder"] or "").startswith(prefixes)]
     others = [entry for entry in active if entry not in mine]
     if mine:
+        # A claim left open for a detached job is resumed by the same worker's
+        # next run once the job has finished; anything else needs recovery.
+        for entry in mine:
+            charter, req = next((c, r) for c, r in rows(data)
+                                if f"{c['id']}/{r['id']}" == entry["item"])
+            if req.get('jobs') and has_job_by(req, entry["holder"]):
+                if any(job_live(path, job)['status'] == 'running'
+                       for job in req['jobs'] if 'hours_used' not in job):
+                    return None, [{"reason": "own detached job still running",
+                                   "stalled": False, "items": [entry]}]
+                skipped.extend({"reason": "another worker's active claim", "stalled": o["expired"],
+                                "items": [o]} for o in others)
+                return (charter, req), skipped
         return None, [{"reason": "active claim requires completion or recovery",
                        "stalled": any(entry["expired"] for entry in mine),
                        "items": mine}]
@@ -415,9 +639,13 @@ def release(paths, token):
 
 
 def check_exit(path, data, holder):
-    if any(r.get('claim', {}).get('holder') == holder for _, r in rows(data)):
+    # A claim this run left open for its own detached job is a deliberate
+    # handover, not a leak: the worker's next run resumes it.
+    held = [r for _, r in rows(data) if r.get('claim', {}).get('holder') == holder]
+    if any(not has_job_by(r, holder) for r in held):
         raise ValueError('unclosed requirement claim remains for this run')
-    for repo in {repo for _, req in rows(data) for repo in repo_paths(path, req)}:
+    kept = {repo for r in held for repo in repo_paths(path, r)}
+    for repo in {repo for _, req in rows(data) for repo in repo_paths(path, req)} - kept:
         lock = repo / '.tasks/.lock'
         if lock.exists() and json.loads(lock.read_text()).get('holder') == holder:
             raise ValueError(f'unreleased repository lock: {repo}')
@@ -551,6 +779,8 @@ def write_report(path, workers_data, workers, data, args):
         matching = [transition for transition in known_items[item].get('transitions', [])
                     if transition['holder'] == args.holder
                     and transition['state'] == expected_states[args.state]]
+        if not matching and args.state == 'advanced' and has_job_by(known_items[item], args.holder):
+            matching = [True]
         if not matching:
             raise ValueError(
                 f"{args.state} report requires a matching durable transition for {item}")
@@ -595,8 +825,16 @@ def write_report(path, workers_data, workers, data, args):
 def run(args):
     path = args.queue.resolve()
     workers_data, workers = read_workers(path.parent / 'WORKERS.json')
-    if args.command in {'next', 'validate', 'check-exit', 'reports'}:
+    if args.command == 'job-run':
+        return job_run(path, args.job_id)
+    if args.command in {'next', 'validate', 'check-exit', 'reports', 'jobs'}:
         data = read_queue(path, workers)
+        if args.command == 'jobs':
+            if args.wait:
+                if not args.run:
+                    raise ValueError('--wait needs --run')
+                return wait_for_jobs(path, workers, args.run)
+            return {'jobs': jobs_view(path, data, args.run)}
         if args.command == 'validate':
             return {'valid': True, 'charters': len(data['charters']), 'workers': len(workers),
                     'awaiting_close': awaiting_close(data)}
@@ -640,6 +878,26 @@ def run(args):
             claim = {'holder': args.holder, 'token': token, 'acquired_at': now.isoformat(),
                      'expires_at': (now + timedelta(hours=4)).isoformat(),
                      'item': f"{charter['id']}/{req['id']}"}
+            if req['state'] == 'active':
+                # Resume after a detached job: the locks move to the new claim.
+                previous = req['claim']
+                repos = repo_paths(path, req)
+                for repo in repos:
+                    lock = repo / '.tasks/.lock'
+                    if not lock.exists() or json.loads(lock.read_text()).get('token') != previous['token']:
+                        raise ValueError(f'lock ownership changed: {repo}')
+                settle_jobs(path, req)
+                for repo in repos:
+                    atomic_text(repo / '.tasks/.lock', json.dumps(claim))
+                req.setdefault('transitions', []).append(
+                    {'holder': previous['holder'], 'state': 'handover', 'at': now.isoformat()})
+                req['claim'] = claim
+                save(path, data)
+                commit = commit_queue(path, f"{claim['item']}: resume by {args.holder} "
+                                            f"after {previous['holder']}'s job")
+                return {'selected': describe(path, selected), 'resumed_from': previous['holder'],
+                        'skipped': skipped, 'awaiting_close': awaiting_close(data),
+                        'commit': commit}
             acquired = []
             try:
                 for repo in repo_paths(path, req):
@@ -678,7 +936,12 @@ def run(args):
             save(path, data)
             commit = commit_queue(path, f"{parent}: task {args.id} by {req['claim']['holder']}")
             return {'task': str(dest), 'parent': parent, 'commit': commit}
+        if args.command in ('job-start',):
+            return job_start(path, workers, data, args)
         recovering = args.command == 'recover'
+        if settle_jobs(path, req):
+            raise ValueError('a detached job on this requirement is still running; wait for it '
+                             'or stop it before this transition')
         state = 'ready' if recovering else args.state
         note = args.reason if recovering else args.note
         evidence = [] if recovering else args.evidence
@@ -750,6 +1013,18 @@ def main():
     group.add_argument('--token')
     group.add_argument('--item', help="charter/requirement, e.g. HMT-C3/R1")
     cmd.add_argument('--reason', required=True)
+    cmd = sub.add_parser('job-start', help='run a long job detached from this session')
+    cmd.add_argument('--token', required=True)
+    cmd.add_argument('--hours', type=float, required=True,
+                     help="GPU-hours reserved; the job is stopped at this deadline")
+    cmd.add_argument('--log', required=True, help='log path inside the working repository')
+    cmd.add_argument('--cwd', type=Path, help='claimed repository to run in (default: first)')
+    cmd.add_argument('job_command', nargs=argparse.REMAINDER, help='-- then the command')
+    cmd = sub.add_parser('job-run', help=argparse.SUPPRESS)
+    cmd.add_argument('job_id')
+    cmd = sub.add_parser('jobs')
+    cmd.add_argument('--run', help='only jobs started in this container run (AGENT_RUN_ID)')
+    cmd.add_argument('--wait', action='store_true', help='block until none of them is running')
     cmd = sub.add_parser('task')
     cmd.add_argument('--token', required=True)
     cmd.add_argument('--repo', type=Path, required=True)

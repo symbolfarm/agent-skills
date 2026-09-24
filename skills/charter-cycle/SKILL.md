@@ -3,7 +3,7 @@ name: charter-cycle
 description: Execute authorized charter requirements from a fresh queue, preserve research context across tasks, and close with evidence and a useful handover. Use for scheduled charter work or when asked to work a charter.
 license: MIT
 metadata:
-  version: "5"
+  version: "6"
 ---
 
 # Charter cycle
@@ -98,21 +98,39 @@ endorsement or independently corroborate a claim by repeating another report.
 
 A scheduled run is non-interactive: the session ends when the agent ends its
 turn. Nothing wakes it for a background-task notification or a monitor event,
-and the worker's container is removed on exit, killing anything still running in
-it. So never end a turn while a job is running. Do not say you will "report
+and anything started with a shell `&` or a background tool call dies with the
+session. Never end a turn waiting on such a job, and never say you will "report
 back" — there is no later.
 
-Run a job that fits inside one tool call in the foreground. For a longer one,
-start it in the background with output going to a log file, then wait with
-repeated foreground calls that each stay under the tool timeout, for example:
+A job that fits the session runs in the foreground, or in the background with
+repeated bounded foreground waits, each under the tool timeout:
 
 ```
 timeout 540 bash -c 'until grep -qE "^DONE|Traceback" run.log; do sleep 15; done'; tail -5 run.log
 ```
 
-Repeat until the job finishes or the wind-down reserve begins. Other useful work
-may happen between waits. If the job cannot finish before the reserve, stop it,
-commit what exists, and `finish --state ready` with the exact command to resume.
+A job longer than the session is started detached, from a claimed requirement,
+when the worker profile has `max_job_hours` and the charter's queue entry has a
+`gpu_hours` budget:
+
+```
+python3 <script> --queue <queue> job-start --token <claim-token> --hours 6 \
+  --log results/run.log [--cwd <claimed-repo>] -- <command...>
+```
+
+`--hours` is reserved against the charter's remaining budget and is the job's
+deadline: the job is stopped when it passes. A finished job is charged what it
+used; a lost one up to its last heartbeat. The job keeps running after your
+session ends, and your claim and repository locks stay held for it. Before ending
+the session, commit what exists, write a task brief (`task`) saying what is
+running, what output to expect and how to analyse it, then `check-exit` and close
+out `advanced` with that continuation — the held claim is accepted because it
+has your job. The worker's next run claims as usual and is handed this
+requirement back once the job has finished (`resumed_from` in the result), with
+the job's status, exit code and hours in the requirement's `jobs` record. Job
+output written into the repository must be committed or ignored before `finish`.
+`jobs` lists every job's live status. If the budget is spent, stop and report it;
+never split a job to fit under the ceiling.
 
 ## Close or leave a continuation
 

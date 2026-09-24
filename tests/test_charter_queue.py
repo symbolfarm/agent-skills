@@ -1,9 +1,11 @@
 import json
+import os
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 import subprocess
 import sys
 import tempfile
+import time
 import unittest
 
 SCRIPT = Path(__file__).resolve().parents[1] / 'scripts/charter_queue.py'
@@ -11,7 +13,7 @@ WORKERS_SCHEMA = Path(__file__).resolve().parents[1] / (
     'skills/charter-cycle/assets/workers.schema.json')
 
 
-class CharterQueueTests(unittest.TestCase):
+class QueueFixture(unittest.TestCase):
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory()
         self.addCleanup(self.temp.cleanup)
@@ -75,6 +77,9 @@ class CharterQueueTests(unittest.TestCase):
     def claim(self, holder='research-worker-run-a'):
         return self.cmd('claim', '--worker', 'research-worker', '--holder', holder)[
             'selected']['requirement']['claim']['token']
+
+
+class CharterQueueTests(QueueFixture):
 
     def test_exhausted_active_charter_is_reported_not_closed(self):
         # Closing is a joint review decision; the helper only makes it visible.
@@ -550,6 +555,119 @@ class CharterQueueTests(unittest.TestCase):
         advanced = self.cmd('brief-window', '--previous-delivery', 'success',
                             '--through', (base + timedelta(hours=2, minutes=30)).isoformat())
         self.assertEqual([entry['run_id'] for entry in advanced['reports']], ['third'])
+
+
+class DetachedJobTests(QueueFixture):
+    """Jobs that outlive the agent session, metered against the charter budget."""
+
+    def setUp(self):
+        super().setUp()
+        workers = json.loads(self.workers.read_text())
+        workers['workers'][0]['max_job_hours'] = 1
+        self.workers.write_text(json.dumps(workers))
+        self.data['charters'][0]['gpu_hours'] = 2
+        self.write()
+        self.env = {**os.environ, 'CHARTER_JOB_POLL': '0.1', 'CHARTER_JOB_GRACE': '1',
+                    'CHARTER_JOB_STALE': '3', 'AGENT_RUN_ID': 'run-1'}
+
+    def cmd(self, *args, ok=True):
+        r = subprocess.run([sys.executable, str(SCRIPT), '--queue', str(self.queue), *args],
+                           text=True, capture_output=True, env=self.env)
+        self.assertEqual(r.returncode == 0, ok, r.stdout + r.stderr)
+        return json.loads(r.stdout) if ok else r.stderr
+
+    def start(self, token, hours, *command, ok=True):
+        return self.cmd('job-start', '--token', token, '--hours', str(hours),
+                        '--log', 'logs/job.log', '--', *command, ok=ok)
+
+    def req(self):
+        return json.loads(self.queue.read_text())['charters'][0]['requirements'][0]
+
+    def test_job_outlives_the_session_and_the_next_run_resumes_it(self):
+        token = self.claim()
+        started = self.start(token, 0.5, 'sh', '-c', 'echo measured; sleep 1')
+        self.assertAlmostEqual(started['gpu_hours_left'], 1.5)
+        # The session can close out and exit with the claim deliberately held.
+        self.cmd('check-exit', '--holder', 'research-worker-run-a')
+        self.cmd('report', '--worker', 'research-worker', '--holder', 'research-worker-run-a',
+                 '--state', 'advanced', '--item', 'C-001/R1', '--summary', 'Job started.',
+                 '--continuation', 'Analyse logs/job.log.')
+        self.assertEqual(self.cmd('jobs', '--wait', '--run', 'run-1')['running'], 0)
+        self.assertEqual(self.cmd('next', '--worker', 'research-worker')['selected']['item'],
+                         'C-001/R1')
+        resumed = self.cmd('claim', '--worker', 'research-worker', '--holder', 'research-worker-run-b')
+        self.assertEqual(resumed['resumed_from'], 'research-worker-run-a')
+        new_token = resumed['selected']['requirement']['claim']['token']
+        lock = json.loads((self.repo / '.tasks/.lock').read_text())
+        self.assertEqual(lock['token'], new_token)
+        job = self.req()['jobs'][0]
+        self.assertEqual((job['status'], job['exit_code']), ('exited', 0))
+        self.assertLess(job['hours_used'], 0.01)
+        self.assertEqual(self.req()['transitions'][-1]['state'], 'handover')
+        self.assertIn('measured', (self.repo / 'logs/job.log').read_text())
+        (self.repo / '.gitignore').write_text('.tasks/.lock\nlogs/\n')
+        subprocess.run(['git', '-C', str(self.repo), 'commit', '-qam', 'ignore logs'],
+                       check=True, capture_output=True)
+        self.cmd('finish', '--token', new_token, '--state', 'done', '--evidence', 'logs/job.log: measured')
+        self.assertFalse((self.repo / '.tasks/.lock').exists())
+
+    def test_budget_and_profile_bound_every_job(self):
+        token = self.claim()
+        self.assertIn('max_job_hours', self.start(token, 1.5, 'true', ok=False))
+        # Running jobs hold their whole reservation; finished ones are charged
+        # what they used.
+        self.start(token, 1, 'sleep', '2')
+        self.start(token, 0.75, 'sleep', '2')
+        self.assertIn('GPU-hours left', self.start(token, 0.5, 'true', ok=False))
+        self.cmd('jobs', '--wait', '--run', 'run-1')
+        self.start(token, 0.5, 'true')
+        self.cmd('jobs', '--wait', '--run', 'run-1')
+
+    def test_charter_without_a_budget_cannot_start_a_job(self):
+        del self.data['charters'][0]['gpu_hours']
+        self.write()
+        self.assertIn('no gpu_hours budget', self.start(self.claim(), 0.1, 'true', ok=False))
+
+    def test_job_is_stopped_at_its_deadline(self):
+        token = self.claim()
+        self.start(token, 1 / 3600, 'sleep', '30')
+        self.cmd('jobs', '--wait', '--run', 'run-1')
+        self.claim('research-worker-run-b')
+        job = self.req()['jobs'][0]
+        self.assertEqual(job['status'], 'killed-budget')
+        self.assertLess(job['hours_used'], 5 / 3600)
+
+    def test_running_job_blocks_resume_and_transitions(self):
+        token = self.claim()
+        self.start(token, 0.5, 'sleep', '3')
+        blocked = self.cmd('next', '--worker', 'research-worker')
+        self.assertIsNone(blocked['selected'])
+        self.assertEqual(blocked['skipped'][0]['reason'], 'own detached job still running')
+        self.assertIn('still running', self.cmd(
+            'finish', '--token', token, '--state', 'ready', '--note', 'x', ok=False))
+        self.cmd('jobs', '--wait', '--run', 'run-1')
+
+    def test_lost_job_is_charged_to_its_last_heartbeat(self):
+        token = self.claim()
+        job_id = self.start(token, 0.5, 'sleep', '30')['job']['id']
+        live_path = self.portfolio / '.jobs' / f'{job_id}.json'
+        for _ in range(50):
+            live = json.loads(live_path.read_text())
+            if live.get('pid'):
+                break
+            time.sleep(0.1)
+        # The container vanished: runner and job gone, heartbeat frozen.
+        import signal as sig
+        os.killpg(live['pid'], sig.SIGKILL)
+        subprocess.run(['pkill', '-KILL', '-f', f'job-run {job_id}'], capture_output=True)
+        time.sleep(0.3)
+        live = json.loads(live_path.read_text())
+        live['heartbeat'] = (datetime.now(timezone.utc) - timedelta(seconds=10)).isoformat()
+        live_path.write_text(json.dumps(live))
+        self.claim('research-worker-run-b')
+        job = self.req()['jobs'][0]
+        self.assertEqual(job['status'], 'lost')
+        self.assertGreaterEqual(job['hours_used'], 0)
 
 
 if __name__ == '__main__':

@@ -49,6 +49,11 @@
             "reserve_minutes": {"type": "integer", "minimum": 1}
           }
         },
+        "max_job_hours": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "description": "Longest detached job this worker's scheduler can host. Absent: no detached jobs."
+        },
         "report_sink": {"$ref": "#/$defs/relativePath"},
         "health": {
           "oneOf": [
