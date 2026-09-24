@@ -88,6 +88,26 @@ understanding with evidence, uncertainty and provenance. An agent's qualified
 assessment need not wait for human ratification. Never present it as the user's
 endorsement or independently corroborate a claim by repeating another report.
 
+## Long-running jobs in a scheduled run
+
+A scheduled run is non-interactive: the session ends when the agent ends its
+turn. Nothing wakes it for a background-task notification or a monitor event,
+and the worker's container is removed on exit, killing anything still running in
+it. So never end a turn while a job is running. Do not say you will "report
+back" — there is no later.
+
+Run a job that fits inside one tool call in the foreground. For a longer one,
+start it in the background with output going to a log file, then wait with
+repeated foreground calls that each stay under the tool timeout, for example:
+
+```
+timeout 540 bash -c 'until grep -qE "^DONE|Traceback" run.log; do sleep 15; done'; tail -5 run.log
+```
+
+Repeat until the job finishes or the wind-down reserve begins. Other useful work
+may happen between waits. If the job cannot finish before the reserve, stop it,
+commit what exists, and `finish --state ready` with the exact command to resume.
+
 ## Close or leave a continuation
 
 Verify the requirement itself. Completing tasks or passing unrelated tests is

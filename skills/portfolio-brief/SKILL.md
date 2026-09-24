@@ -40,7 +40,9 @@ step failed. For Hermes cron, inspect the persisted job/execution state. For a f
 health source, read the configured host-produced record, its timestamp as well as
 its status: a `completed` record older than the expected run window, or a `running`
 record older than the worker's hard timeout, is evidence the worker did not
-complete a run — report it as missed or crashed, never as healthy. A host that
+complete a run — report it as missed or crashed, never as healthy. An `incomplete`
+record means the agent exited cleanly but left its claim held or wrote no close-out;
+report it as a stalled run needing recovery. A host that
 cannot reach the workspace at all cannot write its record, so absence together with
 an expected run that left no trace is itself the finding. Absence of a close-out is
 not evidence of an outage; absence of an expected execution is not an empty queue.
