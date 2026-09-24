@@ -242,36 +242,82 @@ class CharterQueueTests(unittest.TestCase):
             'claim', '--worker', 'research-worker', '--holder', 'research-worker-run-a')['selected'])
         self.assertFalse((clean / '.tasks/.lock').exists())
 
-    def test_control_repository_must_be_clean_before_claim(self):
-        (self.portfolio / '.gitignore').write_text('.charter-queue.lock\n.queue-*\n')
-        for args in (['init', '-q'], ['config', 'user.email', 'test@example.invalid'],
-                     ['config', 'user.name', 'Test'], ['add', '.'], ['commit', '-qm', 'queue']):
-            subprocess.run(['git', '-C', str(self.portfolio), *args], check=True, capture_output=True)
-        (self.portfolio / 'uncommitted.md').write_text('another author')
-        self.cmd('claim', '--worker', 'research-worker', '--holder',
-                 'research-worker-run-a', ok=False)
-        self.assertFalse((self.repo / '.tasks/.lock').exists())
-
-    def test_complete_handoff_lifecycle_with_real_commits(self):
+    def git_portfolio(self):
         (self.portfolio / '.gitignore').write_text(
             '.charter-queue.lock\n.queue-*\n.briefing/\n')
         for args in (['init', '-q'], ['config', 'user.email', 'test@example.invalid'],
                      ['config', 'user.name', 'Test'], ['add', '.'], ['commit', '-qm', 'queue']):
             subprocess.run(['git', '-C', str(self.portfolio), *args], check=True, capture_output=True)
+
+    def portfolio_status(self):
+        return subprocess.check_output(
+            ['git', '-C', str(self.portfolio), 'status', '--porcelain'], text=True)
+
+    def test_uncommitted_queue_edit_blocks_a_claim(self):
+        self.git_portfolio()
+        self.data['charters'][0]['requirements'][0]['progress'] = 'hand edit in progress'
+        self.write()
+        self.cmd('claim', '--worker', 'research-worker', '--holder',
+                 'research-worker-run-a', ok=False)
+        self.assertFalse((self.repo / '.tasks/.lock').exists())
+
+    def test_queue_commits_are_limited_to_the_queue_file(self):
+        # Another worker's portfolio edits, staged or not, stay out of the
+        # helper's commits and stay in the worktree untouched.
+        self.git_portfolio()
+        (self.portfolio / 'staged.md').write_text('another worker, staged')
+        subprocess.run(['git', '-C', str(self.portfolio), 'add', 'staged.md'],
+                       check=True, capture_output=True)
+        (self.portfolio / 'loose.md').write_text('another worker, untracked')
+        result = self.cmd('claim', '--worker', 'research-worker', '--holder', 'research-worker-run-a')
+        self.assertIsNotNone(result['commit'])
+        committed = subprocess.check_output(
+            ['git', '-C', str(self.portfolio), 'show', '--name-only', '--format=%s', 'HEAD'],
+            text=True).split()
+        self.assertEqual(committed[-1], 'QUEUE.json')
+        self.assertIn('C-001/R1: claim by research-worker-run-a', ' '.join(committed))
+        self.assertEqual(sorted(self.portfolio_status().splitlines()),
+                         ['?? loose.md', 'A  staged.md'])
+
+    def test_workers_hold_separate_claims_concurrently(self):
+        other = self.make_repo('product')
+        (self.portfolio / 'product.md').write_text('### R1 — Ship\n')
+        self.data['charters'].append({
+            'id': 'P-001', 'path': 'product.md', 'status': 'active',
+            'authorized_by': 'Fixture user, explicit test authorization',
+            'eligible_workers': ['product-worker'],
+            'requirements': [{'id': 'R1', 'state': 'ready', 'repos': ['../product']}]})
+        self.write()
+        self.git_portfolio()
+        self.claim()
+        second = self.cmd('claim', '--worker', 'product-worker', '--holder', 'product-worker-run-a')
+        self.assertEqual(second['selected']['item'], 'P-001/R1')
+        self.assertEqual(second['skipped'][0]['reason'], "another worker's active claim")
+        self.assertEqual(second['skipped'][0]['items'][0]['item'], 'C-001/R1')
+        self.assertTrue((other / '.tasks/.lock').exists())
+        self.assertEqual(self.portfolio_status(), '')
+
+    def test_another_workers_claim_still_blocks_its_repository(self):
+        self.data['charters'][0]['eligible_workers'].append('product-worker')
+        self.data['charters'][0]['requirements'][1]['depends_on'] = []
+        self.write()
+        self.claim()
+        result = self.cmd('next', '--worker', 'product-worker')
+        self.assertIsNone(result['selected'])
+        self.assertIn({'item': 'C-001/R2', 'reason': f'repository lock present: {self.repo}'},
+                      result['skipped'])
+
+    def test_complete_handoff_lifecycle_with_real_commits(self):
+        self.git_portfolio()
         token = self.claim()
-        for args in (['add', 'QUEUE.json'], ['commit', '-qm', 'claim']):
-            subprocess.run(['git', '-C', str(self.portfolio), *args], check=True, capture_output=True)
+        self.assertEqual(self.portfolio_status(), '')
         self.cmd('task', '--token', token, '--repo', str(self.repo), '--id', 'EXP-1', '--title', 'Compare')
         (self.repo / 'evidence.txt').write_text('baseline 0; intervention 1; fixture only')
         for args in (['add', '.'], ['commit', '-qm', 'comparison']):
             subprocess.run(['git', '-C', str(self.repo), *args], check=True, capture_output=True)
         self.cmd('finish', '--token', token, '--state', 'done', '--evidence', 'research/evidence.txt: fixture comparison')
-        self.assertIn('commit the control-repository transition', self.cmd(
-            'report', '--worker', 'research-worker', '--holder', 'research-worker-run-a',
-            '--state', 'completed', '--item', 'C-001/R1', '--summary', 'Comparison complete.',
-            '--evidence', 'research/evidence.txt: fixture comparison', ok=False))
-        for args in (['add', 'QUEUE.json'], ['commit', '-qm', 'close']):
-            subprocess.run(['git', '-C', str(self.portfolio), *args], check=True, capture_output=True)
+        log = subprocess.check_output(['git', '-C', str(self.portfolio), 'log', '--format=%s'], text=True)
+        self.assertIn('C-001/R1: done by research-worker-run-a', log)
         self.cmd('check-exit', '--holder', 'research-worker-run-a')
         self.cmd(
             'report', '--worker', 'research-worker', '--holder', 'research-worker-run-a',

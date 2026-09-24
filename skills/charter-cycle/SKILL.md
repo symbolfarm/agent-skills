@@ -3,7 +3,7 @@ name: charter-cycle
 description: Execute authorized charter requirements from a fresh queue, preserve research context across tasks, and close with evidence and a useful handover. Use for scheduled charter work or when asked to work a charter.
 license: MIT
 metadata:
-  version: "4"
+  version: "5"
 ---
 
 # Charter cycle
@@ -49,13 +49,19 @@ callers must not claim capabilities ad hoc. A null selection is a successful
 no-op. Missing/malformed configuration,
 an unknown worker or an active requirement no eligible worker can run is an error,
 not an empty queue. `next` is advisory; `claim` selects again under an atomic queue
-lock and acquires repository locks before recording ownership. Concurrent scheduled
-work is serialized for now. A Git commit alone is not a lock in a shared worktree.
+lock and acquires repository locks before recording ownership. Workers run
+concurrently, one claim each: another worker's claim blocks only the repositories
+it locked. A Git commit alone is not a lock in a shared worktree.
+
+The helper commits every queue change itself (claim, task, finish, recover),
+limited to `QUEUE.json`. In the portfolio, commit only the paths you changed, by
+name; never `git add -A` or `git add .` there, which would sweep another worker's
+in-progress changes into your commit.
 
 The queue contains lifecycle/routing data; the charter owns requirement wording.
 An entry is executable only with `status: active` and `authorized_by` recording
 actual user authorization. Only the user can activate a draft or lift a deferral.
-Commit a successful claim before implementation. Never claim with a reused run id.
+Never claim with a reused run id.
 
 ## Interpret, then work
 
@@ -153,17 +159,17 @@ The configured wind-down reserve exists to leave enough time for commit, `finish
 `check-exit` and this report; do not begin new work inside it.
 
 Use `ready` for resumable work and `blocked` only when no further authorized
-progress on that requirement is possible. Commit the queue update and verify
-clean worktrees. A task brief's completion note records its result; the queue's
+progress on that requirement is possible. Verify your work repositories are
+clean. A task brief's completion note records its result; the queue's
 evidence independently establishes requirement completion. Charter completion
 is derived from all requirements being done or explicitly dropped by the user.
 
 Budget scheduled runs by execution time or context-sized work, not by completed
 requirements of arbitrary size. Preserve continuation before context/time runs
 out. Release `ready` only with the work committed: uncommitted residue makes the
-requirement unselectable on the next run, including by you resuming it. An active
-claim holds the whole queue, so `next` reports an expired one as stalled with the
-command that clears it. A stale claim requires inspection; `recover --item <id>
+requirement unselectable on the next run, including by you resuming it. Your own
+open claim blocks you from claiming anything else, and `next` reports another
+worker's expired claim as stalled; both come with the command that clears them. A stale claim requires inspection; `recover --item <id>
 --reason ...` (or `--token`) releases it only after confirming the previous worker
 is no longer running and preserving its work. An expired claim is never seized
 automatically. Never clear another worker's dirty files to make work eligible.

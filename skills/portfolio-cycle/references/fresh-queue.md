@@ -43,9 +43,10 @@ review of the dependent requirement. Charter states: draft, active, paused, clos
 Closing a charter requires every requirement done or dropped.
 
 The helper serializes queue/report mutations with `.charter-queue.lock`, atomically
-writes the queue and acquires `.tasks/.lock` in each work repository. Ensure
-repository locks are gitignored before unattended use. One active claim serializes
-scheduled charter workers. The four-hour lock expiry is diagnostic, never permission
+writes and commits the queue (`QUEUE.json` only), and acquires `.tasks/.lock` in
+each work repository. Ensure repository locks are gitignored before unattended use.
+Workers run concurrently with one claim each; a claim blocks only the repositories
+it locked. The four-hour lock expiry is diagnostic, never permission
 for automatic takeover. Review abandoned work before `recover`; dirty files are
 preserved and still prevent a fresh claim.
 

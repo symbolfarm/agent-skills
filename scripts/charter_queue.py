@@ -5,7 +5,9 @@ Only QUEUE.json and WORKERS.json provide execution state; historical goal/task
 ledgers are never discovered. Mutations use flock plus atomic replacement.
 Repository O_EXCL locks interoperate with existing workers. No automatic
 stale-lock takeover is performed: an expired claim is reported with the command
-that clears it, never seized.
+that clears it, never seized. Every queue mutation is committed here, inside the
+queue lock and limited to QUEUE.json, so concurrent workers never sweep each
+other's changes into a portfolio commit.
 """
 from __future__ import annotations
 
@@ -17,8 +19,10 @@ import json
 import os
 from pathlib import Path
 import re
+import subprocess
 import sys
 import tempfile
+import time
 import uuid
 from zoneinfo import ZoneInfo
 
@@ -269,6 +273,40 @@ def transaction(path, workers):
         yield data
 
 
+def queue_dirty(path):
+    """True when QUEUE.json differs from the portfolio's HEAD."""
+    if not (path.parent / '.git').exists():
+        return False
+    result = subprocess.run(['git', '-C', str(path.parent), 'status', '--porcelain', '--', path.name],
+                            capture_output=True, text=True)
+    if result.returncode != 0:
+        raise RuntimeError(result.stderr.strip() or 'git status failed')
+    return bool(result.stdout.strip())
+
+
+def commit_queue(path, message):
+    """Commit QUEUE.json alone, under the queue lock the caller already holds.
+
+    The pathspec makes this an --only commit: whatever else another worker has
+    staged or left in the portfolio stays out of it. A worker's own `git commit`
+    elsewhere in the portfolio can hold the index lock briefly, so that one
+    failure is retried; any other failure is an error.
+    """
+    if not queue_dirty(path):
+        return None
+    for _ in range(20):
+        result = subprocess.run(['git', '-C', str(path.parent), 'commit', '-q', '-m', message,
+                                 '--', path.name], capture_output=True, text=True)
+        if result.returncode == 0:
+            return subprocess.check_output(['git', '-C', str(path.parent), 'rev-parse', '--short',
+                                            'HEAD'], text=True).strip()
+        if 'index.lock' not in result.stderr:
+            break
+        time.sleep(0.5)
+    raise RuntimeError('queue transition saved but not committed; the next helper mutation '
+                       f'commits it: {result.stderr.strip()}')
+
+
 def repo_paths(path, req):
     return sorted({(path.parent / r).resolve() for r in req["repos"]})
 
@@ -277,11 +315,13 @@ def choose(path, data, worker):
     skipped = []
     worker_id = worker["id"]
     capabilities = set(worker["capabilities"])
-    # Serial execution avoids simultaneous commits to shared portfolio state.
-    # An active claim anywhere holds the whole queue, so a worker that died
-    # mid-requirement stalls both lanes. Report that as a stall naming the
-    # command that clears it: seizing a claim whose worker may still be running
-    # is the one failure this serialisation exists to prevent.
+    prefixes = tuple(p + '-' for p in [worker['holder_prefix'], *worker.get('legacy_holder_prefixes', [])])
+    # Workers run concurrently, one claim each. Another worker's claim blocks
+    # only the repositories it locked, which the per-repository check below
+    # enforces; it is listed so a stalled one stays visible. A worker whose own
+    # earlier claim is still open gets nothing new: that claim is finished or
+    # recovered first. An expired claim is reported with the command that
+    # clears it, never seized — its worker may still be running.
     now = datetime.now(timezone.utc)
     active = []
     for charter, req in rows(data):
@@ -294,10 +334,16 @@ def choose(path, data, worker):
                        "expires_at": expires,
                        "expired": bool(expires and datetime.fromisoformat(expires) < now),
                        "clear_with": f"recover --item {item} --reason '<why the previous worker is gone>'"})
-    if active:
+    mine = [entry for entry in active if (entry["holder"] or "").startswith(prefixes)]
+    others = [entry for entry in active if entry not in mine]
+    if mine:
         return None, [{"reason": "active claim requires completion or recovery",
-                       "stalled": any(entry["expired"] for entry in active),
-                       "items": active}]
+                       "stalled": any(entry["expired"] for entry in mine),
+                       "items": mine}]
+    if others:
+        skipped.append({"reason": "another worker's active claim",
+                        "stalled": any(entry["expired"] for entry in others),
+                        "items": others})
     for charter, req in rows(data):
         key = f"{charter['id']}/{req['id']}"
         if charter['status'] != 'active' or req['state'] != 'ready':
@@ -481,7 +527,7 @@ def write_report(path, workers_data, workers, data, args):
     if not RUN_ID.fullmatch(args.holder) or not args.holder.startswith(prefix):
         raise ValueError(f'holder must begin {prefix}')
     check_exit(path, data, args.holder)
-    if (path.parent / '.git').exists() and worktree_residue(path.parent):
+    if queue_dirty(path):
         raise ValueError('commit the control-repository transition before reporting')
     if args.state not in REPORT_STATES:
         raise ValueError('invalid report state')
@@ -583,8 +629,8 @@ def run(args):
             sink = safe_relative(path.parent, worker['report_sink'], 'report_sink')
             if any(entry['run_id'] == args.holder for entry in report_entries([sink])):
                 raise ValueError(f'run id already has a close-out: {args.holder}')
-            if (path.parent / '.git').exists() and worktree_residue(path.parent):
-                raise ValueError('commit or preserve control-repository changes before claiming')
+            if queue_dirty(path):
+                raise ValueError('QUEUE.json has uncommitted changes; commit or preserve them before claiming')
             selected, skipped = choose(path, data, worker)
             if selected is None:
                 return {'selected': None, 'skipped': skipped}
@@ -608,8 +654,9 @@ def run(args):
             except Exception:
                 release(acquired, token)
                 raise
+            commit = commit_queue(path, f"{claim['item']}: claim by {args.holder}")
             return {'selected': describe(path, selected), 'skipped': skipped,
-                'awaiting_close': awaiting_close(data)}
+                    'awaiting_close': awaiting_close(data), 'commit': commit}
         token = resolve_token(data, args)
         charter, req = owned(data, token)
         repos = repo_paths(path, req)
@@ -629,7 +676,8 @@ def run(args):
                 f.write(body)
             req.setdefault('tasks', []).append(os.path.relpath(dest, path.parent))
             save(path, data)
-            return {'task': str(dest), 'parent': parent}
+            commit = commit_queue(path, f"{parent}: task {args.id} by {req['claim']['holder']}")
+            return {'task': str(dest), 'parent': parent, 'commit': commit}
         recovering = args.command == 'recover'
         state = 'ready' if recovering else args.state
         note = args.reason if recovering else args.note
@@ -674,7 +722,10 @@ def run(args):
         req.pop('claim')
         release(repos, token)
         save(path, data)
-        return {'item': f"{charter['id']}/{req['id']}", 'state': state}
+        item = f"{charter['id']}/{req['id']}"
+        verb = f"recover {holder}'s claim" if recovering else f"{state} by {holder}"
+        commit = commit_queue(path, f"{item}: {verb}")
+        return {'item': item, 'state': state, 'commit': commit}
 
 
 def main():
