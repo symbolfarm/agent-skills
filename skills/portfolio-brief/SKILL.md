@@ -2,7 +2,7 @@
 name: portfolio-brief
 description: Report structured worker close-outs and independently checked scheduler health between portfolio reviews. Does not execute or authorize work.
 metadata:
-  version: "16"
+  version: "17"
 ---
 
 # Portfolio brief
@@ -53,7 +53,10 @@ lead with the most meaningful change in understanding or capability. Group healt
 no-ops, but name any charter the helper reports as `awaiting_close`: it needs a
 closing decision at the next review. For each substantive entry report its worker, charter/requirement, result,
 direct evidence pointer and continuation or decision needed. Link a new digest
-with enough context to explain why it matters. Do not redo a repository-wide
+with enough context to explain why it matters. List ideas added to the portfolio's
+`ideas/` directory during the window (`git log --diff-filter=A --since <window
+start> -- ideas/`) with their title and proposer, one line each. They are ideas to
+consider, not work to do. Do not redo a repository-wide
 evidence tour merely to paraphrase a verified close-out; investigate a contradiction
 before repeating it.
 

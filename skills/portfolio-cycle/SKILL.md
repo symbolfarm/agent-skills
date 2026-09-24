@@ -3,7 +3,7 @@ name: portfolio-cycle
 description: Discuss research direction, review meaningful results, draft and authorize bounded charters, and order the fresh charter queue with the user.
 license: MIT
 metadata:
-  version: "14"
+  version: "15"
 ---
 
 # Portfolio cycle
@@ -50,7 +50,12 @@ can be a cheap recorded instruction. Preserve evidence when a requirement is
 revised or dropped. Charters the queue helper reports as `awaiting_close` have no
 open requirement; closing, extending or holding one is decided together at review.
 Agents may propose next charters after findings or in review;
-empty capacity alone is not a reason to generate work.
+empty capacity alone is not a reason to generate work. The portfolio's `ideas/`
+directory holds ideas that agents, workers and the user want to try, one file
+each. When choosing what comes next, check whether an idea's "Ready when"
+condition now holds, and raise it if it does. At review, the user decides what
+happens to an idea: it becomes a charter (status `charter <ID>`), it waits, or it
+is dropped (moved to `ideas/archive/` with a reason).
 
 Use `QUEUE.json` for ordered charter references and requirement lifecycle; use
 charter prose for intent and acceptance conditions. Read the schema beside

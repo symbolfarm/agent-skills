@@ -149,6 +149,11 @@ Use `digest` when the result materially changes what its reader understands or
 can do, at a meaningful finding or charter closure; no automatic per-task digest.
 A digest may recommend a next step while distinguishing evidence from advice.
 
+If the work suggests something worth trying outside this requirement, record it
+as one new file in the portfolio's `ideas/` directory, in the shape its README
+gives, and commit only that file. An idea authorizes nothing: do not pursue it,
+and do not let it widen the requirement you are working.
+
 Commit work before the queue transition. The helper releases only locks bearing
 this claim's token:
 
