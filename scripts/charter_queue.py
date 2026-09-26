@@ -151,9 +151,15 @@ def read_workers(path):
             health_path = safe_relative(path.parent, health.get("path", ""),
                                         f"WORKERS.json: {worker_id} health path")
             health_source = ("file", str(health_path))
+        elif health.get("kind") == "interactive":
+            # A session run with the owner present has no scheduler to check;
+            # it claims only a named requirement (claim --item), never by rank.
+            if set(health) != {"kind"}:
+                raise ValueError(f"WORKERS.json: {worker_id} interactive health takes no fields")
+            health_source = None
         else:
             raise ValueError(f"WORKERS.json: {worker_id} has invalid health kind")
-        if health_source in health_sources:
+        if health_source is not None and health_source in health_sources:
             raise ValueError(f"WORKERS.json: {worker_id} reuses another worker's health source")
         health_sources.add(health_source)
         workers[worker_id] = worker
@@ -522,7 +528,14 @@ def repo_paths(path, req):
     return sorted({(path.parent / r).resolve() for r in req["repos"]})
 
 
-def choose(path, data, worker):
+def interactive(worker):
+    return worker["health"]["kind"] == "interactive"
+
+
+def choose(path, data, worker, target=None):
+    """Select the next claimable requirement, or exactly `target` for an
+    interactive worker. An interactive worker is eligible for any active charter:
+    the owner's presence is the authorization, and the named item replaces rank."""
     skipped = []
     worker_id = worker["id"]
     capabilities = set(worker["capabilities"])
@@ -570,9 +583,13 @@ def choose(path, data, worker):
                         "items": others})
     for charter, req in rows(data):
         key = f"{charter['id']}/{req['id']}"
-        if charter['status'] != 'active' or req['state'] != 'ready':
+        if target is not None and key != target:
             continue
-        if worker_id not in charter['eligible_workers']:
+        if charter['status'] != 'active' or req['state'] != 'ready':
+            if target is not None:
+                skipped.append({"item": key, "reason": "charter not active or requirement not ready"})
+            continue
+        if target is None and worker_id not in charter['eligible_workers']:
             continue
         if not set(req.get('requires', [])).issubset(capabilities):
             skipped.append({"item": key, "reason": "missing capability"})
@@ -869,8 +886,12 @@ def run(args):
                 raise ValueError(f'run id already has a close-out: {args.holder}')
             if queue_dirty(path):
                 raise ValueError('QUEUE.json has uncommitted changes; commit or preserve them before claiming')
-            selected, skipped = choose(path, data, worker)
+            if interactive(worker) != bool(args.item):
+                raise ValueError('an interactive worker claims with --item; a scheduled worker claims by rank')
+            selected, skipped = choose(path, data, worker, args.item)
             if selected is None:
+                if args.item and not any(s.get('item') == args.item for s in skipped):
+                    skipped.append({"item": args.item, "reason": "no such requirement"})
                 return {'selected': None, 'skipped': skipped}
             charter, req = selected
             token = uuid.uuid4().hex
@@ -1001,6 +1022,7 @@ def main():
         cmd.add_argument('--worker', required=True)
         if command == 'claim':
             cmd.add_argument('--holder', required=True)
+            cmd.add_argument('--item', help="charter/requirement for an interactive worker, e.g. C-001/R1")
     cmd = sub.add_parser('check-exit')
     cmd.add_argument('--holder', required=True)
     cmd = sub.add_parser('finish')

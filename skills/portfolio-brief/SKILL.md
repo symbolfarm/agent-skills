@@ -33,7 +33,8 @@ ever been confirmed delivered — without it, a deployment whose first delivery 
 failing replays its whole history each time. Use `reports --since` only for
 diagnostics, not scheduled cursor management.
 
-For every configured worker, check its independent `health` source. A close-out
+For every configured scheduled worker, check its independent `health` source; an
+`interactive` profile has none, and its close-outs are reported like any other. A close-out
 and a scheduler execution establish different facts: distinguish a healthy no-op,
 completed or resumable work, a failed run, a missed run, and a run whose reporting
 step failed. For Hermes cron, inspect the persisted job/execution state. For a file

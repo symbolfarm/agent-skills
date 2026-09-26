@@ -59,7 +59,9 @@ preserved and still prevent a fresh claim.
 
 Keep the portfolio as the control repository, not a requirement work repository:
 claim commits and lifecycle updates occur there. For direct maintenance, use
-ordinary interactive authorization and coordinate with any active worker.
+ordinary interactive authorization and coordinate with any active worker. To
+complete or advance a requirement in session with the user, claim it as the
+installation's `interactive` worker with `claim --item`.
 
 `task` creates `.tasks/current/<id>.md` with parent and charter links and records
 its path in the requirement. Historical `.tasks/LOG.jsonl` files are never scanned.

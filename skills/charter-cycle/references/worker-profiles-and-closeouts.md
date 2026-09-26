@@ -34,6 +34,15 @@ eligibility, capabilities, dependencies, claims, repository permissions and
 availability. Themes do not choose a worker. An active requirement that no named
 worker can execute is invalid configuration.
 
+A profile with health `{"kind": "interactive"}` is a session run with the owner
+present. It has no scheduler, so the brief has no health to check for it. It never
+claims by rank: it names the requirement with `claim --item C-001/R1`, and it may
+claim in any active charter, because the owner's presence is the authorization.
+Every other rule holds: readiness, dependencies, capabilities, repository locks,
+evidence at `finish`, `check-exit` and a close-out through `report`. Use it for
+completing or advancing a requirement together, rather than spending a scheduled
+run on bookkeeping.
+
 After lifecycle close-out and `check-exit`, a scheduled worker calls `report` once.
 The queue retains immutable transition records keyed by holder, so a later worker
 cannot invalidate an earlier run's close-out. A transition must also name a

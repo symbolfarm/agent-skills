@@ -557,6 +557,49 @@ class CharterQueueTests(QueueFixture):
         self.assertEqual([entry['run_id'] for entry in advanced['reports']], ['third'])
 
 
+class InteractiveWorkerTests(QueueFixture):
+    def setUp(self):
+        super().setUp()
+        workers = json.loads(self.workers.read_text())
+        workers['workers'].append({
+            'id': 'owner-session', 'holder_prefix': 'owner-session',
+            'capabilities': ['general'],
+            'wind_down': {'minutes': 50, 'reserve_minutes': 10},
+            'report_sink': '.briefing/daily', 'health': {'kind': 'interactive'}})
+        self.workers.write_text(json.dumps(workers))
+        self.data['charters'][0]['requirements'][0]['state'] = 'done'
+        self.data['charters'][0]['requirements'][0]['evidence'] = ['fixture']
+        self.write()
+
+    def test_interactive_worker_claims_a_named_item_without_eligibility(self):
+        self.cmd('validate')
+        r = self.cmd('claim', '--worker', 'owner-session', '--holder', 'owner-session-a',
+                     '--item', 'C-001/R2')
+        token = r['selected']['requirement']['claim']['token']
+        self.cmd('finish', '--token', token, '--state', 'done', '--evidence', 'handover transcript')
+        self.cmd('validate')
+        self.cmd('check-exit', '--holder', 'owner-session-a')
+
+    def test_interactive_needs_item_and_scheduled_workers_refuse_it(self):
+        self.cmd('claim', '--worker', 'owner-session', '--holder', 'owner-session-a', ok=False)
+        self.cmd('claim', '--worker', 'research-worker', '--holder', 'research-worker-a',
+                 '--item', 'C-001/R2', ok=False)
+
+    def test_named_item_must_exist_and_be_ready(self):
+        r = self.cmd('claim', '--worker', 'owner-session', '--holder', 'owner-session-a',
+                     '--item', 'C-001/R1')
+        self.assertIsNone(r['selected'])
+        r = self.cmd('claim', '--worker', 'owner-session', '--holder', 'owner-session-b',
+                     '--item', 'C-001/R9')
+        self.assertEqual(r['skipped'][-1]['reason'], 'no such requirement')
+
+    def test_interactive_health_takes_no_fields(self):
+        workers = json.loads(self.workers.read_text())
+        workers['workers'][-1]['health'] = {'kind': 'interactive', 'path': 'x'}
+        self.workers.write_text(json.dumps(workers))
+        self.cmd('validate', ok=False)
+
+
 class DetachedJobTests(QueueFixture):
     """Jobs that outlive the agent session, metered against the charter budget."""
 

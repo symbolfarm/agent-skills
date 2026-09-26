@@ -74,6 +74,14 @@
                 "kind": {"const": "file"},
                 "path": {"$ref": "#/$defs/relativePath"}
               }
+            },
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["kind"],
+              "properties": {
+                "kind": {"const": "interactive"}
+              }
             }
           ]
         }
