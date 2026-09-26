@@ -14,6 +14,11 @@ State what must be established and what evidence would satisfy it. For research,
 name the question, comparison and conditions; a credible negative result can
 satisfy a question without satisfying a requirement to achieve a performance target.
 
+Workers must be able to produce every requirement's evidence on their own. The
+owner's input (a person at a terminal, a judgement, an approval) may add value
+but must never be the only route to satisfying a requirement, or a prerequisite
+that dependent requirements wait on.
+
 ## Authority and boundaries
 
 Repositories and permitted actions; excluded outcomes; resource/time/spend limits.

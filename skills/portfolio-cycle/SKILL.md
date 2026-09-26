@@ -30,6 +30,10 @@ Draft requirements with observable evidence of satisfaction, research context,
 permitted repositories/actions, resource limits and meaningful stop conditions.
 For research questions, permit credible negative answers and adaptive experiment
 design. A performance target remains unmet when an experiment misses it.
+Before authorization, check each requirement's evidence: if only the user can
+supply it (their presence, judgement or hands), redraft it so the user's input is
+optional or value-add. A charter is a work package workers can finish without
+them; nothing may depend on a step only the user can take.
 
 The user authorizes a charter and names its eligible workers. Record actual
 approval, including approval given in ordinary conversation; never ask for a
