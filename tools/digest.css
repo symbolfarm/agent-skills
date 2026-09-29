@@ -19,8 +19,8 @@ th,td{padding:.55rem .7rem;border-top:1px solid var(--line);text-align:left;vert
 thead th{border-top:0;border-bottom:2px solid var(--line);font-size:.72rem;text-transform:uppercase;color:var(--soft)}
 blockquote{margin:1.2rem 0;padding:1rem 1.1rem;border-left:4px solid var(--accent);background:var(--pale)}
 hr{border:0;border-top:1px solid var(--line);margin:2rem 0}
-.site-header{display:flex;gap:1rem;align-items:baseline;padding:1rem 1.25rem;border-bottom:1px solid var(--line)}
-.site-header .brand{font-weight:700;text-decoration:none}
+/* A standalone document has nowhere to navigate, so its header bar is hidden. */
+.site-header{display:none}
 .layout{max-width:52rem;margin:auto;padding:2rem 1.25rem 4rem}
 .toc{border:1px solid var(--line);background:var(--paper);padding:.8rem 1rem;margin-bottom:2rem;font-size:.92rem}
 .toc h2{font-size:.8rem;margin:0 0 .4rem;text-transform:uppercase;letter-spacing:.08em;color:var(--soft)}

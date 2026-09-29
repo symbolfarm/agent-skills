@@ -852,7 +852,8 @@ def render_document(source: Path, *, digest: bool = True, stylesheet: Path = DIG
     if digest:
         first_heading_end = rendered.index("</h1>") + len("</h1>")
         rendered = rendered[:first_heading_end] + digest_declaration(meta) + rendered[first_heading_end:]
-    return shell(site, page, rendered, headings)
+    contents = headings if sum(2 <= level <= 3 for level, _, _ in headings) >= 3 else []
+    return shell(site, page, rendered, contents)
 
 
 def main() -> None:
