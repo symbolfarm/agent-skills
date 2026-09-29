@@ -351,5 +351,62 @@ class AltitudeFixtureTests(unittest.TestCase):
                 self.assertFalse(target.startswith(("http://", "https://", "//")), f"{attribute} reaches out to {target}")
 
 
+DIGEST = """---
+title: A foundation the next lesson builds on
+reader: project owner, oriented on the programme
+date: 2026-09-30
+charter: EX-C4
+status: agent-authored; not human-reviewed
+summary: Holding A lets B be learned from its own lesson.
+---
+
+## What changed
+
+Oracle text reaches the ceiling. See [the record](../notebook/r3.md).
+
+```:status
+@built
+A calibrated curriculum.
+@open
+Construction's case.
+```
+"""
+
+
+class DigestTests(unittest.TestCase):
+    def render(self, text: str, **kw) -> str:
+        with tempfile.TemporaryDirectory() as directory:
+            source = Path(directory) / "digest.md"
+            source.write_text(text, encoding="utf-8")
+            return builder.render_document(source, **kw)
+
+    def test_digest_renders_title_declaration_and_components_standalone(self) -> None:
+        page = self.render(DIGEST)
+        self.assertIn("<title>A foundation the next lesson builds on</title>", page)
+        declaration = re.search(r'<aside class="digest-meta".*?</aside>', page, re.DOTALL).group(0)
+        for value in ("project owner, oriented on the programme", "2026-09-30", "EX-C4", "not human-reviewed"):
+            self.assertIn(value, declaration)
+        self.assertLess(page.index("</h1>"), page.index("<aside class=\"digest-meta\""))
+        self.assertIn('class="pill open"', page)
+        self.assertIn('href="../notebook/r3.md"', page)
+        self.assertNotIn("<link", page)
+        self.assertNotIn("reader:", page)
+
+    def test_digest_front_matter_is_required_and_closed(self) -> None:
+        with self.assertRaisesRegex(ValueError, "missing: reader"):
+            self.render(DIGEST.replace("reader: project owner, oriented on the programme\n", ""))
+        with self.assertRaisesRegex(ValueError, "YYYY-MM-DD"):
+            self.render(DIGEST.replace("2026-09-30", "30 Sep"))
+        with self.assertRaisesRegex(ValueError, "unknown digest front matter: verdict"):
+            self.render(DIGEST.replace("summary:", "verdict: yes\nsummary:"))
+        with self.assertRaisesRegex(ValueError, "never closed"):
+            self.render("---\ntitle: x\n")
+
+    def test_older_markdown_renders_without_front_matter(self) -> None:
+        page = self.render("# ADUS-C1 close digest\n\nBody.\n", digest=False)
+        self.assertIn("<title>ADUS-C1 close digest</title>", page)
+        self.assertNotIn("<aside class=\"digest-meta\"", page)
+
+
 if __name__ == "__main__":
     unittest.main()

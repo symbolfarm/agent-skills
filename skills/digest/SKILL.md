@@ -3,7 +3,7 @@ name: digest
 description: Explain a meaningful result or research finding to its reader, leading with what changed, supporting evidence, uncertainty and implications. Use at meaningful findings, handover or charter closure.
 license: MIT
 metadata:
-  version: "2"
+  version: "3"
 ---
 
 # Digest
@@ -35,12 +35,40 @@ Use a diagram when it helps; a sentence may suffice. Give a working artifact,
 example, command or link when handing over a capability. A build check alone is
 not a demonstration of the requested behavior.
 
-Prefer the simplest usable format. Follow the project's page convention when
-publishing a page; `../../tools/build_pages.py` is available for static rendering.
-Do not create a site merely to deliver a short explanation.
-
 Keep dated digests as records, and correct important errors visibly. Link a
 successor when understanding changes. The current research overview should
 point to the best current account so readers need not replay the digest history.
 A digest's existence proves an attempted explanation, not reader understanding.
 Deliver it through the current conversation or an already authorized channel.
+
+## Format
+
+Write the digest as markdown in the repository that holds its evidence, at
+`docs/digests/<charter-or-topic>-<YYYY-MM-DD>.md`, opening with this header:
+
+```
+---
+title: A foundation the next lesson builds on
+reader: project owner, oriented on the programme
+date: 2026-09-30
+charter: EX-C4
+status: agent-authored; not human-reviewed
+summary: One sentence that tells a reader scanning a list what changed.
+supersedes: docs/digests/ex-c3-2026-09-27.md
+---
+```
+
+`title`, `reader`, `date` and `status` are required; `charter`, `summary` and
+`supersedes` are optional; no other keys are accepted. Relative links resolve
+beside the file. Beyond ordinary markdown, tables and inline SVG, three block
+components are available as fenced directives: `:reading` (a best reading and
+an alternative), `:option` (options with verdicts) and `:status` (built,
+designed and open rows). Their syntax is in the docstring of
+`tools/build_pages.py` in the agent-skills repository.
+
+Do not hand-write HTML and do not commit generated HTML. Readers' tools render
+the markdown. From the repository root, with agent-skills checked out beside it,
+`python3 ../agent-skills/tools/build_pages.py --digest docs/digests/<file>.md`
+prints a standalone page. Run it before committing, because it is also the
+header check. Do not create a site merely to deliver a short
+explanation. Dated digests written before this format stay as they are.

@@ -67,6 +67,9 @@ FORBIDDEN_SVG_ELEMENTS = {"script", "foreignObject", "style"}
 # The set is closed on purpose: an unrecognised or malformed directive is a
 # build failure, never raw passthrough, which is what keeps the narrow audited
 # SVG block the only markup that reaches output unescaped.
+DIGEST_STYLESHEET = SCRIPT.parent / "digest.css"
+DIGEST_REQUIRED = ("title", "reader", "date", "status")
+DIGEST_OPTIONAL = ("charter", "summary", "supersedes")
 DIRECTIVES = ("reading", "option", "status")
 PILL_VARIANTS = ("built", "designed", "open")
 DIRECTIVE_FIELDS: dict[str, tuple[str, ...]] = {
@@ -87,6 +90,10 @@ class Page:
     output: str
     title: str
     explainer: dict[str, Any] | None = None
+    text: str | None = None
+
+    def read(self) -> str:
+        return self.text if self.text is not None else self.source.read_text(encoding="utf-8")
 
 
 @dataclass(frozen=True)
@@ -267,11 +274,11 @@ def section_number(text: str) -> str | None:
     return match.group(1) if match else None
 
 
-def heading_data(source: Path) -> tuple[dict[str, str], list[tuple[int, str, str]]]:
+def heading_data(source: Path, text: str | None = None) -> tuple[dict[str, str], list[tuple[int, str, str]]]:
     sections: dict[str, str] = {}
     headings: list[tuple[int, str, str]] = []
     used: dict[str, int] = {}
-    for line in source.read_text(encoding="utf-8").splitlines():
+    for line in (text if text is not None else source.read_text(encoding="utf-8")).splitlines():
         match = re.match(r"^(#{1,6})\s+(.+?)\s*$", line)
         if not match:
             continue
@@ -539,8 +546,9 @@ def render_directive(lines: list[str], start: int, site: Site, page: Page, repor
 
 
 def render_markdown(site: Site, page: Page, report_sections: dict[str, str]) -> tuple[str, list[tuple[int, str, str]]]:
-    lines = page.source.read_text(encoding="utf-8").splitlines()
-    _, headings = heading_data(page.source)
+    text = page.read()
+    lines = text.splitlines()
+    _, headings = heading_data(page.source, text)
     heading_iter = iter(headings)
     output: list[str] = []
     paragraph: list[str] = []
@@ -776,11 +784,94 @@ def check(site: Site) -> None:
         print(f"{site.output} is byte-reproducible and all local links/metadata resolve")
 
 
+def front_matter(text: str, source: Path) -> tuple[dict[str, str], str]:
+    """Split a leading ``---`` block of ``key: value`` lines from the body.
+
+    Only flat string values are allowed; that is all a digest header needs and
+    it keeps the format readable without a YAML parser.
+    """
+    lines = text.splitlines()
+    if not lines or lines[0].strip() != "---":
+        return {}, text
+    meta: dict[str, str] = {}
+    for number, line in enumerate(lines[1:], start=2):
+        if line.strip() == "---":
+            return meta, "\n".join(lines[number:]) + "\n"
+        if not line.strip():
+            continue
+        key, sep, value = line.partition(":")
+        if not sep or not re.fullmatch(r"[a-z_]+", key.strip()):
+            fail(f"{source}:{number}: front matter lines are 'key: value'; got {line!r}")
+        meta[key.strip()] = value.strip().strip('"')
+    fail(f"{source}: front matter opened with --- is never closed")
+
+
+def digest_meta(meta: dict[str, str], source: Path) -> dict[str, str]:
+    missing = [key for key in DIGEST_REQUIRED if not meta.get(key)]
+    if missing:
+        fail(f"{source}: digest front matter missing: {', '.join(missing)}")
+    unknown = sorted(set(meta) - set(DIGEST_REQUIRED) - set(DIGEST_OPTIONAL))
+    if unknown:
+        fail(f"{source}: unknown digest front matter: {', '.join(unknown)}")
+    if not re.fullmatch(r"\d{4}-\d{2}-\d{2}", meta["date"]):
+        fail(f"{source}: digest date must be YYYY-MM-DD; got {meta['date']!r}")
+    return meta
+
+
+def digest_declaration(meta: dict[str, str]) -> str:
+    labels = (("Reader", "reader"), ("Date", "date"), ("Charter", "charter"), ("Status", "status"), ("Supersedes", "supersedes"))
+    rows = "".join(f"<div><dt>{label}</dt><dd>{html.escape(meta[key])}</dd></div>" for label, key in labels if meta.get(key))
+    return f'<aside class="digest-meta" aria-label="Digest declaration"><dl>{rows}</dl></aside>'
+
+
+def render_document(source: Path, *, digest: bool = True, stylesheet: Path = DIGEST_STYLESHEET) -> str:
+    """Render one markdown file as a standalone page, with no site config.
+
+    With ``digest`` the file must open with digest front matter, which becomes
+    the page title and a visible declaration. Without it (older digests written
+    before the format), the first heading is the title. Relative links are left
+    as written, so they resolve beside the source file.
+    """
+    source = source.resolve()
+    meta, body = front_matter(source.read_text(encoding="utf-8"), source)
+    if digest:
+        meta = digest_meta(meta, source)
+        title = meta["title"]
+        body = f"# {title}\n\n{body}"
+    else:
+        headings = heading_data(source, body)[1]
+        title = meta.get("title") or (headings[0][1] if headings else source.stem)
+    page = Page(source, source.name, title, None, body)
+    site = Site(
+        config_path=source, output=source.parent, description=meta.get("summary", title),
+        brand="Digest" if digest else "Document", brand_suffix="", footer_html="",
+        stylesheet="", inline_stylesheet=stylesheet, write_nojekyll=False, pages=(page,),
+        navigation=(), assets=(), aliases={}, section_reference_page=None,
+    )
+    rendered, headings = render_markdown(site, page, {})
+    if digest:
+        first_heading_end = rendered.index("</h1>") + len("</h1>")
+        rendered = rendered[:first_heading_end] + digest_declaration(meta) + rendered[first_heading_end:]
+    return shell(site, page, rendered, headings)
+
+
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--config", type=Path, default=None, help="JSON site config (default: site.json or site/site.json under the working directory)")
     parser.add_argument("--check", action="store_true", help="fail if committed output is stale")
+    parser.add_argument("--digest", type=Path, help="render one digest markdown file as a standalone page instead of a site")
+    parser.add_argument("--out", type=Path, help="with --digest: write here instead of standard output")
     args = parser.parse_args()
+    if args.digest:
+        try:
+            page = render_document(args.digest)
+        except ValueError as exc:
+            raise SystemExit(str(exc)) from exc
+        if args.out:
+            args.out.write_text(page, encoding="utf-8", newline="\n")
+        else:
+            print(page, end="")
+        return
     try:
         site = load_site(args.config if args.config is not None else default_config())
     except ValueError as exc:
