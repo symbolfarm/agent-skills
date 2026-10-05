@@ -49,6 +49,14 @@ Distinguish observation, agent interpretation and the user's strategic choice.
 Discuss the one or two consequences most worth attention, rather than reading
 out the backlog. A useful review need not change the queue or graduate a policy.
 
+Before asking the user to decide anything, put the object of the decision in
+front of them: what the thing concretely is (the lesson, the data, the
+mechanism, what gets trained), what each option costs or risks, and what
+follows from each. Do not assume they remember earlier digests or
+reviews: gloss terms and IDs, and link the page that explains them. A ranked
+list of one-line asks with recommendations is not a review; it invites a
+signature in place of understanding.
+
 Record agreed steering in the relevant charter/queue. Changing requirement order
 can be a cheap recorded instruction. Preserve evidence when a requirement is
 revised or dropped. Charters the queue helper reports as `awaiting_close` have no
