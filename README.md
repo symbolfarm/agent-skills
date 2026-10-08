@@ -97,7 +97,8 @@ installed.
 
 | Tool | What it does |
 | --- | --- |
-| [`tools/build_pages.py`](./tools/build_pages.py) | Build a committed static site — explainer and document pages — from a JSON config: Markdown to HTML, audited inline-SVG passthrough, three named block components, optional build-time stylesheet inlining, declared asset copying, `.md`→`.html` route rewriting, and explainer-metadata validation. `--check` fails when the committed output is not byte-reproducible. |
+| [`tools/build_pages.py`](./tools/build_pages.py) | Build a committed static site — explainer and document pages — from a JSON config: Markdown to HTML, audited inline-SVG passthrough, three named block components, optional build-time stylesheet inlining, declared asset copying, `.md`→`.html` route rewriting, and explainer-metadata validation. An optional site glossary links each term's first use on a page to a definition that opens in place on tap, with no script; it adds "Mentioned in" backlinks, and `--lint` reports bold terms the glossary does not explain. `--check` fails when the committed output is not byte-reproducible. |
+| [`tools/phone_check.mjs`](./tools/phone_check.mjs) | Open a built page in headless Chrome as a 390 px phone (or any width) with JavaScript disabled, tap the first glossary term, and report horizontal overflow and whether the definition opened, with screenshots. Needs Node and Chrome. |
 | [`scripts/repo_availability.py`](./scripts/repo_availability.py) | Report whether repositories are clean and unlocked, so one blocked repository costs one queue item rather than the run. |
 | [`scripts/check-public-boundary.py`](./scripts/check-public-boundary.py) | Guard what this public repository may contain. |
 

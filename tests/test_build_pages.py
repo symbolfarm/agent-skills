@@ -410,3 +410,107 @@ class DigestTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+GLOSSARY = ROOT / "tests" / "fixtures" / "glossary-site"
+
+
+class GlossaryTests(unittest.TestCase):
+    def build_site(self, directory: Path, **glossary: object) -> tuple[object, dict[str, str]]:
+        config = {
+            "output": str(directory / "out"),
+            "stylesheet": "styles.css",
+            "assets": [{"source": str(GLOSSARY / "styles.css"), "output": "styles.css"}],
+            "pages": [
+                {"source": str(GLOSSARY / "start.md"), "output": "index.html", "title": "Start"},
+                {"source": str(GLOSSARY / "concept.md"), "output": "notes/concept.html", "title": "Concept"},
+                {"source": str(GLOSSARY / "glossary.md"), "output": "glossary.html", "title": "Glossary"},
+            ],
+            "glossary": {"page": "glossary.html", "common_knowledge": str(GLOSSARY / "known.md"),
+                         "lint_ignore": ["emphasis phrase"], **glossary},
+        }
+        path = directory / "site.json"
+        path.write_text(json.dumps(config), encoding="utf-8")
+        site = builder.load_site(path)
+        builder.build(site, directory / "out")
+        pages = {name: (directory / "out" / name).read_text(encoding="utf-8")
+                 for name in ("index.html", "notes/concept.html", "glossary.html")}
+        return site, pages
+
+    def test_entries_aliases_and_definitions_are_read_from_the_glossary_page(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            site, _ = self.build_site(Path(tmp))
+        terms = {term.title: term for term in site.glossary.terms}
+        self.assertEqual(set(terms), {"Flonk", "Wibble gate", "Zarp cache"})
+        self.assertEqual(terms["Wibble gate"].anchor, "wibble-gate-invented")
+        self.assertIn("wibble", terms["Wibble gate"].surfaces)
+        self.assertEqual(terms["Flonk"].definition,
+                         "A flonk is a small invented widget that hums when touched. It exists only in this fixture.")
+
+    def test_first_use_of_each_term_links_once_and_opens_without_script(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            _, pages = self.build_site(Path(tmp))
+        start = pages["index.html"]
+        self.assertEqual(start.count('class="term-label"'), 3)
+        self.assertEqual(start.count(">flonk</label>"), 1)
+        self.assertIn('for="term-2">wibble gate</label>', start)
+        self.assertIn('>zarp</label>', start)
+        self.assertIn('<input type="checkbox" class="term-toggle" id="term-1"', start)
+        self.assertIn('hums when touched. It exists only in this fixture. <a href="glossary.html#flonk">Full entry</a>', start)
+        self.assertNotIn("<script", start)
+        self.assertIn(".term-toggle:checked~.term-def{display:block", start)
+        concept = pages["notes/concept.html"]
+        self.assertIn('<a href="../glossary.html#wibble-gate-invented">Full entry</a>', concept)
+        self.assertNotIn('term-label', re.search(r"<h2.*?</h2>", concept).group(0))
+
+    def test_code_links_headings_and_the_glossary_itself_are_not_linked(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            _, pages = self.build_site(Path(tmp))
+        start = pages["index.html"]
+        self.assertIn("<code>flonk</code>", start)
+        self.assertIn('<a href="glossary.html#wibble-gate-invented">wibble gate</a>', start)
+        self.assertNotIn('class="term-label"', pages["glossary.html"])
+
+    def test_backlinks_on_entries_and_on_pages_linked_from_others(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            _, pages = self.build_site(Path(tmp))
+        glossary = pages["glossary.html"]
+        flonk = glossary[glossary.index('id="flonk"'):glossary.index('id="w"')]
+        self.assertIn('Mentioned in: <a href="index.html">Start</a></p>', flonk)
+        wibble = glossary[glossary.index('id="wibble-gate-invented"'):glossary.index('id="zarp-cache"')]
+        self.assertIn('Mentioned in: <a href="notes/concept.html">Concept</a>, <a href="index.html">Start</a>', wibble)
+        zarp = glossary[glossary.index('id="zarp-cache"'):]
+        self.assertIn('Mentioned in: <a href="index.html">Start</a>', zarp)
+        self.assertIn('<aside class="backlinks" aria-label="Mentioned in"><p>Mentioned in: <a href="../index.html">Start</a></p></aside>',
+                      pages["notes/concept.html"])
+
+    def test_lint_reports_only_unexplained_bold_terms(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            site, _ = self.build_site(Path(tmp))
+            findings = builder.lint(site)
+        self.assertEqual(len(findings), 1, findings)
+        self.assertIn("'mystery term' has no glossary entry", findings[0])
+
+    def test_wide_content_scrolls_in_its_own_box(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            _, pages = self.build_site(Path(tmp))
+        start = pages["index.html"]
+        self.assertIn('<div class="table-wrap"><table>', start)
+        self.assertIn("pre,.table-wrap,.inline-svg{max-width:100%;overflow-x:auto}", start)
+        self.assertIn("<td>zarps</td>", start)
+
+    def test_glossary_config_is_validated(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            with self.assertRaisesRegex(ValueError, "unknown field"):
+                self.build_site(Path(tmp), colour="red")
+            with self.assertRaisesRegex(ValueError, "entry_level"):
+                self.build_site(Path(tmp), entry_level=9)
+
+    def test_sites_without_a_glossary_get_no_glossary_styles(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            directory = Path(tmp)
+            path = BuilderTests().fixture_config(directory)
+            site = builder.load_site(path)
+            builder.build(site, directory / "output")
+            text = (directory / "output" / "index.html").read_text(encoding="utf-8")
+        self.assertNotIn("term-toggle", text)
