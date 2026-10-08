@@ -3,7 +3,7 @@ name: digest
 description: Explain a meaningful result or research finding to its reader, leading with what changed, supporting evidence, uncertainty and implications. Use at meaningful findings, handover or charter closure.
 license: MIT
 metadata:
-  version: "3"
+  version: "4"
 ---
 
 # Digest
@@ -66,9 +66,25 @@ an alternative), `:option` (options with verdicts) and `:status` (built,
 designed and open rows). Their syntax is in the docstring of
 `tools/build_pages.py` in the agent-skills repository.
 
-Do not hand-write HTML and do not commit generated HTML. Readers' tools render
-the markdown. From the repository root, with agent-skills checked out beside it,
+Do not hand-write HTML, and do not commit a generated page for a single digest.
+Readers' tools render the markdown; a site that commits its built output does
+so through its own config and `--check`. From the repository root, with
+agent-skills checked out beside it,
 `python3 ../agent-skills/tools/build_pages.py --digest docs/digests/<file>.md`
 prints a standalone page. Run it before committing, because it is also the
 header check. Do not create a site merely to deliver a short
 explanation. Dated digests written before this format stay as they are.
+
+## Glossary
+
+Where the repository keeps a glossary for the domain (a site config that names
+a `glossary` page), write for a reader who remembers none of the earlier
+digests. Link the first use of each glossary term to its entry, for example
+`[cold start](../glossary.md#cold-start)`, so the markdown reads on its own and the built
+site opens the definition in place. When the digest needs a term the glossary
+lacks, add the entry in the same change, with where the term came from and its
+status, rather than defining it only in the digest. A term the reader already
+knows goes on the site's common-knowledge list with a one-line reason instead.
+Before committing, run the site's lint from the repository root:
+`python3 ../agent-skills/tools/build_pages.py --lint`. It reports bold terms
+that match no entry, no common-knowledge line and no ignore phrase.

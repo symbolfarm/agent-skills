@@ -34,9 +34,15 @@ await shot('closed');
 const doc = (await send('DOM.getDocument')).result.root;
 const q = async (sel) => (await send('DOM.querySelector', { nodeId: doc.nodeId, selector: sel })).result.nodeId;
 const label = await q('.term-label'), def = await q('.term-def');
+if (!label) {
+  console.log(JSON.stringify({ width, js: 'disabled', contentWidth: content.width, viewportWidth: view.clientWidth,
+    horizontalOverflow: content.width > view.clientWidth + 0.5, terms: 0 }));
+  ws.close(); chrome.kill(); process.exit(0);
+}
 const before = (await send('DOM.getBoxModel', { nodeId: def })).error ? 'hidden' : 'visible';
 await send('DOM.scrollIntoViewIfNeeded', { nodeId: label }); await sleep(200);
-const box = (await send('DOM.getBoxModel', { nodeId: label })).result.model.content;
+// A label can wrap across lines, so tap the middle of its first line box.
+const box = (await send('DOM.getContentQuads', { nodeId: label })).result.quads[0];
 const x = (box[0] + box[2]) / 2, y = (box[1] + box[5]) / 2;
 if (mobile) {
   await send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x, y }] });

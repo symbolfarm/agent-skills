@@ -56,8 +56,18 @@ linked: a checkbox and label reveal the definition in place on tap, click or
 keyboard, with no script, and the definition links to the full entry. Glossary
 entries and pages gain "Mentioned in" backlinks. ``--lint`` reports bold terms
 of one to three words that match no entry, no line of the common-knowledge file
-(``- term; other term — reason``) and no ``lint_ignore`` phrase. A site with no
+(``- term; other term — reason``), no ``lint_ignore`` phrase and no
+``lint_ignore_patterns`` regular expression. An explicit
+link to a glossary entry also opens in place on its first use. A site with no
 glossary renders exactly as before.
+
+``source_links`` maps local links that leave the site to a hosted copy of the
+source, so a page can cite files the site does not render::
+
+    "source_links": [{"root": "..", "url": "https://example.org/repo/blob/main/"}]
+
+A link whose target lies under ``root`` (relative to the config) and is not a
+site page or asset becomes ``url`` plus its path below ``root``.
 """
 
 from __future__ import annotations
@@ -131,6 +141,7 @@ class Site:
     aliases: dict[str, str]
     section_reference_page: str | None
     glossary: Glossary | None = None
+    source_links: tuple[tuple[Path, str], ...] = ()
 
     @property
     def source_routes(self) -> dict[Path, str]:
@@ -156,6 +167,7 @@ class Glossary:
     terms: tuple[Term, ...]
     common: frozenset[str]
     ignore: frozenset[str]
+    ignore_patterns: tuple[re.Pattern[str], ...] = ()
 
     @property
     def pattern(self) -> re.Pattern[str] | None:
@@ -292,6 +304,15 @@ def load_site(config_path: Path) -> Site:
 
     glossary = load_glossary(raw.get("glossary"), base, pages, outputs)
 
+    source_links: list[tuple[Path, str]] = []
+    for index, item in enumerate(raw.get("source_links", [])):
+        if not isinstance(item, dict) or not item.get("root") or not item.get("url"):
+            fail(f"source_links[{index}] needs root and url")
+        url = str(item["url"])
+        if not re.match(r"https?://", url) or not url.endswith("/"):
+            fail(f"source_links[{index}].url must be an http(s) URL ending in '/'")
+        source_links.append((resolve_from(base, str(item["root"])), url))
+
     output = resolve_from(base, str(raw.get("output", "docs")))
     return Site(
         config_path=config_path,
@@ -309,10 +330,11 @@ def load_site(config_path: Path) -> Site:
         aliases=dict(aliases),
         section_reference_page=section_page,
         glossary=glossary,
+        source_links=tuple(source_links),
     )
 
 
-GLOSSARY_FIELDS = ("page", "entry_level", "common_knowledge", "lint_ignore")
+GLOSSARY_FIELDS = ("page", "entry_level", "common_knowledge", "lint_ignore", "lint_ignore_patterns")
 
 
 def normal_term(text: str) -> str:
@@ -350,6 +372,13 @@ def load_glossary(raw: Any, base: Path, pages: list[Page], outputs: set[str]) ->
     ignore = raw.get("lint_ignore", [])
     if not isinstance(ignore, list) or not all(isinstance(item, str) for item in ignore):
         fail("glossary.lint_ignore must be a list of strings")
+    patterns = raw.get("lint_ignore_patterns", [])
+    if not isinstance(patterns, list) or not all(isinstance(item, str) for item in patterns):
+        fail("glossary.lint_ignore_patterns must be a list of regular expressions")
+    try:
+        compiled = tuple(re.compile(item) for item in patterns)
+    except re.error as exc:
+        fail(f"glossary.lint_ignore_patterns: {exc}")
     common: set[str] = set()
     if raw.get("common_knowledge"):
         path = resolve_from(base, str(raw["common_knowledge"]))
@@ -357,7 +386,7 @@ def load_glossary(raw: Any, base: Path, pages: list[Page], outputs: set[str]) ->
             fail(f"missing glossary.common_knowledge: {path}")
         common = common_knowledge(path)
     page = next(page for page in pages if page.output == page_output)
-    return Glossary(page_output, level, glossary_terms(page.source, level), frozenset(common), frozenset(normal_term(item) for item in ignore))
+    return Glossary(page_output, level, glossary_terms(page.source, level), frozenset(common), frozenset(normal_term(item) for item in ignore), compiled)
 
 
 def common_knowledge(path: Path) -> set[str]:
@@ -447,8 +476,12 @@ def heading_data(source: Path, text: str | None = None) -> tuple[dict[str, str],
     sections: dict[str, str] = {}
     headings: list[tuple[int, str, str]] = []
     used: dict[str, int] = {}
+    in_code = False
     for line in (text if text is not None else source.read_text(encoding="utf-8")).splitlines():
-        match = re.match(r"^(#{1,6})\s+(.+?)\s*$", line)
+        if line.startswith("```"):
+            in_code = not in_code
+            continue
+        match = None if in_code else re.match(r"^(#{1,6})\s+(.+?)\s*$", line)
         if not match:
             continue
         level, text = len(match.group(1)), plain(match.group(2))
@@ -498,6 +531,12 @@ def link_target(site: Site, page: Page, target: str) -> str:
     if output:
         route = relative_route(page.output, output)
         return route + (f"#{parsed.fragment}" if parsed.fragment else "")
+    for root, url in site.source_links:
+        try:
+            remainder = source_target.relative_to(root)
+        except ValueError:
+            continue
+        return url + remainder.as_posix() + (f"#{parsed.fragment}" if parsed.fragment else "")
     return target
 
 
@@ -514,6 +553,10 @@ def inline(text: str, site: Site, page: Page, report_sections: dict[str, str], l
 
     def markdown_link(match: re.Match[str]) -> str:
         label, target = match.group(1), link_target(site, page, match.group(2))
+        term = glossary_link(site, page, target, linker)
+        if term is not None and linker is not None:
+            linker.used[term.anchor] = term
+            return hold(term_html(page, linker, term, html.escape(label)))
         return hold(f'<a href="{html.escape(target, quote=True)}">{html.escape(label)}</a>')
 
     text = re.sub(r"!\[([^]]*)\]\(([^)]+)\)", markdown_image, text)
@@ -547,6 +590,31 @@ def inline(text: str, site: Site, page: Page, report_sections: dict[str, str], l
     return text
 
 
+def glossary_link(site: Site, page: Page, target: str, linker: Linker | None) -> Term | None:
+    """The term an explicit link to a glossary entry names, on its first use here."""
+    if linker is None:
+        return None
+    path, _, fragment = target.partition("#")
+    if not fragment or relative_route(page.output, linker.glossary.page) != path:
+        return None
+    term = next((term for term in linker.glossary.terms if term.anchor == fragment), None)
+    return None if term is None or term.anchor in linker.used else term
+
+
+def term_html(page: Page, linker: Linker, term: Term, label: str) -> str:
+    """A term whose definition opens in place: checkbox state, so no script."""
+    linker.count += 1
+    ident = f"term-{linker.count}"
+    entry = relative_route(page.output, linker.glossary.page) + f"#{term.anchor}"
+    return (
+        f'<span class="term"><input type="checkbox" class="term-toggle" id="{ident}" '
+        f'aria-label="Definition of {html.escape(term.title, quote=True)}">'
+        f'<label class="term-label" for="{ident}">{label}</label>'
+        f'<span class="term-def" role="note">{html.escape(term.definition)} '
+        f'<a href="{html.escape(entry, quote=True)}">Full entry</a></span></span>'
+    )
+
+
 def link_terms(text: str, site: Site, page: Page, linker: Linker, hold: Any) -> str:
     """Wrap the first use on this page of each glossary term, in escaped prose."""
 
@@ -555,16 +623,7 @@ def link_terms(text: str, site: Site, page: Page, linker: Linker, hold: Any) -> 
         if term is None or term.anchor in linker.used:
             return match.group(0)
         linker.used[term.anchor] = term
-        linker.count += 1
-        ident = f"term-{linker.count}"
-        entry = relative_route(page.output, linker.glossary.page) + f"#{term.anchor}"
-        return hold(
-            f'<span class="term"><input type="checkbox" class="term-toggle" id="{ident}" '
-            f'aria-label="Definition of {html.escape(term.title, quote=True)}">'
-            f'<label class="term-label" for="{ident}">{match.group(0)}</label>'
-            f'<span class="term-def" role="note">{html.escape(term.definition)} '
-            f'<a href="{html.escape(entry, quote=True)}">Full entry</a></span></span>'
-        )
+        return hold(term_html(page, linker, term, match.group(0)))
 
     return linker.pattern.sub(wrap, text)
 
@@ -738,8 +797,20 @@ def render_directive(lines: list[str], start: int, site: Site, page: Page, repor
     return f'<div class="state">{"".join(rows)}</div>', next_index
 
 
+def site_front_matter(text: str, source: Path) -> tuple[dict[str, str], str]:
+    """Front matter on a site page, if the page opens with a valid block.
+
+    A page that opens with a rule rather than ``key: value`` lines keeps it, so
+    sites written before pages carried front matter render as they did.
+    """
+    try:
+        return front_matter(text, source)
+    except ValueError:
+        return {}, text
+
+
 def render_markdown(site: Site, page: Page, report_sections: dict[str, str], linker: Linker | None = None) -> tuple[str, list[tuple[int, str, str]]]:
-    text = page.read()
+    meta, text = site_front_matter(page.read(), page.source)
     lines = text.splitlines()
     _, headings = heading_data(page.source, text)
     heading_iter = iter(headings)
@@ -834,7 +905,11 @@ def render_markdown(site: Site, page: Page, report_sections: dict[str, str], lin
     flush_paragraph(); close_list()
     if in_code:
         fail(f"Unclosed code fence in {page.source}")
-    return "\n".join(output), headings
+    body = "\n".join(output)
+    if meta and all(meta.get(key) for key in DIGEST_REQUIRED) and "</h1>" in body:
+        end = body.index("</h1>") + len("</h1>")
+        body = body[:end] + digest_declaration(digest_meta(meta, page.source)) + body[end:]
+    return body, headings
 
 
 def toc(headings: list[tuple[int, str, str]]) -> str:
@@ -875,7 +950,8 @@ def inline_stylesheet_css(path: Path) -> str:
 # definition. The rest keeps a 360-414 px page from scrolling sideways: wide
 # tables, code and diagrams scroll inside their own boxes.
 GLOSSARY_CSS = """
-.term-toggle{position:absolute;opacity:0;width:1px;height:1px;margin:0;pointer-events:none}
+.term{position:relative}
+.term-toggle{position:absolute;left:0;top:0;opacity:0;width:1px;height:1px;margin:0;pointer-events:none}
 .term-label{border-bottom:1px dotted currentColor;cursor:pointer}
 .term-toggle:focus-visible+.term-label{outline:2px solid currentColor;outline-offset:2px}
 .term-def{display:none}
@@ -1013,7 +1089,12 @@ def add_backlinks(site: Site, rendered: dict[str, tuple[str, list[tuple[int, str
 
 
 def lint(site: Site) -> list[str]:
-    """Bold terms of one to three words that the glossary does not explain."""
+    """Bold terms of one to three words that the glossary does not explain.
+
+    A single all-lowercase word with no digit or hyphen is read as emphasis
+    ("**not**"), not as a coined term. A candidate that contains a glossary
+    term ("a **trained holder**") counts as explained by it.
+    """
     if site.glossary is None:
         fail("lint needs a site with a glossary")
     glossary = site.glossary
@@ -1034,6 +1115,8 @@ def lint(site: Site) -> list[str]:
             for raw in re.findall(r"\*\*([^*\n]+)\*\*", re.sub(r"`[^`]*`", "", line)):
                 candidate = plain(raw)
                 if not re.fullmatch(r"[A-Za-z][\w'’\- /]*", candidate) or len(candidate.split()) > 3:
+                    continue
+                if re.fullmatch(r"[a-z]+", candidate) or any(pattern.fullmatch(candidate) for pattern in glossary.ignore_patterns):
                     continue
                 key = normal_term(candidate)
                 if key in seen or key in known or glossary.term_for(candidate):

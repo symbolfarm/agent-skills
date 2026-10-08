@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import importlib.util
 import json
+import os
 import re
 import sys
 import tempfile
@@ -427,7 +428,7 @@ class GlossaryTests(unittest.TestCase):
                 {"source": str(GLOSSARY / "glossary.md"), "output": "glossary.html", "title": "Glossary"},
             ],
             "glossary": {"page": "glossary.html", "common_knowledge": str(GLOSSARY / "known.md"),
-                         "lint_ignore": ["emphasis phrase"], **glossary},
+                         "lint_ignore": ["emphasis phrase"], "lint_ignore_patterns": [r"ZX-\d+"], **glossary},
         }
         path = directory / "site.json"
         path.write_text(json.dumps(config), encoding="utf-8")
@@ -514,3 +515,50 @@ class GlossaryTests(unittest.TestCase):
             builder.build(site, directory / "output")
             text = (directory / "output" / "index.html").read_text(encoding="utf-8")
         self.assertNotIn("term-toggle", text)
+
+
+class GlossaryLinkAndSourceTests(unittest.TestCase):
+    def test_explicit_entry_links_open_in_place_and_outside_links_map_to_source(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            directory = Path(tmp)
+            (directory / "src").mkdir()
+            entry = os.path.relpath(GLOSSARY / "glossary.md", directory / "src")
+            (directory / "src" / "page.md").write_text(
+                f"# Page\n\nThe [humming widget]({entry}#flonk) appears, then a flonk again.\n"
+                "See [the raw notes](../notes/raw.md#part) and [elsewhere](https://example.org/x).\n",
+                encoding="utf-8")
+            config = {
+                "output": str(directory / "out"), "stylesheet": "styles.css",
+                "assets": [{"source": str(GLOSSARY / "styles.css"), "output": "styles.css"}],
+                "pages": [
+                    {"source": str(directory / "src" / "page.md"), "output": "page.html", "title": "Page"},
+                    {"source": str(GLOSSARY / "glossary.md"), "output": "glossary.html", "title": "Glossary"},
+                ],
+                "glossary": {"page": "glossary.html"},
+                "source_links": [{"root": ".", "url": "https://example.org/repo/blob/main/"}],
+            }
+            (directory / "site.json").write_text(json.dumps(config), encoding="utf-8")
+            site = builder.load_site(directory / "site.json")
+            builder.build(site, directory / "out")
+            text = (directory / "out" / "page.html").read_text(encoding="utf-8")
+        self.assertIn('<label class="term-label" for="term-1">humming widget</label>', text)
+        self.assertEqual(text.count('class="term-label"'), 1)
+        self.assertIn('href="https://example.org/repo/blob/main/notes/raw.md#part"', text)
+        self.assertIn('href="https://example.org/x"', text)
+
+    def test_source_links_are_validated(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            directory = Path(tmp)
+            (directory / "a.md").write_text("# A\n", encoding="utf-8")
+            config = {"output": str(directory / "out"), "pages": [{"source": "a.md", "output": "a.html", "title": "A"}],
+                      "source_links": [{"root": ".", "url": "ftp://nowhere"}]}
+            (directory / "site.json").write_text(json.dumps(config), encoding="utf-8")
+            with self.assertRaisesRegex(ValueError, "source_links"):
+                builder.load_site(directory / "site.json")
+
+
+class HeadingTests(unittest.TestCase):
+    def test_hash_lines_inside_code_fences_are_not_headings(self) -> None:
+        text = "# Title\n\n```python\n# a comment\n```\n\n## Later\n\nSee [later](#later).\n"
+        _, headings = builder.heading_data(Path("x.md"), text)
+        self.assertEqual([anchor for _, _, anchor in headings], ["title", "later"])

@@ -13,3 +13,6 @@ plain text. The **Flonk** heading-style bold also counts as a use.
 
 **Short answer.** A **mystery term** is unexplained, a **plinth** is common
 knowledge, and an **emphasis phrase** is ignored.
+
+It is **not** a term, **ZX-12** matches an ignore pattern, and a **humming flonk**
+contains a known term.
