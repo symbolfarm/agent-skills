@@ -16,6 +16,20 @@ repository's README first, since its rules override anything here that is less
 strict. Read the publishing theme, where there is one, for audiences and
 streams.
 
+## Expected layout
+
+The writing repository's README may override these defaults.
+
+- One directory per piece. The owner's draft is a single file with front
+  matter: `title`, `audience`, `mode` (owner-authored, or AI-assisted and
+  disclosed), `status` (`idea`, `drafting`, `revising`, `ready`, `published`)
+  and `next_step`.
+- Beside it, `material.md` holds sourced episodes and evidence that agents
+  gather, and `notes/YYYY-MM-DD.md` holds the desk's feedback.
+- If a repository has no README and no such layout, report that in the
+  message. Do not create one, because the owner decides how their writing is
+  organised.
+
 ## Each run
 
 1. **Find the pieces in progress:** those whose front matter has `status`
