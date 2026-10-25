@@ -3,7 +3,7 @@ name: product-cycle
 description: Build a polished, production-ready software product to a set budget, leading a team of agents, keeping main shippable at every merge, and handing over a document pack that lets a person use and develop what was built. Use for authorized product builds of any size, from a 30-minute hackathon slice to a multi-run build.
 license: MIT
 metadata:
-  version: "1"
+  version: "2"
 ---
 
 # Product cycle
@@ -17,6 +17,23 @@ budget is spent, unless the next improvement is not worth making.
 Under a charter, `charter-cycle` still owns claims, requirement lifecycle,
 close-outs and reports. This skill owns how the product is built. For a direct
 request, the request is the authority and its stated budget is the budget.
+
+## Autonomous and interactive
+
+The same workflow runs either way.
+
+- **Autonomous** (a scheduled worker under a charter): never wait for the
+  owner. Decide within the brief, log the decision, and keep going. Anything
+  only the owner can provide becomes optional value-add or an item in the
+  handover.
+- **Interactive** (the owner is present): the owner is the best playtester
+  and the scope decider. Show the product early and often: after the
+  skeleton, then after each merge that changes what a user sees. Offer one
+  pivot point at each checkpoint ("next I'd do X; or Y if you'd rather"), and
+  keep going on your own pick if there's no answer. With a short budget,
+  agree scope in the first minutes, then show it at about half-time so there
+  is room to rescope or pivot. The owner's steering is recorded in
+  `DECISIONS.md` like any other decision.
 
 ## Budget and authority
 
