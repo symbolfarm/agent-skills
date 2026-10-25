@@ -83,6 +83,7 @@ orders its fresh charters. Historical queues are reference material only.
 | `research-notebook` | Preserve research findings and current qualified understanding. |
 | `digest` | Transfer meaningful changes to their reader. |
 | `portfolio-brief` | Report consequences and blockers between reviews. |
+| `product-cycle` | Build a polished product to a set budget with a team of agents, keeping main shippable, and hand over a document pack. |
 
 `scripts/charter_queue.py` selects from the fresh queue, acquires repository locks,
 generates task parent links and checks requirement closeout. Its schema is in
