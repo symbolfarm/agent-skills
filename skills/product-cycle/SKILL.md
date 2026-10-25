@@ -3,7 +3,7 @@ name: product-cycle
 description: Build a polished, production-ready software product to a set budget, leading a team of agents, keeping main shippable at every merge, and handing over a document pack that lets a person use and develop what was built. Use for authorized product builds of any size, from a 30-minute hackathon slice to a multi-run build.
 license: MIT
 metadata:
-  version: "2"
+  version: "3"
 ---
 
 # Product cycle
@@ -17,6 +17,10 @@ budget is spent, unless the next improvement is not worth making.
 Under a charter, `charter-cycle` still owns claims, requirement lifecycle,
 close-outs and reports. This skill owns how the product is built. For a direct
 request, the request is the authority and its stated budget is the budget.
+Either way, the brief follows [the brief template](assets/product-brief-template.md):
+the charter itself, or `BRIEF.md` in the product repository for a direct
+request. Write the brief with the owner before building; for a short budget,
+a few lines per section is enough.
 
 ## Autonomous and interactive
 

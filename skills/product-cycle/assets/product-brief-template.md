@@ -1,6 +1,8 @@
 # P-001 — A product in one line, from the recipient's side
 
-Uses the `product-cycle` skill.
+Uses the `product-cycle` skill. Under a charter, this is the charter. For a
+direct request, save it in the product repository as `BRIEF.md` and drop the
+authorization details the request already covers.
 
 ## Purpose
 
