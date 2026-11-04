@@ -3,7 +3,7 @@ name: product-cycle
 description: Build a polished, production-ready software product to a set budget, leading a team of agents, keeping main shippable at every merge, and handing over a document pack that lets a person use and develop what was built. Use for authorized product builds of any size, from a 30-minute hackathon slice to a multi-run build.
 license: MIT
 metadata:
-  version: "3"
+  version: "4"
 ---
 
 # Product cycle
@@ -19,8 +19,53 @@ close-outs and reports. This skill owns how the product is built. For a direct
 request, the request is the authority and its stated budget is the budget.
 Either way, the brief follows [the brief template](assets/product-brief-template.md):
 the charter itself, or `BRIEF.md` in the product repository for a direct
-request. Write the brief with the owner before building; for a short budget,
-a few lines per section is enough.
+request. The owner chooses between two ways of getting one:
+
+- **An interview.** The owner wants to shape the product. Write the brief
+  with them before building, one section at a time, proposing a draft for each
+  section rather than asking open questions. For a short budget, a few lines
+  per section is enough.
+- **A short request.** The owner gives a few lines and the lead writes the
+  rest, as below.
+
+Either way, the lead may add to the brief within its purpose, but never drops
+what the owner wrote.
+
+## From a short request
+
+The owner may give only a few lines: what the product is for, who it is for,
+the budget, and anything it must or must not do. That is enough. Do not send
+it back for detail. The lead writes the full brief, and that is the first
+item of work:
+
+1. **Survey.** Find the existing products, open projects, datasets and APIs
+   for the need. Note what each covers, its terms, and whether to reuse it,
+   extend it or build alongside it. Record the decision.
+2. **Write `SPEC.md`** in the template's shape:
+   - the recipients and the jobs they come to do;
+   - must-haves, each with an observable outcome;
+   - a ranked starter backlog;
+   - what is out of scope;
+   - the forks to keep open;
+   - acceptance examples, which the lead writes and marks as such;
+   - risks: privacy, legal, safety, anything that could be mistaken for an
+     official or real organisation, and data held about people.
+
+   Aim for a fully featured product that the budget can reach, not the
+   minimum the request implies.
+3. **Freeze before building.** Commit `SPEC.md` before the skeleton. Every
+   point in the owner's request appears in it unchanged. The spec may add to
+   the request, but it may not drop or weaken any of it. After the freeze,
+   changes go in `DECISIONS.md` with a reason. The handover reports against
+   the spec and the request.
+4. **Carry on.** In autonomous mode, don't wait for approval of the spec. In
+   interactive mode, show it in a few lines, offer one pivot, and keep going.
+
+Spend about a tenth of a single run's budget on this, or most of the first
+run of a multi-run build. Where the request is silent on something only the
+owner can decide (publishing, spending, contacting people, a change of
+purpose), the spec records the conservative default and the handover lists
+it as an open question.
 
 ## Autonomous and interactive
 
@@ -66,7 +111,7 @@ Scale the ceremony to the budget:
 
 ### 1. Orient and plan
 
-Read the brief, its acceptance examples, any reference look or product, and
+Read the brief (or `SPEC.md`), its acceptance examples, any reference look or product, and
 the repository's instructions. Write `PLAN.md`: the purpose in a sentence,
 who the recipient is, the stack and why, and a ranked backlog. Each backlog
 item says what the recipient gains. The backlog is a living list. Re-rank it

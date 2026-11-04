@@ -4,6 +4,10 @@ Uses the `product-cycle` skill. Under a charter, this is the charter. For a
 direct request, save it in the product repository as `BRIEF.md` and drop the
 authorization details the request already covers.
 
+A short request needs only Purpose, Budget and team, and Authority and
+boundaries, a few lines each. The lead then writes the other sections as
+`SPEC.md` (see "From a short request" in the skill).
+
 ## Purpose
 
 Who the product is for, what they should be able to do with it, and why it is
@@ -24,7 +28,7 @@ What already exists and may be reused.
 
 ## Acceptance examples
 
-Written by the owner: "the user does X, and Y happens." They are played through
+Written by the owner, or by the lead and marked as such: "the user does X, and Y happens." They are played through
 the real build. Do not special-case their wording.
 
 ## Budget and team
