@@ -600,9 +600,7 @@ class InteractiveWorkerTests(QueueFixture):
         self.cmd('validate', ok=False)
 
 
-class DetachedJobTests(QueueFixture):
-    """Jobs that outlive the agent session, metered against the charter budget."""
-
+class JobFixture(QueueFixture):
     def setUp(self):
         super().setUp()
         workers = json.loads(self.workers.read_text())
@@ -625,6 +623,10 @@ class DetachedJobTests(QueueFixture):
 
     def req(self):
         return json.loads(self.queue.read_text())['charters'][0]['requirements'][0]
+
+
+class DetachedJobTests(JobFixture):
+    """Jobs that outlive the agent session, metered against the charter budget."""
 
     def test_job_outlives_the_session_and_the_next_run_resumes_it(self):
         token = self.claim()
@@ -711,6 +713,102 @@ class DetachedJobTests(QueueFixture):
         job = self.req()['jobs'][0]
         self.assertEqual(job['status'], 'lost')
         self.assertGreaterEqual(job['hours_used'], 0)
+
+
+class ResourceLockTests(JobFixture):
+    """One exclusive lock per compute resource, held for a job's whole life."""
+
+    def setUp(self):
+        super().setUp()
+        self.locks = self.root / 'locks'
+        self.locks.mkdir()
+        self.env['CHARTER_RESOURCE_LOCKS'] = str(self.locks)
+
+    def held(self, resource='gpu0'):
+        import fcntl
+        with (self.locks / f'{resource}.lock').open('a') as f:
+            try:
+                fcntl.flock(f, fcntl.LOCK_EX | fcntl.LOCK_NB)
+            except BlockingIOError:
+                return True
+            fcntl.flock(f, fcntl.LOCK_UN)
+            return False
+
+    def until(self, condition, seconds=10):
+        give_up = time.monotonic() + seconds
+        while not condition():
+            self.assertLess(time.monotonic(), give_up, 'condition not reached')
+            time.sleep(0.05)
+
+    def test_second_job_is_refused_naming_the_holder(self):
+        token = self.claim()
+        first = self.start(token, 0.25, 'sleep', '2')
+        self.assertEqual(first['job']['resource'], 'gpu0')
+        self.assertTrue(self.held())
+        refusal = self.start(token, 0.25, 'true', ok=False)
+        self.assertIn('research-worker-run-a', refusal)
+        self.assertIn(first['job']['id'], refusal)
+        self.assertIn(first['job']['deadline'], refusal)
+        # A refused start reserves nothing.
+        self.assertEqual(len(self.req()['jobs']), 1)
+        self.cmd('jobs', '--wait', '--run', 'run-1')
+        self.assertFalse(self.held())
+        self.start(token, 0.25, 'true')
+        self.cmd('jobs', '--wait', '--run', 'run-1')
+
+    def test_resources_are_independent(self):
+        token = self.claim()
+        self.start(token, 0.25, 'sleep', '2')
+        self.cmd('job-start', '--token', token, '--hours', '0.25', '--resource', 'gpu1',
+                 '--log', 'logs/job1.log', '--', 'true')
+        self.assertIn('unsafe resource', self.cmd(
+            'job-start', '--token', token, '--hours', '0.25', '--resource', '../x',
+            '--log', 'logs/x.log', '--', 'true', ok=False))
+        self.cmd('jobs', '--wait', '--run', 'run-1')
+
+    def test_waiting_start_takes_the_resource_when_it_frees(self):
+        token = self.claim()
+        self.start(token, 0.25, 'sleep', '1')
+        started = self.cmd('job-start', '--token', token, '--hours', '0.25', '--wait-minutes', '0.5',
+                           '--log', 'logs/job.log', '--', 'true')
+        self.assertEqual(started['job']['resource'], 'gpu0')
+        self.cmd('jobs', '--wait', '--run', 'run-1')
+
+    def test_lock_lives_as_long_as_the_command_not_the_runner(self):
+        token = self.claim()
+        job_id = self.start(token, 0.5, 'sleep', '30')['job']['id']
+        live_path = self.portfolio / '.jobs' / f'{job_id}.json'
+        self.until(lambda: json.loads(live_path.read_text()).get('pid'))
+        pid = json.loads(live_path.read_text())['pid']
+        import signal as sig
+        subprocess.run(['pkill', '-KILL', '-f', f'job-run {job_id}'], capture_output=True)
+        time.sleep(0.3)
+        self.assertTrue(self.held(), 'the orphaned command still uses the GPU')
+        os.killpg(pid, sig.SIGKILL)
+        self.until(lambda: not self.held())
+
+    def test_in_session_command_shares_the_lock(self):
+        token = self.claim()
+        self.start(token, 0.25, 'sleep', '2')
+        refusal = self.cmd('resource-run', '--minutes', '5', '--', 'true', ok=False)
+        self.assertIn('research-worker-run-a', refusal)
+        self.cmd('jobs', '--wait', '--run', 'run-1')
+        r = subprocess.run([sys.executable, str(SCRIPT), '--queue', str(self.queue), 'resource-run',
+                            '--minutes', '5', '--', 'sh', '-c', 'echo probing; exit 3'],
+                           text=True, capture_output=True, env=self.env)
+        self.assertEqual((r.returncode, r.stdout), (3, 'probing\n'))
+        self.assertIn('run-1', (self.locks / 'gpu0.lock').read_text())
+
+    def test_unconfigured_lock_directory_runs_unguarded(self):
+        del self.env['CHARTER_RESOURCE_LOCKS']
+        token = self.claim()
+        self.assertIsNone(self.start(token, 0.25, 'sleep', '1')['job']['resource'])
+        self.start(token, 0.25, 'true')
+        self.cmd('jobs', '--wait', '--run', 'run-1')
+
+    def test_missing_lock_directory_is_refused(self):
+        self.env['CHARTER_RESOURCE_LOCKS'] = str(self.root / 'not-mounted')
+        self.assertIn('not mounted', self.start(self.claim(), 0.25, 'true', ok=False))
 
 
 if __name__ == '__main__':

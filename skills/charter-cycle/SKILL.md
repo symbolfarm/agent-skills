@@ -132,6 +132,20 @@ output written into the repository must be committed or ignored before `finish`.
 `jobs` lists every job's live status. If the budget is spent, stop and report it;
 never split a job to fit under the ceiling.
 
+Where the container sets `CHARTER_RESOURCE_LOCKS`, a job holds an exclusive
+lock on its compute resource (`--resource`, default `gpu0`) for its whole life,
+shared with every other worker on the host. If another job holds it, `job-start`
+refuses at once and names the holder and its expected end; add
+`--wait-minutes <n>` to wait first. A refusal reserves nothing: do work that
+needs no GPU, or close out `advanced` saying the GPU was busy until when. GPU
+work inside the session, such as a timed probe, takes the same lock:
+
+```
+python3 <script> --queue <queue> resource-run --minutes 20 [--wait-minutes <n>] -- <command...>
+```
+
+Its output and exit status are the command's own.
+
 ## Close or leave a continuation
 
 Verify the requirement itself. Completing tasks or passing unrelated tests is

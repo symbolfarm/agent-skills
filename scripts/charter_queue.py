@@ -48,6 +48,17 @@ JOB_STALE_SECONDS = float(os.environ.get("CHARTER_JOB_STALE", "180"))
 # next scheduled run finds it unexpired.
 JOB_CLAIM_MARGIN = timedelta(hours=24)
 
+# Exclusive compute resources (a local GPU card) are guarded by one flock'd file
+# per resource in a directory shared by every container that can reach them:
+# `<CHARTER_RESOURCE_LOCKS>/<resource>.lock`. The directory, not each file, is
+# bind-mounted, so adding a resource later needs no container change. The lock
+# is held for a job's whole life: the open file is inherited by the runner and
+# by the job's command, and the kernel releases it only when all of them have
+# exited, however they end. The lock file's content names the current holder,
+# for refusals. Unset means no lock is configured and jobs run unguarded.
+RESOURCE_LOCKS = os.environ.get("CHARTER_RESOURCE_LOCKS")
+DEFAULT_RESOURCE = "gpu0"
+
 # Two charter forms are in use: the template writes `### R1 — ...`, while the
 # human-machine-teaming charters write a requirements table. Both declare the
 # same thing, so both are read rather than forcing one to be rewritten.
@@ -396,6 +407,72 @@ def gpu_hours_committed(path, charter):
     return total
 
 
+def acquire_resource(resource, wait_minutes):
+    """Exclusive lock on one resource, as an open fd, or None when no lock
+    directory is configured. Refuses, naming the holder, if the resource is
+    still held after `wait_minutes`. Taken before the queue transaction so a
+    wait never blocks other workers' queue operations."""
+    if not RESOURCE_LOCKS:
+        return None
+    if not SAFE_ID.fullmatch(resource):
+        raise ValueError(f'unsafe resource name: {resource}')
+    if wait_minutes < 0:
+        raise ValueError('--wait-minutes must not be negative')
+    directory = Path(RESOURCE_LOCKS)
+    if not directory.is_dir():
+        raise ValueError(f'resource lock directory {directory} is missing; '
+                         'CHARTER_RESOURCE_LOCKS names a directory that is not mounted')
+    lock_path = directory / f'{resource}.lock'
+    fd = os.open(lock_path, os.O_RDWR | os.O_CREAT, 0o666)
+    try:
+        os.fchmod(fd, 0o666)  # other workers may run as other users
+    except PermissionError:
+        pass
+    give_up = time.monotonic() + wait_minutes * 60
+    while True:
+        try:
+            fcntl.flock(fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+            return fd
+        except BlockingIOError:
+            if time.monotonic() >= give_up:
+                break
+            time.sleep(min(JOB_POLL_SECONDS, max(give_up - time.monotonic(), 0.05)))
+    try:
+        held = json.loads(lock_path.read_text() or '{}')
+    except (OSError, ValueError):
+        held = {}
+    os.close(fd)
+    raise ValueError(f"resource {resource} is held by {held.get('holder', 'an unknown holder')}"
+                     f" ({held.get('job') or 'in-session work'}) until about "
+                     f"{held.get('expected_end', 'an unknown time')}; do other work, or retry "
+                     "with --wait-minutes")
+
+
+def describe_holder(fd, record):
+    """Write who holds a resource into its lock file, for refusals."""
+    os.ftruncate(fd, 0)
+    os.pwrite(fd, (json.dumps(record) + '\n').encode(), 0)
+
+
+def resource_run(args):
+    """Run one in-session command holding a resource; returns its exit status."""
+    fd = acquire_resource(args.resource, args.wait_minutes)
+    command = list(args.job_command)
+    if command[:1] == ['--']:
+        command = command[1:]
+    if not command:
+        raise ValueError('resource-run needs a command after --')
+    if not args.minutes > 0:
+        raise ValueError('--minutes must be above 0')
+    if fd is not None:
+        now = datetime.now(timezone.utc)
+        describe_holder(fd, {'resource': args.resource,
+                             'holder': os.environ.get('AGENT_RUN_ID') or f'pid {os.getpid()}',
+                             'job': None, 'started_at': now.isoformat(),
+                             'expected_end': (now + timedelta(minutes=args.minutes)).isoformat()})
+    return subprocess.run(command, pass_fds=() if fd is None else (fd,)).returncode
+
+
 def job_start(path, workers, data, args):
     token = resolve_token(data, args)
     charter, req = owned(data, token)
@@ -429,15 +506,20 @@ def job_start(path, workers, data, args):
     now = datetime.now(timezone.utc)
     deadline = now + timedelta(hours=hours)
     job_id = f"job-{now.strftime('%Y%m%dT%H%M%SZ')}-{uuid.uuid4().hex[:6]}"
+    lock_fd = getattr(args, 'lock_fd', None)
+    resource = args.resource if lock_fd is not None else None
+    if lock_fd is not None:
+        describe_holder(lock_fd, {'resource': resource, 'holder': holder, 'job': job_id,
+                                  'started_at': now.isoformat(), 'expected_end': deadline.isoformat()})
     live = {'id': job_id, 'token': token, 'holder': holder,
             'run': os.environ.get('AGENT_RUN_ID'), 'status': 'starting',
-            'command': command, 'cwd': str(cwd), 'log': str(log),
+            'command': command, 'cwd': str(cwd), 'log': str(log), 'resource': resource,
             'started_at': now.isoformat(), 'deadline': deadline.isoformat(),
             'heartbeat': now.isoformat()}
     atomic_text(job_file(path, job_id), json.dumps(live, indent=2) + '\n')
     record = {'id': job_id, 'holder': holder, 'command': shlex.join(command),
               'cwd': os.path.relpath(cwd, path.parent), 'log': os.path.relpath(log, path.parent),
-              'started_at': now.isoformat(), 'deadline': deadline.isoformat(),
+              'resource': resource, 'started_at': now.isoformat(), 'deadline': deadline.isoformat(),
               'hours_reserved': hours}
     req.setdefault('jobs', []).append(record)
     claim_expiry = deadline + JOB_CLAIM_MARGIN
@@ -447,15 +529,19 @@ def job_start(path, workers, data, args):
     item = f"{charter['id']}/{req['id']}"
     commit = commit_queue(path, f"{item}: job {job_id} ({hours} GPU-hours) by {holder}")
     # The runner gets its own session so it outlives the agent's tool call and
-    # the agent process; the container keeps running until it finishes.
-    subprocess.Popen([sys.executable, str(Path(__file__).resolve()), '--queue', str(path),
-                      'job-run', job_id], start_new_session=True, stdin=subprocess.DEVNULL,
-                     stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, close_fds=True)
+    # the agent process; the container keeps running until it finishes. It
+    # inherits the resource lock, and so does the job's command.
+    runner = [sys.executable, str(Path(__file__).resolve()), '--queue', str(path), 'job-run', job_id]
+    if lock_fd is not None:
+        runner += ['--lock-fd', str(lock_fd)]
+    subprocess.Popen(runner, start_new_session=True, stdin=subprocess.DEVNULL,
+                     stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, close_fds=True,
+                     pass_fds=() if lock_fd is None else (lock_fd,))
     return {'job': record, 'item': item, 'commit': commit,
             'gpu_hours_left': round(remaining - hours, 4)}
 
 
-def job_run(path, job_id):
+def job_run(path, job_id, lock_fd=None):
     """Runs one job to completion or its deadline. Not called by agents."""
     live_path = job_file(path, job_id)
     live = json.loads(live_path.read_text())
@@ -464,7 +550,8 @@ def job_run(path, job_id):
     log.parent.mkdir(parents=True, exist_ok=True)
     with log.open('ab') as out:
         child = subprocess.Popen(live['command'], cwd=live['cwd'], stdin=subprocess.DEVNULL,
-                                 stdout=out, stderr=subprocess.STDOUT, start_new_session=True)
+                                 stdout=out, stderr=subprocess.STDOUT, start_new_session=True,
+                                 pass_fds=() if lock_fd is None else (lock_fd,))
     stopping = {'status': None}
 
     def stop(status):
@@ -505,6 +592,7 @@ def jobs_view(path, data, run_id=None):
                 continue
             views.append({'item': f"{charter['id']}/{req['id']}", 'id': job['id'],
                           'holder': job['holder'], 'status': live.get('status'),
+                          'resource': job.get('resource'),
                           'deadline': job['deadline'], 'log': job['log'],
                           'exit_code': live.get('exit_code')})
     return views
@@ -843,7 +931,11 @@ def run(args):
     path = args.queue.resolve()
     workers_data, workers = read_workers(path.parent / 'WORKERS.json')
     if args.command == 'job-run':
-        return job_run(path, args.job_id)
+        return job_run(path, args.job_id, args.lock_fd)
+    if args.command == 'job-start':
+        # Before the queue transaction: waiting for the resource must not hold
+        # the queue lock. Released by the kernel if anything below refuses.
+        args.lock_fd = acquire_resource(args.resource, args.wait_minutes)
     if args.command in {'next', 'validate', 'check-exit', 'reports', 'jobs'}:
         data = read_queue(path, workers)
         if args.command == 'jobs':
@@ -1041,9 +1133,20 @@ def main():
                      help="GPU-hours reserved; the job is stopped at this deadline")
     cmd.add_argument('--log', required=True, help='log path inside the working repository')
     cmd.add_argument('--cwd', type=Path, help='claimed repository to run in (default: first)')
+    cmd.add_argument('--resource', default=DEFAULT_RESOURCE,
+                     help=f'exclusive resource the job holds for its life (default: {DEFAULT_RESOURCE})')
+    cmd.add_argument('--wait-minutes', type=float, default=0,
+                     help='wait this long for a held resource before refusing (default: refuse now)')
     cmd.add_argument('job_command', nargs=argparse.REMAINDER, help='-- then the command')
     cmd = sub.add_parser('job-run', help=argparse.SUPPRESS)
     cmd.add_argument('job_id')
+    cmd.add_argument('--lock-fd', type=int)
+    cmd = sub.add_parser('resource-run', help='run an in-session command holding a resource')
+    cmd.add_argument('--resource', default=DEFAULT_RESOURCE)
+    cmd.add_argument('--minutes', type=float, required=True,
+                     help='expected duration, shown to anyone refused meanwhile')
+    cmd.add_argument('--wait-minutes', type=float, default=0)
+    cmd.add_argument('job_command', nargs=argparse.REMAINDER, help='-- then the command')
     cmd = sub.add_parser('jobs')
     cmd.add_argument('--run', help='only jobs started in this container run (AGENT_RUN_ID)')
     cmd.add_argument('--wait', action='store_true', help='block until none of them is running')
@@ -1068,8 +1171,12 @@ def main():
                      help='inclusive ISO-8601 timestamp staged for next-run delivery reconciliation')
     cmd.add_argument('--earliest', help='lower bound used only when no delivery has ever been '
                                         'confirmed, so an unconsummated cursor cannot replay history')
+    args = p.parse_args()
     try:
-        print(json.dumps(run(p.parse_args()), indent=2))
+        if args.command == 'resource-run':
+            # The command's own output and exit status pass straight through.
+            return resource_run(args)
+        print(json.dumps(run(args), indent=2))
     except (ValueError, KeyError, OSError, RuntimeError, TypeError) as error:
         print(f'Queue error: {error}', file=sys.stderr)
         return 1
