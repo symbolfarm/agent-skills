@@ -799,6 +799,27 @@ class ResourceLockTests(JobFixture):
         self.assertEqual((r.returncode, r.stdout), (3, 'probing\n'))
         self.assertIn('run-1', (self.locks / 'gpu0.lock').read_text())
 
+    def test_scheduled_worker_skips_gpu_work_while_the_gpu_is_busy(self):
+        import fcntl
+        workers = json.loads(self.workers.read_text())
+        workers['workers'][0]['capabilities'] = ['general', 'gpu']
+        self.workers.write_text(json.dumps(workers))
+        self.data['charters'][0]['requirements'][0]['requires'] = ['gpu']
+        del self.data['charters'][0]['requirements'][1]['depends_on']
+        self.write()
+        with (self.locks / 'gpu0.lock').open('w') as lock:
+            fcntl.flock(lock, fcntl.LOCK_EX)
+            lock.write(json.dumps({'holder': 'other-worker-run', 'job': 'job-x',
+                                   'expected_end': '2026-11-06T08:15:00+10:30'}))
+            lock.flush()
+            busy = self.cmd('next', '--worker', 'research-worker')
+            self.assertEqual(busy['selected']['item'], 'C-001/R2')
+            skip = next(s for s in busy['skipped'] if s.get('item') == 'C-001/R1')
+            self.assertEqual((skip['reason'], skip['holder'], skip['until']),
+                             ('gpu0 busy', 'other-worker-run', '2026-11-06T08:15:00+10:30'))
+            self.assertTrue(self.held(), 'the peek must not release or take the lock')
+        self.assertEqual(self.cmd('next', '--worker', 'research-worker')['selected']['item'], 'C-001/R1')
+
     def test_unconfigured_lock_directory_runs_unguarded(self):
         del self.env['CHARTER_RESOURCE_LOCKS']
         token = self.claim()

@@ -58,6 +58,9 @@ JOB_CLAIM_MARGIN = timedelta(hours=24)
 # for refusals. Unset means no lock is configured and jobs run unguarded.
 RESOURCE_LOCKS = os.environ.get("CHARTER_RESOURCE_LOCKS")
 DEFAULT_RESOURCE = "gpu0"
+# The resource a requirement declaring `requires: ["gpu"]` will need. Scheduled
+# selection skips such a requirement while another job holds it.
+GPU_RESOURCE = DEFAULT_RESOURCE
 
 # Two charter forms are in use: the template writes `### R1 — ...`, while the
 # human-machine-teaming charters write a requirements table. Both declare the
@@ -448,6 +451,31 @@ def acquire_resource(resource, wait_minutes):
                      "with --wait-minutes")
 
 
+def resource_holder(resource):
+    """Who holds a resource right now, or None when it is free or no lock is
+    configured. A shared, non-blocking peek, released at once: it never holds
+    the resource and never waits."""
+    if not RESOURCE_LOCKS:
+        return None
+    lock_path = Path(RESOURCE_LOCKS) / f'{resource}.lock'
+    try:
+        fd = os.open(lock_path, os.O_RDONLY)
+    except FileNotFoundError:
+        return None
+    try:
+        try:
+            fcntl.flock(fd, fcntl.LOCK_SH | fcntl.LOCK_NB)
+        except BlockingIOError:
+            try:
+                return json.loads(lock_path.read_text() or '{}')
+            except (OSError, ValueError):
+                return {}
+        fcntl.flock(fd, fcntl.LOCK_UN)
+        return None
+    finally:
+        os.close(fd)
+
+
 def describe_holder(fd, record):
     """Write who holds a resource into its lock file, for refusals."""
     os.ftruncate(fd, 0)
@@ -682,6 +710,15 @@ def choose(path, data, worker, target=None):
         if not set(req.get('requires', [])).issubset(capabilities):
             skipped.append({"item": key, "reason": "missing capability"})
             continue
+        # A scheduled worker moves on to other work while the GPU is busy; an
+        # interactive one named the item, and job-start will refuse if needed.
+        if target is None and 'gpu' in req.get('requires', []):
+            held = resource_holder(GPU_RESOURCE)
+            if held is not None:
+                skipped.append({"item": key, "reason": f"{GPU_RESOURCE} busy",
+                                "holder": held.get('holder'), "job": held.get('job'),
+                                "until": held.get('expected_end')})
+                continue
         states = {r['id']: r['state'] for r in charter['requirements']}
         if any(states[d] != 'done' for d in req.get('depends_on', [])):
             skipped.append({"item": key, "reason": "dependency not satisfied"})

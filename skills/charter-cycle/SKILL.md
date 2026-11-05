@@ -136,7 +136,10 @@ Where the container sets `CHARTER_RESOURCE_LOCKS`, a job holds an exclusive
 lock on its compute resource (`--resource`, default `gpu0`) for its whole life,
 shared with every other worker on the host. If another job holds it, `job-start`
 refuses at once and names the holder and its expected end; add
-`--wait-minutes <n>` to wait first. A refusal reserves nothing: do work that
+`--wait-minutes <n>` to wait first. While the GPU is busy, scheduled selection
+skips requirements that declare `requires: ["gpu"]` and hands you other
+eligible work, so declare `gpu` only where the card is used. A refusal (the
+card was taken after your claim) reserves nothing: do work that
 needs no GPU, or close out `advanced` saying the GPU was busy until when. GPU
 work inside the session, such as a timed probe, takes the same lock:
 
