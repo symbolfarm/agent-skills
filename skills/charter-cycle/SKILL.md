@@ -210,7 +210,11 @@ evidence independently establishes requirement completion. Charter completion
 is derived from all requirements being done or explicitly dropped by the user.
 
 Budget scheduled runs by execution time or context-sized work, not by completed
-requirements of arbitrary size. Preserve continuation before context/time runs
+requirements of arbitrary size. Finishing or blocking a requirement does not end the
+run: if time outside the wind-down reserve and enough context remain, run `next`
+and claim again, one claim at a time. Give each claim its own holder (append
+`-2`, `-3` to the run's holder) and write one close-out per claim, since the
+helper keys reports by holder. Stop when the budget, context or queue runs out. Preserve continuation before context/time runs
 out. Release `ready` only with the work committed: uncommitted residue makes the
 requirement unselectable on the next run, including by you resuming it. Your own
 open claim blocks you from claiming anything else, and `next` reports another
