@@ -199,7 +199,12 @@ The configured wind-down reserve exists to leave enough time for commit, `finish
 `check-exit` and this report; do not begin new work inside it.
 
 Use `ready` for resumable work and `blocked` only when no further authorized
-progress on that requirement is possible. Verify your work repositories are
+progress on that requirement is possible. Before blocking, trace each
+constraint you cite to its source: the charter, `WORKFLOW.md`, local policy, or a
+dated probe. A rule you or an earlier task added in code or docs is a design
+choice, not a block; if relaxing it would stay within the charter, relax it, or
+say plainly in the note that the block is self-imposed and what the charter
+actually requires. Verify your work repositories are
 clean. A task brief's completion note records its result; the queue's
 evidence independently establishes requirement completion. Charter completion
 is derived from all requirements being done or explicitly dropped by the user.
