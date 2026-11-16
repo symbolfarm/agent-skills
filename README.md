@@ -6,7 +6,7 @@ directory under [`skills/`](./skills) holding a `SKILL.md` (the instructions, wi
 YAML frontmatter), any `assets/` it ships, and its own `LICENSE.txt`.
 
 The skill content is plain Markdown with no hard dependency on any single agent
-runtime, so the same source can drive Claude Code, gemini-cli, codex, or anything
+runtime, so the same source can drive Claude Code, the Antigravity CLI (`agy`), codex, or anything
 else that loads instruction files. Discovery differs per agent (see **Install**).
 
 ## Status: experimental
@@ -166,7 +166,7 @@ attachments while edits continue to land in this Git working tree.
 ### Other agents
 
 Point the agent at the same canonical `skills/<name>/` directory using its own
-mechanism (e.g. gemini-cli extensions, or copying the instructions into an
+mechanism (e.g. copying the instructions into an
 `AGENTS.md`-style file). The skill content is portable; only the link target
 changes.
 
