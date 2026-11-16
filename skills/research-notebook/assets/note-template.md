@@ -1,5 +1,6 @@
 ---
-status: live
+status: provisional   # live once an independent challenge is recorded below
+evidence: empirical   # empirical | derivation | source
 tags: []
 tasks: []
 ---
@@ -31,3 +32,4 @@ What this changes about the plan, the theory, or other notes.
 ## Changelog
 
 - YYYY-MM-DD: created (TASK-ID).
+- YYYY-MM-DD: challenged by [agent]: what was tried, what happened, link.

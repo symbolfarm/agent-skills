@@ -3,7 +3,7 @@ name: portfolio-cycle
 description: Discuss research direction, review meaningful results, draft and authorize bounded charters, and order the fresh charter queue with the user.
 license: MIT
 metadata:
-  version: "15"
+  version: "16"
 ---
 
 # Portfolio cycle
@@ -30,6 +30,11 @@ Draft requirements with observable evidence of satisfaction, research context,
 permitted repositories/actions, resource limits and meaningful stop conditions.
 For research questions, permit credible negative answers and adaptive experiment
 design. A performance target remains unmet when an experiment misses it.
+Where the work is an open question rather than a set of known outcomes, draft a
+question charter (`../charter-cycle/assets/question-charter-template.md`):
+authorize the question, the budget and the boundaries, and leave the sequence of
+experiments to the worker. Link the notebook claims it should move and record
+what the user expects the answer to be, as a prediction rather than a target.
 Before authorization, check each requirement's evidence: if only the user can
 supply it (their presence, judgement or hands), redraft it so the user's input is
 optional or value-add. A charter is a work package workers can finish without

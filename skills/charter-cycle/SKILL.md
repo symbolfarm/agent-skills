@@ -3,7 +3,7 @@ name: charter-cycle
 description: Execute authorized charter requirements from a fresh queue, preserve research context across tasks, and close with evidence and a useful handover. Use for scheduled charter work or when asked to work a charter.
 license: MIT
 metadata:
-  version: "6"
+  version: "7"
 ---
 
 # Charter cycle
@@ -90,9 +90,35 @@ Revise or split tasks within the charter. Keep the requirement's outcome fixed
 unless the user changes it. Repository lists locate authorized work; incidental
 caller/test/doc edits inside them do not need another approval.
 
-For research, record setup before running, preserve observations and negative
-results, investigate credible alternatives within the budget, and update current
-understanding with evidence, uncertainty and provenance. An agent's qualified
+A question charter (`assets/question-charter-template.md`) authorizes a question
+and a budget in place of a requirement list. Its one requirement is the question.
+The worker owns the sequence of experiments and derivations inside the budget and
+boundaries, and re-plans from the notebook after each result rather than
+following a plan written beforehand. Each run releases the requirement `ready`
+with what changed in belief, what was spent and the next step. Finish `done` when
+the question is answered to the charter's stated standard; a credible negative
+answer counts. When the budget is spent first, finish `blocked` with what is
+known and what remains open, because extending the budget is the user's decision.
+
+For research, name the notebook claim or open question the work is meant to
+move. Before a run or a derivation, record what you expect and which result would
+change the plan. That prediction is a calibration record, not a bar to clear.
+Record setup before running, preserve observations and negative results,
+investigate credible alternatives within the budget, and update current
+understanding with evidence, uncertainty and provenance. Hold each claim to the
+standard for its kind of evidence: a number traces to a commit, config and seeds,
+with a baseline from the same harness and the spread across seeds known before a
+difference is read as an effect; a derivation lists its assumptions and the
+limits where it stops holding; a source claim rests on the primary source.
+`research-notebook` gives the full standard. Close by saying how the belief
+changed, including when it did not.
+
+Before a result changes a claim that later work will build on, have an agent that
+did not produce it try to break it: a fresh-context subagent, or another vendor's
+agent where the worker has one. It reruns the key number, looks for the confound
+or the bug, and attacks the weakest assumption. Record what it tried and what
+happened. A break that succeeds is a finding. A claim nobody else has challenged
+is recorded as `provisional`. An agent's qualified
 assessment need not wait for human ratification. Never present it as the user's
 endorsement or independently corroborate a claim by repeating another report.
 

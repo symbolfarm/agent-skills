@@ -13,16 +13,22 @@ verdict: supports   # supports | refutes | inconclusive
 What this experiment was designed to establish or rule out, stated
 before the results.
 
+## Prediction
+
+Written before the run: what you expect to see, and which result would
+change the plan. Leave it as written once the result is in.
+
 ## Setup
 
 Enough to rerun: model/config, data, seeds, budget, and the exact
 command (also in frontmatter). Note the commit SHA the numbers came
-from.
+from, and the baseline run in the same harness that they are compared
+with.
 
 ## Results
 
-The numbers that matter, with variance where measured. Tables are
-fine; don't paste raw logs.
+The numbers that matter, with the spread across seeds; say so when
+there is one seed. Tables are fine; don't paste raw logs.
 
 | condition | metric | value |
 |---|---|---|

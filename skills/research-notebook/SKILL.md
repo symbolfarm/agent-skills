@@ -13,7 +13,7 @@ description: >-
   portfolio-cycle drives learning and planning.
 metadata:
   author: symbolfarm
-  version: "3"
+  version: "4"
   authored_by: agent
   status: draft
 ---
@@ -122,14 +122,19 @@ Every note (not log entries) carries YAML frontmatter:
 
 ```yaml
 ---
-status: live          # live | superseded | overturned
+status: provisional   # provisional | live | superseded | overturned
+evidence: empirical   # empirical | derivation | source (a list when more than one)
 tags: [construction, additivity]
 tasks: [CR-19, CR-22] # driving/related task IDs, if any
 superseded_by: notes/two-stage-chaining.md   # only when not live
 ---
 ```
 
-- `status: live` — current best understanding.
+- `status: provisional` — our best reading, challenged by nobody but its author.
+  Every new claim starts here.
+- `status: live` — current best understanding, and it has survived an
+  independent attempt to break it (see "Evidence and challenge"). A live note
+  with no challenge recorded in its changelog is read as provisional.
 - `status: superseded` — replaced by a better formulation; the note is
   kept for the record, `superseded_by` points at the replacement.
 - `status: overturned` — the claim was *wrong*; the body gains a
@@ -198,6 +203,39 @@ When sources disagree, check the primary evidence and correction provenance.
 A current-status label or recent timestamp alone does not establish truth. If you *find* a disagreement
 the discipline missed, fixing it is a notebook chore — do it in the
 same session and note it in today's log.
+
+---
+
+## Evidence and challenge
+
+A claim is worth what its evidence and the attempts it has survived are worth.
+Three habits carry that.
+
+**Predict first.** Before a run or a derivation, write in the experiment note
+what you expect and which result would change the plan. Keep it after the result
+arrives. A prediction is a record for calibration, not a bar the work must
+clear: a miss tells us about our understanding, and the direction continues
+either way.
+
+**Meet the standard for the kind of evidence.** Each note names its kind in
+`evidence`, and a claim resting on more than one kind meets each.
+
+- `empirical` — every number traces to a run: commit, config, seeds and command.
+  The baseline it is compared with ran in the same harness. The spread across
+  seeds is known before a difference is read as an effect, and a single-seed
+  result says that it is one.
+- `derivation` — the assumptions are listed, a reader can check each step, the
+  limits where it stops holding are stated, and a counterexample was looked for.
+- `source` — the primary source was read rather than a summary of it, and the
+  note separates what the source claims from what we infer.
+
+**Challenge before `live`.** A claim becomes `live` after an agent that did not
+produce it has tried to break it, working in a fresh context and from another
+vendor where one is available. It reruns the key number, looks for the confound
+or the bug, and attacks the weakest assumption. Record what was tried and what
+happened in the changelog, with a link. A challenge that succeeds is a finding
+in its own right. The author re-checking their own work does not count, so where
+no second agent is available the claim stays `provisional`.
 
 ---
 
