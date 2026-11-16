@@ -69,10 +69,10 @@ Requirement closeout needs primary evidence; the helper checks that it is presen
 and work repositories are clean, while the agent judges its meaning. JSON validation
 is not scientific verification.
 
-After `check-exit`, scheduled workers use `report`; the brief reads `reports --since`
+After `check-exit`, scheduled workers use `report`; the brief reads `brief-window`
 and checks each worker's health source independently. See the charter-cycle
 `worker-profiles-and-closeouts.md` reference for the anonymized deployment shape.
 
 Commands: `validate`, `next`, `claim`, `task`, `finish`, `check-exit`, `recover`,
-`report`, `reports`, `brief-window`. Run
+`job-start`, `resource-run`, `jobs`, `report`, `reports`, `brief-window`. Run
 `python3 <skills-repo>/scripts/charter_queue.py --help`.

@@ -32,7 +32,9 @@ are defined by the portfolio's `WORKERS.json`; their profile supplies a stable
 identity prefix, verified capabilities, wind-down budget, health source and
 structured-report sink. Charters name their `eligible_workers` when the user
 authorizes them. Themes provide direction but are never executable work and do
-not route a charter automatically.
+not route a charter automatically. Read
+`references/worker-profiles-and-closeouts.md` when setting up or changing a
+worker profile, or when claiming as an interactive worker.
 
 ```
 python3 <script> --queue <portfolio>/QUEUE.json next --worker <worker-id>

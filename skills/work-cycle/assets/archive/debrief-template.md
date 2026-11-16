@@ -30,8 +30,8 @@ reading the code.
 
 ## Follow-ups
 
-Triage every follow-up into one of three buckets (see SKILL.md
-"Triage candidate tasks"). Omit any bucket that's empty.
+Triage every follow-up into one of three buckets. Omit any bucket
+that's empty.
 
 ### Filed as tasks
 

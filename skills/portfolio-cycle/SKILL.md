@@ -48,6 +48,9 @@ Lead with what changed in understanding or capability, supported by artifacts.
 Distinguish observation, agent interpretation and the user's strategic choice.
 Discuss the one or two consequences most worth attention, rather than reading
 out the backlog. A useful review need not change the queue or graduate a policy.
+When a mature project may be polishing details without advancing its purpose, or
+an old repository is being considered for revival, read
+`references/strategic-review-and-project-archaeology.md`.
 
 Before asking the user to decide anything, put the object of the decision in
 front of them: what the thing concretely is (the lesson, the data, the

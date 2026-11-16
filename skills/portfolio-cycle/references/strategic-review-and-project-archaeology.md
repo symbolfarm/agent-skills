@@ -39,7 +39,7 @@ or generalising prematurely.
 Do not create an `incubating` state merely because a project is being discussed.
 Use the portfolio's existing axes:
 
-- `active` with non-empty `agent_may`: may receive agreed goals and agent work;
+- `active` with non-empty `agent_may`: may receive charter work;
 - `active` with empty `agent_may`: alive but human-only while direction is scoped;
 - `parked`: preserved without current attention; revival requires a priority
   decision;
@@ -55,8 +55,8 @@ is worth pursuing.
 1. Inspect bounded repository evidence.
 2. Discuss value proposition, boundaries, and the stop/revival decision.
 3. Record the agreed direction in the private portfolio or project design note.
-4. File outcome goals only after their done-whens are stable.
-5. Let `work-cycle` create implementation tasks when a handoff is useful.
+4. Draft a charter only once each requirement's evidence of satisfaction is stable.
+5. Let `charter-cycle` create tasks when a handoff is useful.
 6. Reconcile the next review against the strategic outcome, not commit volume.
 
 If nobody can state what done would look like in one sentence, remain in scoping

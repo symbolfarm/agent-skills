@@ -4,7 +4,7 @@
   "workspace_root": "/workspace",
   "timezone": "Area/City",
   "_states": {
-    "active": "May receive goals.",
+    "active": "May receive charter work.",
     "parked": "Might resume. Needs a priority decision.",
     "archived": "Kept for reference. Will not resume without a deliberate restart.",
     "resource": "Read-only source material. Not a work target."

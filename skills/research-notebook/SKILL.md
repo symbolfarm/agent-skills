@@ -217,7 +217,8 @@ charter drafting; `charter-cycle` executes the resulting requirements.
 
 ## What does NOT go in the notebook
 
-- Work orders, acceptance criteria, queue state → `.tasks/` + `TASKS.md`.
+- Work orders, acceptance criteria, queue state → the charter queue and its
+  `.tasks/current/` briefs.
 - Per-task completion records → debriefs. Link them; don't copy them.
 - Code documentation (how to run, API contracts) → `README`/`AGENTS.md`
   or docstrings.
@@ -264,6 +265,6 @@ directory, state-of-play files, a narrative-heavy `TASKS.md`):
    parts) plus several `notes/` (the durable claims).
 3. Trim `TASKS.md`'s narrative down to a pointer at `INDEX.md` once
    the map covers it.
-4. Treat the bootstrap itself as a filed task (it's multi-session and
-   benefits from review), but each incremental migration is part of
-   whatever task motivated it.
+4. The bootstrap is multi-session: run it under a charter requirement or a
+   direct request. Each incremental migration is part of whatever work
+   motivated it.
