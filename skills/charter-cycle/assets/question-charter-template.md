@@ -31,6 +31,13 @@ survive an independent attempt to break it before the charter closes.
 Runs, hours, GPU-hours and spend. The worker stops when the budget is spent and
 reports what is known; extending it is the user's decision.
 
+A question charter is for open-ended questions, so a first answer does not end
+it. Keep a running list of open avenues (theory and experiment) in the notebook.
+Finish early only when every avenue has been explored, ruled out with a stated
+reason, or needs something outside the charter's bounds; those become next
+questions in the close-out. An independent review checks the list before
+closing.
+
 ## Authority and boundaries
 
 Repositories and permitted actions; excluded outcomes. The worker may design
