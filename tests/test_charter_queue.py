@@ -413,6 +413,20 @@ class CharterQueueTests(QueueFixture):
         self.write()
         self.assertIn('unknown eligible worker', self.cmd('validate', ok=False))
 
+    def test_requirement_workers_route_within_the_charter(self):
+        self.data['charters'][0]['eligible_workers'] = ['research-worker', 'product-worker']
+        self.data['charters'][0]['requirements'][0]['workers'] = ['product-worker']
+        self.write()
+        self.assertIsNone(self.cmd('next', '--worker', 'research-worker')['selected'])
+        selected = self.cmd('next', '--worker', 'product-worker')['selected']
+        self.assertEqual(selected['requirement']['id'], 'R1')
+        self.data['charters'][0]['requirements'][0]['workers'] = ['missing']
+        self.write()
+        self.assertIn('subset', self.cmd('validate', ok=False))
+        self.data['charters'][0]['requirements'][0]['workers'] = []
+        self.write()
+        self.assertIn('subset', self.cmd('validate', ok=False))
+
     def test_worker_paths_and_run_ids_fail_closed(self):
         workers = json.loads(self.workers.read_text())
         workers['unexpected'] = True

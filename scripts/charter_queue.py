@@ -226,10 +226,18 @@ def read_queue(path, workers):
             if (not isinstance(requires, list) or len(set(requires)) != len(requires)
                     or not all(isinstance(c, str) and SAFE_ID.fullmatch(c) for c in requires)):
                 raise ValueError(f"{cid}/{req['id']}: invalid required capabilities")
+            # Optional per-requirement routing: a subset of the charter's
+            # eligible workers (e.g. a review requirement only a reviewer takes).
+            routed = req.get("workers")
+            if routed is not None and (
+                    not isinstance(routed, list) or not routed
+                    or len(set(routed)) != len(routed) or not set(routed) <= set(eligible)):
+                raise ValueError(f"{cid}/{req['id']}: workers must be a non-empty unique "
+                                 "subset of the charter's eligible_workers")
             if (charter["status"] == "active" and req["state"] not in {"done", "dropped"}
                     and not any(
                     set(requires).issubset(set(workers[worker]["capabilities"]))
-                    for worker in eligible)):
+                    for worker in (routed or eligible))):
                 raise ValueError(f"{cid}/{req['id']}: no eligible worker has required capabilities")
             if path.parent.resolve() in repo_paths(path, req):
                 raise ValueError(f"{cid}: portfolio is the control repository, not a work repository")
@@ -706,6 +714,8 @@ def choose(path, data, worker, target=None):
                 skipped.append({"item": key, "reason": "charter not active or requirement not ready"})
             continue
         if target is None and worker_id not in charter['eligible_workers']:
+            continue
+        if target is None and worker_id not in req.get('workers', [worker_id]):
             continue
         if not set(req.get('requires', [])).issubset(capabilities):
             skipped.append({"item": key, "reason": "missing capability"})

@@ -28,7 +28,9 @@ Example (invented):
 }
 ```
 
-The charter records `eligible_workers`; each requirement records `requires`.
+The charter records `eligible_workers`; each requirement records `requires`, and
+may record `workers`, a subset of the charter's eligible workers that alone may
+claim it (for example, a review requirement only an independent reviewer takes).
 Selection preserves charter and requirement order after checking explicit worker
 eligibility, capabilities, dependencies, claims, repository permissions and
 availability. Themes do not choose a worker. An active requirement that no named
