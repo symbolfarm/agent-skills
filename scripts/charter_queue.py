@@ -219,6 +219,12 @@ def read_queue(path, workers):
             raise ValueError(f"{cid}: duplicate or empty requirements")
         if declared_requirements(contract) != set(rids):
             raise ValueError(f"{cid}: requirement ids differ from those the charter declares")
+        alternate = charter.get("alternate", [])
+        if (not isinstance(alternate, list) or not all(
+                isinstance(g, list) and len(g) >= 2 and len(set(g)) == len(g)
+                and set(g) <= set(rids) for g in alternate)
+                or len([r for g in alternate for r in g]) != len({r for g in alternate for r in g})):
+            raise ValueError(f"{cid}: alternate must be disjoint groups of two or more requirement ids")
         for req in requirements:
             if req["state"] not in STATES or not req.get("repos"):
                 raise ValueError(f"{cid}/{req['id']}: invalid state or missing repositories")
@@ -656,6 +662,52 @@ def interactive(worker):
     return worker["health"]["kind"] == "interactive"
 
 
+def claim_blocker(path, charter, req, capabilities, scheduled):
+    """Why a ready, routed requirement cannot be claimed now, or None."""
+    if not set(req.get('requires', [])).issubset(capabilities):
+        return {"reason": "missing capability"}
+    # A scheduled worker moves on to other work while the GPU is busy; an
+    # interactive one named the item, and job-start will refuse if needed.
+    if scheduled and 'gpu' in req.get('requires', []):
+        held = resource_holder(GPU_RESOURCE)
+        if held is not None:
+            return {"reason": f"{GPU_RESOURCE} busy", "holder": held.get('holder'),
+                    "job": held.get('job'), "until": held.get('expected_end')}
+    states = {r['id']: r['state'] for r in charter['requirements']}
+    if any(states[d] != 'done' for d in req.get('depends_on', [])):
+        return {"reason": "dependency not satisfied"}
+    for repo in repo_paths(path, req):
+        if not (repo / '.git').exists():
+            return {"reason": f"missing repository: {repo}"}
+        if (repo / '.tasks/.lock').exists():
+            return {"reason": f"repository lock present: {repo}"}
+        if worktree_residue(repo):
+            return {"reason": f"dirty repository: {repo}"}
+    return None
+
+
+def alternation_sibling(path, charter, req, worker, prefixes, capabilities):
+    """If `req` is in one of the charter's `alternate` groups and this worker's
+    most recent transition in that group was on `req`, return the id of a
+    sibling it can claim instead (in requirement order), else None."""
+    group = next((g for g in charter.get('alternate', []) if req['id'] in g), None)
+    if not group:
+        return None
+    members = [r for r in charter['requirements'] if r['id'] in group]
+    mine = [(datetime.fromisoformat(t['at']), r['id'])
+            for r in members for t in r.get('transitions', [])
+            if t['holder'].startswith(prefixes)]
+    if not mine or max(mine)[1] != req['id']:
+        return None
+    for other in members:
+        if (other['id'] != req['id'] and other['state'] == 'ready'
+                and worker['id'] in charter['eligible_workers']
+                and worker['id'] in other.get('workers', [worker['id']])
+                and not claim_blocker(path, charter, other, capabilities, scheduled=True)):
+            return other['id']
+    return None
+
+
 def choose(path, data, worker, target=None):
     """Select the next claimable requirement, or exactly `target` for an
     interactive worker. An interactive worker is eligible for any active charter:
@@ -717,36 +769,18 @@ def choose(path, data, worker, target=None):
             continue
         if target is None and worker_id not in req.get('workers', [worker_id]):
             continue
-        if not set(req.get('requires', [])).issubset(capabilities):
-            skipped.append({"item": key, "reason": "missing capability"})
+        blocker = claim_blocker(path, charter, req, capabilities, scheduled=target is None)
+        if blocker:
+            skipped.append({"item": key, **blocker})
             continue
-        # A scheduled worker moves on to other work while the GPU is busy; an
-        # interactive one named the item, and job-start will refuse if needed.
-        if target is None and 'gpu' in req.get('requires', []):
-            held = resource_holder(GPU_RESOURCE)
-            if held is not None:
-                skipped.append({"item": key, "reason": f"{GPU_RESOURCE} busy",
-                                "holder": held.get('holder'), "job": held.get('job'),
-                                "until": held.get('expected_end')})
+        # Alternation: a scheduled worker does not take the strand it worked
+        # last when a sibling strand in the same group is claimable for it.
+        if target is None:
+            sibling = alternation_sibling(path, charter, req, worker, prefixes, capabilities)
+            if sibling:
+                skipped.append({"item": key, "reason": "alternation: worked this strand last session",
+                                "prefer": f"{charter['id']}/{sibling}"})
                 continue
-        states = {r['id']: r['state'] for r in charter['requirements']}
-        if any(states[d] != 'done' for d in req.get('depends_on', [])):
-            skipped.append({"item": key, "reason": "dependency not satisfied"})
-            continue
-        reason = None
-        for repo in repo_paths(path, req):
-            if not (repo / '.git').exists():
-                reason = f"missing repository: {repo}"
-                break
-            if (repo / '.tasks/.lock').exists():
-                reason = f"repository lock present: {repo}"
-                break
-            if worktree_residue(repo):
-                reason = f"dirty repository: {repo}"
-                break
-        if reason:
-            skipped.append({"item": key, "reason": reason})
-            continue
         return (charter, req), skipped
     return None, skipped
 

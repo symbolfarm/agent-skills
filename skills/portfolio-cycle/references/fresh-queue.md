@@ -34,7 +34,11 @@ Never copy this example as live authorized work. Every worker id must exist in
 `WORKERS.json`; every active requirement must be runnable by at least one named
 worker. `requires` lists factual capabilities from worker profiles. An optional
 requirement-level `workers` list narrows who may claim that requirement to a subset
-of `eligible_workers`; use it when roles differ within one charter. Themes provide
+of `eligible_workers`; use it when roles differ within one charter. An optional
+charter-level `alternate` lists disjoint groups of requirement ids (for example
+`[["R1", "R2"]]`): a scheduled worker skips the requirement in a group it last
+worked when another in that group is claimable for it, so workers rotate between
+strands. Rank order applies otherwise, and interactive `--item` claims ignore it. Themes provide
 direction but never create a charter, assign a worker or become executable work.
 Repository permission must also permit the intended actions.
 

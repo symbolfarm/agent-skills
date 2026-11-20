@@ -427,6 +427,37 @@ class CharterQueueTests(QueueFixture):
         self.write()
         self.assertIn('subset', self.cmd('validate', ok=False))
 
+    def test_alternate_groups_rotate_a_scheduled_worker_between_strands(self):
+        (self.portfolio / 'charter.md').write_text(
+            '# Question\n\n### R1 — Experiment\n\n### R2 — Theory\n')
+        other = self.make_repo('theory')
+        self.data['charters'][0]['requirements'] = [
+            {'id': 'R1', 'state': 'ready', 'repos': ['../research'], 'requires': ['general']},
+            {'id': 'R2', 'state': 'ready', 'repos': ['../theory'], 'requires': ['general']}]
+        self.data['charters'][0]['alternate'] = [['R1', 'R2']]
+        self.write()
+        pick = lambda: self.cmd('next', '--worker', 'research-worker')['selected']['requirement']['id']
+        self.assertEqual(pick(), 'R1')  # no history: rank order
+        token = self.claim('research-worker-run-a')
+        self.cmd('finish', '--token', token, '--state', 'ready', '--note', 'experiment session')
+        self.assertEqual(pick(), 'R2')  # worked R1 last, R2 claimable
+        token = self.claim('research-worker-run-b')
+        self.cmd('finish', '--token', token, '--state', 'ready', '--note', 'theory session')
+        self.assertEqual(pick(), 'R1')
+        # The sibling is unavailable: fall back to the strand worked last.
+        token = self.claim('research-worker-run-c')
+        self.cmd('finish', '--token', token, '--state', 'ready', '--note', 'experiment again')
+        (other / '.tasks').mkdir(exist_ok=True)
+        (other / '.tasks/.lock').write_text('{}')
+        self.assertEqual(pick(), 'R1')
+        self.data = json.loads(self.queue.read_text())
+        self.data['charters'][0]['alternate'] = [['R1']]
+        self.write()
+        self.assertIn('alternate', self.cmd('validate', ok=False))
+        self.data['charters'][0]['alternate'] = [['R1', 'R9']]
+        self.write()
+        self.assertIn('alternate', self.cmd('validate', ok=False))
+
     def test_worker_paths_and_run_ids_fail_closed(self):
         workers = json.loads(self.workers.read_text())
         workers['unexpected'] = True
